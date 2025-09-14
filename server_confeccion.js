@@ -19,6 +19,36 @@ const port = 3001;
 
 const dbConfeccionPath = path.join(__dirname, 'db_confeccion.json');
 
+// --- INICIO DEL CÓDIGO NUEVO ---
+// Lógica para inicializar la base de datos si no existe
+if (!fs.existsSync(dbConfeccionPath)) {
+    console.log("Base de datos no encontrada. Creando archivo db_confeccion.json con usuario admin por defecto...");
+    
+    // Contraseña por defecto que vamos a cifrar
+    const defaultPassword = 'admin123';
+    const saltRounds = 10;
+    // Ciframos la contraseña de forma síncrona para la inicialización
+    const hashedPassword = bcrypt.hashSync(defaultPassword, saltRounds);
+
+    const defaultData = {
+        proyectos_confeccion: [],
+        disenadores: [],
+        users: [
+            {
+                id: 1,
+                username: 'admin',
+                password: hashedPassword,
+                rol: 'Administrador'
+            }
+        ]
+    };
+    
+    // Escribimos el archivo de base de datos con los datos por defecto
+    fs.writeFileSync(dbConfeccionPath, JSON.stringify(defaultData, null, 2));
+    console.log("¡Base de datos creada exitosamente!");
+}
+// --- FIN DEL CÓDIGO NUEVO ---
+
 // --- Middleware y Configs ---
 // La línea de archivos estáticos se movió al final para corregir la seguridad.
 app.use(express.json());
