@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Principal de Logística</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            margin-top: 4rem;
+        }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .menu-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-decoration: none;
+            color: #333;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid #eee;
+        }
+        .menu-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            color: #0056b3;
+        }
+        .menu-button h2 {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+        .menu-button p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .logout-container {
+            margin-top: 3rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="text-align: center;">
+            <h1>Menú de Logística</h1>
+            <p>Seleccione una opción para continuar.</p>
+        </header>
+
+        <main class="menu-grid">
+            <a href="/panel_confeccion.html" class="menu-button">
+                <h2>Ver Panel de Proyectos</h2>
+                <p>Visualiza y gestiona todas las solicitudes de confección.</p>
+            </a>
+            <a href="/solicitud_confeccion.html" class="menu-button">
+                <h2>Crear Nueva Solicitud</h2>
+                <p>Inicia un nuevo proyecto de diseño y confección.</p>
+            </a>
+            <a href="/admin_diseñadores.html" class="menu-button">
+                <h2>Administrar Diseñadores</h2>
+                <p>Añade o elimina diseñadores del sistema.</p>
+            </a>
+            <a href="/admin_usuarios.html" class="menu-button">
+                <h2>Administrar Usuarios</h2>
+                <p>Crea usuarios y asigna roles en el sistema.</p>
+            </a>
+        </main>
+
+        <div class="logout-container">
+             <a href="/api/logout" class="btn">Cerrar Sesión</a>
+        </div>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            // Tu servidor ya tiene la ruta /api/me para obtener el usuario actual
+            const response = await fetch('/api/me');
+            if (!response.ok) {
+                // Si no se puede obtener el usuario, se ocultan los botones por seguridad
+                throw new Error('Usuario no autenticado');
+            }
+
+            const user = await response.json();
+            const userRole = user.rol;
+
+            // Según tu server.js, solo el 'Administrador' puede ver estas páginas.
+            // Ocultamos los botones para CUALQUIER rol que NO sea 'Administrador'.
+            if (userRole !== 'Administrador') {
+                const adminDesignersButton = document.querySelector('a[href="/admin_diseñadores.html"]');
+                if (adminDesignersButton) {
+                    adminDesignersButton.style.display = 'none';
+                }
+
+                const adminUsersButton = document.querySelector('a[href="/admin_usuarios.html"]');
+                if (adminUsersButton) {
+                    adminUsersButton.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Error al verificar permisos:', error);
+            // Si hay cualquier error, ocultamos los botones como medida de seguridad.
+            document.querySelector('a[href="/admin_diseñadores.html"]').style.display = 'none';
+            document.querySelector('a[href="/admin_usuarios.html"]').style.display = 'none';
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Confección</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/confeccion_dashboard.css">
+    <style>
+        /* Estilos para la nueva lista de proyectos */
+        .project-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .project-card-link {
+            display: block;
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: inherit;
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
+        }
+        .project-card-link:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            transform: translateY(-3px);
+        }
+        .project-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 1rem;
+        }
+        .project-card-header h3 {
+            margin: 0;
+            color: #333;
+        }
+        .project-status {
+            background-color: #e7f3ff;
+            color: #0056b3;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .project-card-body p {
+            margin: 0.5rem 0;
+            color: #555;
+        }
+        .project-card-footer {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+            font-size: 0.9rem;
+            color: #777;
+            text-align: right;
+        }
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Dashboard de Proyectos</h1>
+        <div class="header-actions">
+            <a href="/crear_solicitud_diseno.html" class="btn btn-primary">Crear Nueva Solicitud</a>
+            <a href="/api/logout" class="btn">Cerrar Sesión</a>
+        </div>
+    </header>
+
+    <main>
+        <div id="project-list-container" class="project-list-container">
+            <!-- Los proyectos se cargarán aquí dinámicamente -->
+            <p>Cargando proyectos...</p>
+        </div>
+    </main>
+
+    <script src="confeccion_dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vista del Diseñador</title>
+    <link rel="stylesheet" href="/estilos.css">
+</head>
+<body>
+    <header>
+        <h1>Vista del Diseñador</h1>
+        <a href="/confeccion_dashboard.html" class="back-button">&larr; Volver al Dashboard</a>
+    </header>
+
+    <main>
+        <div class="form-group">
+            <label for="design-upload">Subir Propuesta de Diseño:</label>
+            <input type="file" id="design-upload" name="design-upload" accept="image/*,application/pdf"> 
+        </div>
+        <button id="submit-internal-approval">Enviar para Aprobación Interna</button>
+
+        <hr>
+
+        <div class="form-group">
+            <label for="proforma-upload">Subir Proforma:</label>
+            <input type="file" id="proforma-upload" name="proforma-upload" accept="application/pdf"> 
+        </div>
+        <button id="submit-proforma">Subir Proforma</button>
+    </main>
+
+    <script src="vista_disenador.js"></script>
+</body>
+</html>

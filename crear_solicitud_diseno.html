@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Solicitud de Diseño</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <header>
+        <h1>Nueva Solicitud de Diseño de Confección</h1>
+        <a href="/confeccion-dashboard" class="back-button">&larr; Volver al Dashboard</a>
+    </header>
+
+    <main class="container">
+        <form id="solicitud-diseno-form">
+            <div class="form-group">
+                <label for="cliente">Cliente:</label>
+                <input type="text" id="cliente" name="cliente" required autocomplete="off">
+                <div id="cliente-suggestions" class="suggestions"></div>
+                <input type="hidden" id="cliente-id" name="cliente_id">
+            </div>
+
+            <div class="form-group">
+                <label for="nombre_proyecto">Nombre del Proyecto:</label>
+                <input type="text" id="nombre_proyecto" name="nombre_proyecto" required placeholder="Ej: Polos Promoción 2026">
+            </div>
+
+            <div class="form-group">
+                <label for="descripcion_idea_cliente">Descripción de la Idea del Diseño:</label>
+                <textarea id="descripcion_idea_cliente" name="descripcion_idea_cliente" rows="6" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="archivos_referencia">Archivos de Referencia del Cliente:</label>
+                <input type="file" id="archivos_referencia" name="archivos_referencia" multiple>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn">Crear Solicitud de Diseño</button>
+            </div>
+        </form>
+    </main>
+
+    <script src="crear_solicitud_diseno.js"></script>
+</body>
+</html>

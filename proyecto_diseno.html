@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Proyecto de Confección</title>
+    <link rel="stylesheet" href="estilos.css">
+    <link rel="stylesheet" href="confeccion_dashboard.css">
+</head>
+<body>
+    <header>
+        <h1>Detalle de Proyecto de Confección</h1>
+        <a href="/confeccion-dashboard" class="back-button">&larr; Volver al Dashboard</a>
+    </header>
+
+    <main class="container">
+        <div id="project-details-container">
+            <!-- Los detalles del proyecto se cargarán aquí -->
+        </div>
+
+        <hr style="margin: 30px 0;">
+
+        <!-- Secciones de Acciones -->
+        <div id="action-sections-container">
+            <!-- ... (secciones existentes) ... -->
+
+            <!-- Sección para Recepción de Confección -->
+            <div id="recepcion-confeccion-section" class="action-section" style="display: none;">
+                <h2>Recepción de Confección</h2>
+                <p>El proyecto ha sido enviado a confección. ¿Ya se recibió?</p>
+                <div class="form-group">
+                    <button id="mark-received-from-sewing-btn" class="btn">Marcar como Recibido de Confección</button>
+                </div>
+            </div>
+
+            <!-- Sección para Control de Calidad -->
+            <div id="control-calidad-section" class="action-section" style="display: none;">
+                <h2>Control de Calidad</h2>
+                <p>El proyecto está en control de calidad. ¿Está listo para entrega?</p>
+                <div class="form-group">
+                    <button id="mark-ready-for-delivery-btn" class="btn">Pedido Revisado y Listo para Entrega</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="proyecto_diseno.js"></script>
+</body>
+</html>

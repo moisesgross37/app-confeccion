@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Proyecto</title>
+    <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
+    <link rel="stylesheet" href="confeccion_estilos.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="panel_confeccion.html" class="button"><- Volver al Panel</a>
+        </nav>
+        <h1>Detalle de Proyecto</h1>
+    </header>
+
+    <main class="project-detail-grid">
+        
+        <section id="detalles-principales">
+            <h2>Detalles del Proyecto</h2>
+            <p><strong>Código:</strong> <span id="codigo-proyecto"></span></p>
+            <p><strong>Centro:</strong> <span id="centro-proyecto"></span></p>
+            <p><strong>Asesor:</strong> <span id="asesor-proyecto"></span></p>
+            <p><strong>Estado:</strong> <mark id="estado-proyecto"></mark></p>
+            <p><strong>Detalles Solicitud:</strong></p>
+            <blockquote id="detalles-proyecto"></blockquote>
+        </section>
+
+        <section id="tiempos">
+            <h2>Tiempos e Historial</h2>
+            <div class="card-container">
+                <article class="card">
+                    <h3 id="dias-totales">--</h3>
+                    <p>Días Totales</p>
+                </article>
+                <article class="card">
+                    <h3 id="dias-en-produccion">--</h3>
+                    <p>Días en Producción</p>
+                </article>
+            </div>
+            <h3>Historial de Fechas</h3>
+            <ul id="historial-fechas"></ul>
+        </section>
+
+        <section id="flujo-trabajo" class="full-width-grid-item">
+            <h2>Flujo de Trabajo</h2>
+            </section>
+
+    </main>
+
+    <script src="detalle_proyecto.js"></script>
+</body>
+</html>

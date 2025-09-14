@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrar Diseñadores</title>
+    <link rel="stylesheet" href="/estilos.css">
+    <link rel="stylesheet" href="/admin-estilos.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/admin_menu.html" class="back-button">&larr; Volver al Menú</a>
+            <h1>Administrar Diseñadores</h1>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Añadir Diseñador</h2>
+                <form id="add-designer-form" class="form-group">
+                    <label for="new-designer-name">Nombre del Diseñador:</label>
+                    <input type="text" id="new-designer-name" name="name" required placeholder="Escribe el nombre completo">
+                    <button type="submit" class="btn">Añadir Diseñador</button>
+                </form>
+            </div>
+            <div class="card">
+                <h3>Diseñadores Actuales</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="designers-list">
+                        <!-- Los diseñadores se cargarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="/admin_diseñadores.js"></script>
+</body>
+</html>

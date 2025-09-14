@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Solicitud de Confección</title>
+    <link rel="stylesheet" href="confeccion_estilos.css">
+    <style>
+        .autocomplete-results {
+            border: 1px solid #ccc;
+            border-top: none;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .autocomplete-results div {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .autocomplete-results div:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Nueva Solicitud de Confección</h1>
+
+    <form action="/api/solicitudes" method="POST" enctype="multipart/form-data">
+        <div>
+            <label for="nombre_centro">Nombre del Centro:</label><br>
+            <input type="text" id="nombre_centro" name="nombre_centro">
+            <div id="autocomplete-results" class="autocomplete-results"></div>
+        </div>
+        <br>
+        <div>
+            <label for="nombre_asesor">Nombre del Asesor:</label><br>
+            <input type="text" id="nombre_asesor" name="nombre_asesor">
+        </div>
+        <br>
+        <div>
+            <label for="detalles_solicitud">Detalles de lo que solicita el cliente:</label><br>
+            <textarea id="detalles_solicitud" name="detalles_solicitud" rows="4" cols="50"></textarea>
+        </div>
+        <br>
+        <div>
+            <label for="imagenes_referencia">Imágenes de Referencia:</label><br>
+            <input type="file" id="imagenes_referencia" name="imagenes_referencia" multiple accept="image/*,application/pdf">
+        </div>
+        <br>
+        <button type="submit">Crear Solicitud de Diseño</button>
+    </form>
+    <script src="solicitud_confeccion.js"></script>
+</body>
+</html>
