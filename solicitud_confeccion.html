@@ -5,40 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nueva Solicitud de Confección</title>
     <link rel="stylesheet" href="confeccion_estilos.css">
-    <style>
-        .autocomplete-results {
-            border: 1px solid #ccc;
-            border-top: none;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-        .autocomplete-results div {
-            padding: 10px;
-            cursor: pointer;
-        }
-        .autocomplete-results div:hover {
-            background-color: #f0f0f0;
-        }
-    </style>
 </head>
 <body>
     <h1>Nueva Solicitud de Confección</h1>
 
-    <form action="/api/solicitudes" method="POST" enctype="multipart/form-data">
+    <form>
         <div>
             <label for="nombre_centro">Nombre del Centro:</label><br>
-            <input type="text" id="nombre_centro" name="nombre_centro">
-            <div id="autocomplete-results" class="autocomplete-results"></div>
+            <select id="nombre_centro" name="nombre_centro" required>
+                <option value="" disabled selected>Cargando centros calificados...</option>
+            </select>
         </div>
         <br>
         <div>
             <label for="nombre_asesor">Nombre del Asesor:</label><br>
-            <input type="text" id="nombre_asesor" name="nombre_asesor">
+            <select id="nombre_asesor" name="nombre_asesor" required>
+                <option value="" disabled selected>Cargando asesores...</option>
+            </select>
         </div>
         <br>
         <div>
             <label for="detalles_solicitud">Detalles de lo que solicita el cliente:</label><br>
-            <textarea id="detalles_solicitud" name="detalles_solicitud" rows="4" cols="50"></textarea>
+            <textarea id="detalles_solicitud" name="detalles_solicitud" rows="4" cols="50" required></textarea>
         </div>
         <br>
         <div>
