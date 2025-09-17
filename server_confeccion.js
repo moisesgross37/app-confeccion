@@ -257,6 +257,24 @@ app.delete('/api/designers/:id', requireLogin, checkRole(['Administrador']), (re
         res.status(404).json({ message: 'Diseñador no encontrado' });
     }
 });
+
+// ===================================================================================
+// ===== INICIO DE LA MODIFICACIÓN (ÚNICO BLOQUE AÑADIDO) =====
+// ===================================================================================
+app.get('/api/asesores', requireLogin, (req, res) => {
+    // Por ahora, enviaremos una lista fija de ejemplo.
+    // Más adelante, esto podría leerse de la base de datos db_confeccion.json si decides gestionar asesores aquí.
+    const asesores = [
+        { name: 'Moises Gross' },
+        { name: 'Leudis Santos' },
+        { name: 'Asesor de Prueba' }
+    ];
+    res.json(asesores);
+});
+// ===================================================================================
+// ===== FIN DE LA MODIFICACIÓN =====
+// ===================================================================================
+
 app.put('/api/proyectos/:id/asignar', requireLogin, checkRole(['Administrador', 'Coordinador']), (req, res) => findProjectAndUpdate(req, res, (p) => { p.diseñador_id = req.body.diseñadorId; p.fecha_de_asignacion = new Date().toISOString(); p.status = 'Diseño en Proceso'; }));
 app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñador']), upload.single('propuesta_diseno'), (req, res) => { if (!req.file) return res.status(400).json({ message: 'No se ha subido ningún archivo.' }); findProjectAndUpdate(req, res, (p) => { p.propuesta_diseno_url = req.file.path; p.fecha_propuesta = new Date().toISOString(); p.status = 'Pendiente Aprobación Interna'; }); });
 app.put('/api/proyectos/:id/aprobar-interno', requireLogin, checkRole(['Administrador', 'Coordinador']), (req, res) => findProjectAndUpdate(req, res, (p) => { p.fecha_aprobacion_interna = new Date().toISOString(); p.status = 'Pendiente Aprobación Cliente'; }));
