@@ -5,31 +5,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIGURACIÓN PARA CONECTARSE A LA API DE GESTIÓN ---
     const GESTION_API_URL = 'https://be-gestion.onrender.com/api/formalized-centers';
-    const API_KEY = 'MI_LLAVE_SECRETA_12345'; // Asegúrate de que esta llave coincida con la de tu server_v12.js
+    const ADVISORS_API_URL = 'https://be-gestion.onrender.com/api/advisors-list'; // <-- NUEVA RUTA
+    const API_KEY = 'MI_LLAVE_SECRETA_12345';
     // --- FIN: CONFIGURACIÓN ---
 
-    // Función para poblar el menú de asesores (desde la API local de confección)
+    // --- INICIO: FUNCIÓN DE ASESORES MODIFICADA ---
     const loadAdvisors = () => {
-        // Asumimos que tu app de confección tiene una ruta /api/asesores
-        // Si no la tiene, podemos crearla o poner los nombres manualmente.
-        fetch('/api/asesores')
-            .then(response => response.json())
-            .then(asesores => {
-                asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
-                asesores.forEach(asesor => {
-                    const option = document.createElement('option');
-                    option.value = asesor.name;
-                    option.textContent = asesor.name;
-                    asesorSelect.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Error al cargar asesores:', error);
-                asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar asesores</option>';
+        fetch(ADVISORS_API_URL, { // <-- Se usa la nueva URL
+            headers: {
+                'X-API-Key': API_KEY // <-- Se añade la seguridad
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Error al cargar asesores desde el servidor principal.');
+            return response.json();
+        })
+        .then(asesores => {
+            asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
+            asesores.forEach(asesor => {
+                const option = document.createElement('option');
+                option.value = asesor.name;
+                option.textContent = asesor.name;
+                asesorSelect.appendChild(option);
             });
+        })
+        .catch(error => {
+            console.error('Error al cargar asesores:', error);
+            asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar asesores</option>';
+        });
     };
+    // --- FIN: FUNCIÓN DE ASESORES MODIFICADA ---
 
-    // --- FUNCIÓN PARA CARGAR CENTROS CALIFICADOS DESDE LA OTRA APP ---
     const loadFormalizedCenters = () => {
         fetch(GESTION_API_URL, {
             headers: {
@@ -67,7 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         const formData = new FormData(form);
         
-        // Validación
         if (!formData.get('nombre_centro') || !formData.get('nombre_asesor') || !formData.get('detalles_solicitud')) {
             alert('Por favor, complete todos los campos requeridos.');
             return;
