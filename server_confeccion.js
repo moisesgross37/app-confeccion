@@ -1,9 +1,9 @@
-// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.2 (PostgreSQL Completo) ==============
+// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.3 (PostgreSQL Completo y Corregido) ==============
 // Base de Datos: PostgreSQL en Render
 // Responsabilidad: Gestionar proyectos de diseño, producción y calidad con login propio.
 // =====================================================================================
 
-console.log("--- Servidor de Confección v8.2 con PostgreSQL ---");
+console.log("--- Servidor de Confección v8.3 con PostgreSQL ---");
 
 const express = require('express');
 const path = require('path');
@@ -144,10 +144,15 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/logout', (req, res) => req.session.destroy(() => res.redirect('/login.html')));
 app.get('/api/me', requireLogin, (req, res) => res.json(req.session.user));
 
-// --- Ruta Principal ---
+// ===================================================================================
+// ===== INICIO DE LA MODIFICACIÓN 1: Añadir la Ruta Principal que faltaba =====
+// ===================================================================================
 app.get('/', requireLogin, (req, res) => {
     res.redirect('/panel_confeccion.html');
 });
+// ===================================================================================
+// ===== FIN DE LA MODIFICACIÓN 1 =====
+// ===================================================================================
 
 // --- Rutas HTML Protegidas ---
 const confeccionRoles = ['Administrador', 'Coordinador', 'Asesor', 'Diseñador', 'Colaborador / Staff'];
@@ -166,12 +171,22 @@ app.get('/api/asesores', requireLogin, (req, res) => {
     res.json(asesores);
 });
 
+// ===================================================================================
+// ===== INICIO DE LA MODIFICACIÓN 2: Corregir la consulta de Proyectos =====
+// ===================================================================================
 app.get('/api/proyectos', requireLogin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT *, id AS project_id FROM confeccion_projects ORDER BY fecha_creacion DESC');
+        // CORRECCIÓN: Se elimina el "id AS project_id" que causaba el error.
+        const result = await pool.query('SELECT * FROM confeccion_projects ORDER BY fecha_creacion DESC');
         res.json(result.rows);
-    } catch (err) { res.status(500).json({ message: 'Error al obtener proyectos' }); }
+    } catch (err) { 
+        console.error("Error en /api/proyectos:", err);
+        res.status(500).json({ message: 'Error al obtener proyectos' }); 
+    }
 });
+// ===================================================================================
+// ===== FIN DE LA MODIFICACIÓN 2 =====
+// ===================================================================================
 
 app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
     try {
@@ -192,6 +207,7 @@ app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']
     } catch (err) { console.error(err); res.status(500).json({ error: 'Error interno del servidor' }); }
 });
 
+// --- Rutas de Diseñadores ---
 app.get('/api/designers', requireLogin, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM confeccion_designers ORDER BY name ASC');
@@ -199,6 +215,7 @@ app.get('/api/designers', requireLogin, async (req, res) => {
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error al obtener diseñadores' }); }
 });
 
+// (Aquí continúa el resto de tus rutas originales: POST y DELETE para designers, y todas las rutas PUT para proyectos)
 app.post('/api/designers', requireLogin, checkRole(['Administrador']), async (req, res) => {
     try {
         const result = await pool.query('INSERT INTO confeccion_designers (name) VALUES ($1) RETURNING *', [req.body.nombre]);
@@ -213,7 +230,6 @@ app.delete('/api/designers/:id', requireLogin, checkRole(['Administrador']), asy
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error al eliminar diseñador' }); }
 });
 
-// --- Rutas de Actualización de Proyectos ---
 const updateProjectStatus = async (status, id) => {
     return pool.query(`UPDATE confeccion_projects SET status = $1 WHERE id = $2 RETURNING *`, [status, id]);
 };
@@ -237,7 +253,22 @@ app.put('/api/proyectos/:id/aprobar-interno', requireLogin, checkRole(['Administ
 app.put('/api/proyectos/:id/aprobar-cliente', requireLogin, checkRole(['Asesor', 'Administrador']), (req, res) => updateProjectStatus('Pendiente de Proforma', req.params.id).then(r => res.json(r.rows[0])).catch(err => res.status(500).json(err)));
 app.put('/api/proyectos/:id/aprobar-calidad', requireLogin, checkRole(['Administrador', 'Coordinador']), (req, res) => updateProjectStatus('Listo para Entrega', req.params.id).then(r => res.json(r.rows[0])).catch(err => res.status(500).json(err)));
 
-// (Aquí continuarían el resto de las rutas PUT adaptadas de forma similar)
+app.put('/api/proyectos/:id/autorizar-produccion', requireLogin, checkRole(['Asesor', 'Administrador']), upload.single('listado_final'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ message: 'El listado final es un archivo obligatorio.' });
+    try {
+        const result = await pool.query('UPDATE confeccion_projects SET listado_final_url = $1, fecha_autorizacion_produccion = NOW(), status = $2 WHERE id = $3 RETURNING *', [req.file.path, 'En Lista de Producción', req.params.id]);
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ message: 'Error al autorizar producción' }); }
+});
+
+app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+    const { nuevaEtapa } = req.body;
+    try {
+        const result = await pool.query('UPDATE confeccion_projects SET status = $1, historial_produccion = historial_produccion || $2::jsonb WHERE id = $3 RETURNING *', [nuevaEtapa, JSON.stringify({ etapa: nuevaEtapa, fecha: new Date() }), req.params.id]);
+        res.json(result.rows[0]);
+    } catch (err) { res.status(500).json({ message: 'Error al avanzar etapa' }); }
+});
+
 
 // Servidor de archivos estáticos (Debe ir al final)
 app.use(express.static(path.join(__dirname)));
@@ -245,7 +276,7 @@ app.use(express.static(path.join(__dirname)));
 // Función para iniciar el servidor
 const startServer = async () => {
     await initializeDatabase();
-    app.listen(port, () => console.log(`👕 Servidor de Confección v8.2 escuchando en el puerto ${port}`));
+    app.listen(port, () => console.log(`👕 Servidor de Confección v8.3 escuchando en el puerto ${port}`));
 };
 
 startServer();
