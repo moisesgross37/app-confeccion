@@ -1,9 +1,9 @@
-// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.3 (PostgreSQL Completo y Corregido) ==============
+// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.4 (PostgreSQL Completo y Corregido) ==============
 // Base de Datos: PostgreSQL en Render
 // Responsabilidad: Gestionar proyectos de diseño, producción y calidad con login propio.
 // =====================================================================================
 
-console.log("--- Servidor de Confección v8.3 con PostgreSQL ---");
+console.log("--- Servidor de Confección v8.4 con PostgreSQL ---");
 
 const express = require('express');
 const path = require('path');
@@ -69,6 +69,21 @@ const initializeDatabase = async () => {
                 historial_incidencias JSONB
             );
         `);
+        
+        // ===================================================================================
+        // ===== INICIO DE LA MODIFICACIÓN (ÚNICO BLOQUE AÑADIDO) =====
+        // ===================================================================================
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "confeccion_session" (
+                "sid" varchar NOT NULL COLLATE "default",
+                "sess" json NOT NULL,
+                "expire" timestamp(6) NOT NULL
+            ) WITH (OIDS=FALSE);
+            ALTER TABLE "confeccion_session" ADD CONSTRAINT "confeccion_session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+        `);
+        // ===================================================================================
+        // ===== FIN DE LA MODIFICACIÓN =====
+        // ===================================================================================
         
         const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
         if (adminUser.rows.length === 0) {
@@ -144,15 +159,10 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/logout', (req, res) => req.session.destroy(() => res.redirect('/login.html')));
 app.get('/api/me', requireLogin, (req, res) => res.json(req.session.user));
 
-// ===================================================================================
-// ===== INICIO DE LA MODIFICACIÓN 1: Añadir la Ruta Principal que faltaba =====
-// ===================================================================================
+// --- Ruta Principal ---
 app.get('/', requireLogin, (req, res) => {
     res.redirect('/panel_confeccion.html');
 });
-// ===================================================================================
-// ===== FIN DE LA MODIFICACIÓN 1 =====
-// ===================================================================================
 
 // --- Rutas HTML Protegidas ---
 const confeccionRoles = ['Administrador', 'Coordinador', 'Asesor', 'Diseñador', 'Colaborador / Staff'];
@@ -163,7 +173,8 @@ app.get('/panel_confeccion.html', requireLogin, checkRole(confeccionRoles), (req
 app.get('/solicitud_confeccion.html', requireLogin, checkRole(['Asesor', 'Administrador']), (req, res) => res.sendFile(path.join(__dirname, 'solicitud_confeccion.html')));
 app.get('/detalle_proyecto.html', requireLogin, checkRole(confeccionRoles), (req, res) => res.sendFile(path.join(__dirname, 'detalle_proyecto.html')));
 app.get('/admin_diseñadores.html', requireLogin, checkRole(['Administrador']), (req, res) => res.sendFile(path.join(__dirname, 'admin_diseñadores.html')));
-// (Añade aquí el resto de tus rutas HTML protegidas si faltan)
+// (Aquí continúan tus otras rutas HTML protegidas...)
+
 
 // --- RUTAS DE API ---
 app.get('/api/asesores', requireLogin, (req, res) => {
@@ -171,12 +182,8 @@ app.get('/api/asesores', requireLogin, (req, res) => {
     res.json(asesores);
 });
 
-// ===================================================================================
-// ===== INICIO DE LA MODIFICACIÓN 2: Corregir la consulta de Proyectos =====
-// ===================================================================================
 app.get('/api/proyectos', requireLogin, async (req, res) => {
     try {
-        // CORRECCIÓN: Se elimina el "id AS project_id" que causaba el error.
         const result = await pool.query('SELECT * FROM confeccion_projects ORDER BY fecha_creacion DESC');
         res.json(result.rows);
     } catch (err) { 
@@ -184,9 +191,6 @@ app.get('/api/proyectos', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error al obtener proyectos' }); 
     }
 });
-// ===================================================================================
-// ===== FIN DE LA MODIFICACIÓN 2 =====
-// ===================================================================================
 
 app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
     try {
@@ -215,7 +219,6 @@ app.get('/api/designers', requireLogin, async (req, res) => {
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error al obtener diseñadores' }); }
 });
 
-// (Aquí continúa el resto de tus rutas originales: POST y DELETE para designers, y todas las rutas PUT para proyectos)
 app.post('/api/designers', requireLogin, checkRole(['Administrador']), async (req, res) => {
     try {
         const result = await pool.query('INSERT INTO confeccion_designers (name) VALUES ($1) RETURNING *', [req.body.nombre]);
@@ -230,6 +233,7 @@ app.delete('/api/designers/:id', requireLogin, checkRole(['Administrador']), asy
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error al eliminar diseñador' }); }
 });
 
+// --- Rutas de Actualización de Proyectos ---
 const updateProjectStatus = async (status, id) => {
     return pool.query(`UPDATE confeccion_projects SET status = $1 WHERE id = $2 RETURNING *`, [status, id]);
 };
@@ -269,14 +273,13 @@ app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administra
     } catch (err) { res.status(500).json({ message: 'Error al avanzar etapa' }); }
 });
 
-
 // Servidor de archivos estáticos (Debe ir al final)
 app.use(express.static(path.join(__dirname)));
 
 // Función para iniciar el servidor
 const startServer = async () => {
     await initializeDatabase();
-    app.listen(port, () => console.log(`👕 Servidor de Confección v8.3 escuchando en el puerto ${port}`));
+    app.listen(port, () => console.log(`👕 Servidor de Confección v8.4 escuchando en el puerto ${port}`));
 };
 
 startServer();
