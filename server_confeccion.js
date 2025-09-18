@@ -1,9 +1,9 @@
-// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.4 (PostgreSQL Completo y Corregido) ==============
+// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.5 (PostgreSQL Completo y Corregido) ==============
 // Base de Datos: PostgreSQL en Render
 // Responsabilidad: Gestionar proyectos de diseño, producción y calidad con login propio.
 // =====================================================================================
 
-console.log("--- Servidor de Confección v8.4 con PostgreSQL ---");
+console.log("--- Servidor de Confección v8.5 con PostgreSQL ---");
 
 const express = require('express');
 const path = require('path');
@@ -70,9 +70,7 @@ const initializeDatabase = async () => {
             );
         `);
         
-        // ===================================================================================
-        // ===== INICIO DE LA MODIFICACIÓN (ÚNICO BLOQUE AÑADIDO) =====
-        // ===================================================================================
+        // ===== INICIO DE LA MODIFICACIÓN 1: Añadir tabla de sesiones =====
         await client.query(`
             CREATE TABLE IF NOT EXISTS "confeccion_session" (
                 "sid" varchar NOT NULL COLLATE "default",
@@ -81,9 +79,7 @@ const initializeDatabase = async () => {
             ) WITH (OIDS=FALSE);
             ALTER TABLE "confeccion_session" ADD CONSTRAINT "confeccion_session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
         `);
-        // ===================================================================================
-        // ===== FIN DE LA MODIFICACIÓN =====
-        // ===================================================================================
+        // ===== FIN DE LA MODIFICACIÓN 1 =====
         
         const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
         if (adminUser.rows.length === 0) {
@@ -149,7 +145,9 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ message: 'Usuario o contraseña incorrectos' });
         }
         req.session.user = { username: user.username, rol: user.rol };
-        res.json({ redirectTo: '/panel_confeccion.html' });
+        // ===== INICIO DE LA MODIFICACIÓN 2: Corregir redirección post-login =====
+        res.json({ redirectTo: '/logistica.html' }); // <-- CORREGIDO: Redirige al menú principal
+        // ===== FIN DE LA MODIFICACIÓN 2 =====
     } catch (err) {
         console.error('Error en login:', err);
         res.status(500).json({ message: 'Error en el servidor' });
@@ -161,7 +159,7 @@ app.get('/api/me', requireLogin, (req, res) => res.json(req.session.user));
 
 // --- Ruta Principal ---
 app.get('/', requireLogin, (req, res) => {
-    res.redirect('/panel_confeccion.html');
+    res.redirect('/logistica.html'); // <-- CORREGIDO: También apunta al menú principal
 });
 
 // --- Rutas HTML Protegidas ---
@@ -279,7 +277,7 @@ app.use(express.static(path.join(__dirname)));
 // Función para iniciar el servidor
 const startServer = async () => {
     await initializeDatabase();
-    app.listen(port, () => console.log(`👕 Servidor de Confección v8.4 escuchando en el puerto ${port}`));
+    app.listen(port, () => console.log(`👕 Servidor de Confección v8.5 escuchando en el puerto ${port}`));
 };
 
 startServer();
