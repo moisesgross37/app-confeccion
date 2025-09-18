@@ -231,9 +231,25 @@ app.get('/api/proyectos', requireLogin, async (req, res) => {
     }
 });
 
+// =========================================================================
+// ======================= ÚNICA MODIFICACIÓN AQUÍ =======================
+// =========================================================================
 app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM confeccion_projects WHERE id = $1', [req.params.id]);
+        // ---- CÓDIGO ANTIGUO ----
+        // const result = await pool.query('SELECT * FROM confeccion_projects WHERE id = $1', [req.params.id]);
+
+        // ---- CÓDIGO NUEVO ----
+        // Se añade un LEFT JOIN para unir con la tabla de diseñadores y obtener el nombre.
+        // Se usa LEFT JOIN por si un proyecto aún no tiene diseñador asignado.
+        const query = `
+            SELECT p.*, d.name AS nombre_disenador
+            FROM confeccion_projects p
+            LEFT JOIN confeccion_designers d ON p.diseñador_id = d.id
+            WHERE p.id = $1
+        `;
+        const result = await pool.query(query, [req.params.id]);
+
         if (result.rows.length > 0) res.json(result.rows[0]);
         else res.status(404).json({ message: 'Proyecto no encontrado' });
     } catch (err) { res.status(500).json({ message: 'Error al obtener proyecto' }); }
