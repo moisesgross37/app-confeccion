@@ -1,9 +1,9 @@
-// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.5 (PostgreSQL Completo y Corregido) ==============
+// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.6 (Módulo de Usuarios Completo) ==============
 // Base de Datos: PostgreSQL en Render
 // Responsabilidad: Gestionar proyectos de diseño, producción y calidad con login propio.
 // =====================================================================================
 
-console.log("--- Servidor de Confección v8.5 con PostgreSQL ---");
+console.log("--- Servidor de Confección v8.6 con PostgreSQL ---");
 
 const express = require('express');
 const path = require('path');
@@ -69,8 +69,6 @@ const initializeDatabase = async () => {
                 historial_incidencias JSONB
             );
         `);
-        
-        // ===== INICIO DE LA MODIFICACIÓN 1: Añadir tabla de sesiones =====
         await client.query(`
             CREATE TABLE IF NOT EXISTS "confeccion_session" (
                 "sid" varchar NOT NULL COLLATE "default",
@@ -79,7 +77,6 @@ const initializeDatabase = async () => {
             ) WITH (OIDS=FALSE);
             ALTER TABLE "confeccion_session" ADD CONSTRAINT "confeccion_session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
         `);
-        // ===== FIN DE LA MODIFICACIÓN 1 =====
         
         const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
         if (adminUser.rows.length === 0) {
@@ -145,9 +142,7 @@ app.post('/api/login', async (req, res) => {
             return res.status(401).json({ message: 'Usuario o contraseña incorrectos' });
         }
         req.session.user = { username: user.username, rol: user.rol };
-        // ===== INICIO DE LA MODIFICACIÓN 2: Corregir redirección post-login =====
-        res.json({ redirectTo: '/logistica.html' }); // <-- CORREGIDO: Redirige al menú principal
-        // ===== FIN DE LA MODIFICACIÓN 2 =====
+        res.json({ redirectTo: '/logistica.html' });
     } catch (err) {
         console.error('Error en login:', err);
         res.status(500).json({ message: 'Error en el servidor' });
@@ -156,11 +151,7 @@ app.post('/api/login', async (req, res) => {
 
 app.get('/api/logout', (req, res) => req.session.destroy(() => res.redirect('/login.html')));
 app.get('/api/me', requireLogin, (req, res) => res.json(req.session.user));
-
-// --- Ruta Principal ---
-app.get('/', requireLogin, (req, res) => {
-    res.redirect('/logistica.html'); // <-- CORREGIDO: También apunta al menú principal
-});
+app.get('/', requireLogin, (req, res) => res.redirect('/logistica.html'));
 
 // --- Rutas HTML Protegidas ---
 const confeccionRoles = ['Administrador', 'Coordinador', 'Asesor', 'Diseñador', 'Colaborador / Staff'];
@@ -171,10 +162,65 @@ app.get('/panel_confeccion.html', requireLogin, checkRole(confeccionRoles), (req
 app.get('/solicitud_confeccion.html', requireLogin, checkRole(['Asesor', 'Administrador']), (req, res) => res.sendFile(path.join(__dirname, 'solicitud_confeccion.html')));
 app.get('/detalle_proyecto.html', requireLogin, checkRole(confeccionRoles), (req, res) => res.sendFile(path.join(__dirname, 'detalle_proyecto.html')));
 app.get('/admin_diseñadores.html', requireLogin, checkRole(['Administrador']), (req, res) => res.sendFile(path.join(__dirname, 'admin_diseñadores.html')));
-// (Aquí continúan tus otras rutas HTML protegidas...)
-
 
 // --- RUTAS DE API ---
+
+// ===================================================================================
+// ===== INICIO DE LA MODIFICACIÓN (BLOQUE DE USUARIOS AÑADIDO) =====
+// ===================================================================================
+app.get('/api/users', requireLogin, checkRole(['Administrador']), async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, username, rol FROM confeccion_users ORDER BY username ASC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Error al obtener usuarios:", err);
+        res.status(500).json({ message: 'Error al cargar la lista de usuarios.' });
+    }
+});
+
+app.post('/api/users', requireLogin, checkRole(['Administrador']), async (req, res) => {
+    const { username, password, rol } = req.body;
+    if (!username || !password || !rol) {
+        return res.status(400).json({ message: 'Nombre de usuario, contraseña y rol son obligatorios.' });
+    }
+    try {
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const result = await pool.query(
+            'INSERT INTO confeccion_users (username, password, rol) VALUES ($1, $2, $3) RETURNING id, username, rol',
+            [username, hashedPassword, rol]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        if (err.code === '23505') { // Error de duplicado
+            return res.status(409).json({ message: 'El nombre de usuario ya existe.' });
+        }
+        console.error("Error al crear usuario:", err);
+        res.status(500).json({ message: 'Error al crear el usuario.' });
+    }
+});
+
+app.delete('/api/users/:username', requireLogin, checkRole(['Administrador']), async (req, res) => {
+    const { username } = req.params;
+    if (username === 'admin') {
+        return res.status(403).json({ message: 'No se puede eliminar al usuario administrador principal.' });
+    }
+    try {
+        const result = await pool.query('DELETE FROM confeccion_users WHERE username = $1', [username]);
+        if (result.rowCount > 0) {
+            res.status(200).json({ message: 'Usuario eliminado con éxito.' });
+        } else {
+            res.status(404).json({ message: 'Usuario no encontrado.' });
+        }
+    } catch (err) {
+        console.error("Error al eliminar usuario:", err);
+        res.status(500).json({ message: 'Error al eliminar el usuario.' });
+    }
+});
+// ===================================================================================
+// ===== FIN DE LA MODIFICACIÓN =====
+// ===================================================================================
+
 app.get('/api/asesores', requireLogin, (req, res) => {
     const asesores = [ { name: 'Moises Gross' }, { name: 'Leudis Santos' }, { name: 'Asesor de Prueba' } ];
     res.json(asesores);
@@ -209,7 +255,6 @@ app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']
     } catch (err) { console.error(err); res.status(500).json({ error: 'Error interno del servidor' }); }
 });
 
-// --- Rutas de Diseñadores ---
 app.get('/api/designers', requireLogin, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM confeccion_designers ORDER BY name ASC');
@@ -231,7 +276,6 @@ app.delete('/api/designers/:id', requireLogin, checkRole(['Administrador']), asy
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error al eliminar diseñador' }); }
 });
 
-// --- Rutas de Actualización de Proyectos ---
 const updateProjectStatus = async (status, id) => {
     return pool.query(`UPDATE confeccion_projects SET status = $1 WHERE id = $2 RETURNING *`, [status, id]);
 };
@@ -277,7 +321,7 @@ app.use(express.static(path.join(__dirname)));
 // Función para iniciar el servidor
 const startServer = async () => {
     await initializeDatabase();
-    app.listen(port, () => console.log(`👕 Servidor de Confección v8.5 escuchando en el puerto ${port}`));
+    app.listen(port, () => console.log(`👕 Servidor de Confección v8.6 escuchando en el puerto ${port}`));
 };
 
 startServer();
