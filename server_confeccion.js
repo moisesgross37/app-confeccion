@@ -1,9 +1,9 @@
-// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.6 (Módulo de Usuarios Completo) ==============
+// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.7 (PostgreSQL Completo y Corregido) ==============
 // Base de Datos: PostgreSQL en Render
 // Responsabilidad: Gestionar proyectos de diseño, producción y calidad con login propio.
 // =====================================================================================
 
-console.log("--- Servidor de Confección v8.6 con PostgreSQL ---");
+console.log("--- Servidor de Confección v8.7 con PostgreSQL ---");
 
 const express = require('express');
 const path = require('path');
@@ -165,9 +165,7 @@ app.get('/admin_diseñadores.html', requireLogin, checkRole(['Administrador']), 
 
 // --- RUTAS DE API ---
 
-// ===================================================================================
-// ===== INICIO DE LA MODIFICACIÓN (BLOQUE DE USUARIOS AÑADIDO) =====
-// ===================================================================================
+// --- Rutas de Administración de Usuarios (AÑADIDAS Y ADAPTADAS A POSTGRESQL) ---
 app.get('/api/users', requireLogin, checkRole(['Administrador']), async (req, res) => {
     try {
         const result = await pool.query('SELECT id, username, rol FROM confeccion_users ORDER BY username ASC');
@@ -217,9 +215,6 @@ app.delete('/api/users/:username', requireLogin, checkRole(['Administrador']), a
         res.status(500).json({ message: 'Error al eliminar el usuario.' });
     }
 });
-// ===================================================================================
-// ===== FIN DE LA MODIFICACIÓN =====
-// ===================================================================================
 
 app.get('/api/asesores', requireLogin, (req, res) => {
     const asesores = [ { name: 'Moises Gross' }, { name: 'Leudis Santos' }, { name: 'Asesor de Prueba' } ];
@@ -257,7 +252,7 @@ app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']
 
 app.get('/api/designers', requireLogin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM confeccion_designers ORDER BY name ASC');
+        const result = await pool.query('SELECT id, name AS nombre FROM confeccion_designers ORDER BY name ASC');
         res.json(result.rows);
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error al obtener diseñadores' }); }
 });
@@ -265,7 +260,8 @@ app.get('/api/designers', requireLogin, async (req, res) => {
 app.post('/api/designers', requireLogin, checkRole(['Administrador']), async (req, res) => {
     try {
         const result = await pool.query('INSERT INTO confeccion_designers (name) VALUES ($1) RETURNING *', [req.body.nombre]);
-        res.status(201).json(result.rows[0]);
+        const newDesigner = result.rows[0];
+        res.status(201).json({id: newDesigner.id, nombre: newDesigner.name}); // Devolvemos con 'nombre' para consistencia
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error al crear diseñador' }); }
 });
 
@@ -315,13 +311,13 @@ app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administra
     } catch (err) { res.status(500).json({ message: 'Error al avanzar etapa' }); }
 });
 
-// Servidor de archivos estáticos (Debe ir al final)
+// Servidor de archivos estáticos (Debe ir al final de todas las rutas)
 app.use(express.static(path.join(__dirname)));
 
 // Función para iniciar el servidor
 const startServer = async () => {
     await initializeDatabase();
-    app.listen(port, () => console.log(`👕 Servidor de Confección v8.6 escuchando en el puerto ${port}`));
+    app.listen(port, () => console.log(`👕 Servidor de Confección v8.7 escuchando en el puerto ${port}`));
 };
 
 startServer();
