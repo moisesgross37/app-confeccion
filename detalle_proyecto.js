@@ -28,6 +28,8 @@ function renderizarPagina(proyecto, user) {
     document.getElementById('codigo-proyecto').textContent = proyecto.codigo_proyecto || 'N/A';
     document.getElementById('centro-proyecto').textContent = proyecto.cliente || 'N/A';
     document.getElementById('asesor-proyecto').textContent = proyecto.nombre_asesor || 'N/A';
+    // ===== MODIFICACIÓN 1: LÍNEA AÑADIDA =====
+    document.getElementById('disenador-proyecto').textContent = proyecto.nombre_disenador || 'No Asignado';
     document.getElementById('estado-proyecto').textContent = proyecto.status || 'N/A';
     document.getElementById('detalles-proyecto').textContent = proyecto.detalles_solicitud || 'N/A';
 
@@ -66,47 +68,89 @@ function renderizarPagina(proyecto, user) {
     const contenedorAcciones = document.getElementById('flujo-trabajo');
     const userRol = user.rol;
     const projectId = proyecto.id;
-    let actionPanelRendered = false;
 
-    if (proyecto.status === 'Diseño Pendiente de Asignación' && ['Administrador', 'Coordinador'].includes(userRol)) {
-        mostrarPanelAsignacion(contenedorAcciones, projectId);
-        actionPanelRendered = true;
-    } else if (proyecto.status === 'Diseño en Proceso' && userRol === 'Diseñador') {
-        mostrarPanelSubirPropuesta(contenedorAcciones, projectId);
-        actionPanelRendered = true;
-    } else if (proyecto.status === 'Pendiente Aprobación Interna' && ['Administrador', 'Coordinador'].includes(userRol)) {
-        mostrarPanelRevisarPropuesta(contenedorAcciones, projectId, proyecto);
-        actionPanelRendered = true;
-    } else if (proyecto.status === 'Pendiente Aprobación Cliente' && ['Administrador', 'Asesor'].includes(userRol)) {
-        mostrarPanelAprobarCliente(contenedorAcciones, projectId, proyecto);
-        actionPanelRendered = true;
-    } else if (proyecto.status === 'Pendiente de Proforma' && userRol === 'Diseñador') {
-        mostrarPanelSubirProforma(contenedorAcciones, projectId);
-        actionPanelRendered = true;
-    } else if (proyecto.status === 'Pendiente Aprobación Proforma' && ['Administrador', 'Asesor'].includes(userRol)) { 
-        mostrarPanelRevisionProforma(contenedorAcciones, projectId, proyecto);
-        actionPanelRendered = true;
-    } else if (['En Lista de Producción', 'En Diagramación', 'En Impresión', 'En Calandrado', 'En Confección', 'Supervisión de Calidad'].includes(proyecto.status) && ['Administrador', 'Coordinador'].includes(userRol)) { 
-        mostrarPanelProduccion(contenedorAcciones, proyecto);
-        actionPanelRendered = true;
-    }
+    // ===== MODIFICACIÓN 2: LÓGICA DE PERMISOS REEMPLAZADA =====
+    if (userRol === 'Administrador') {
+        // Si es admin, muestra TODOS los paneles de acción posibles para tener control total
+        contenedorAcciones.innerHTML = '<h2>Acciones de Administrador (Vista Total)</h2>';
+        
+        // Creamos contenedores para cada panel para que no se sobreescriban
+        const adminContainerAsignacion = document.createElement('div');
+        contenedorAcciones.appendChild(adminContainerAsignacion);
+        mostrarPanelAsignacion(adminContainerAsignacion, projectId);
 
-    if (!actionPanelRendered) {
-        contenedorAcciones.innerHTML = `<p>No hay acciones disponibles para tu rol (<strong>${userRol}</strong>) en el estado actual del proyecto (<strong>${proyecto.status}</strong>).</p>`;
+        const adminContainerPropuesta = document.createElement('div');
+        contenedorAcciones.appendChild(adminContainerPropuesta);
+        mostrarPanelSubirPropuesta(adminContainerPropuesta, projectId);
+
+        const adminContainerRevisar = document.createElement('div');
+        contenedorAcciones.appendChild(adminContainerRevisar);
+        mostrarPanelRevisarPropuesta(adminContainerRevisar, projectId, proyecto);
+
+        const adminContainerCliente = document.createElement('div');
+        contenedorAcciones.appendChild(adminContainerCliente);
+        mostrarPanelAprobarCliente(adminContainerCliente, projectId, proyecto);
+
+        const adminContainerProforma = document.createElement('div');
+        contenedorAcciones.appendChild(adminContainerProforma);
+        mostrarPanelSubirProforma(adminContainerProforma, projectId);
+
+        const adminContainerRevisionProforma = document.createElement('div');
+        contenedorAcciones.appendChild(adminContainerRevisionProforma);
+        mostrarPanelRevisionProforma(adminContainerRevisionProforma, projectId, proyecto);
+        
+        const adminContainerProduccion = document.createElement('div');
+        contenedorAcciones.appendChild(adminContainerProduccion);
+        mostrarPanelProduccion(adminContainerProduccion, proyecto);
+
+    } else {
+        // Si NO es admin, aplica la lógica de roles original
+        let actionPanelRendered = false;
+        if (proyecto.status === 'Diseño Pendiente de Asignación' && ['Coordinador'].includes(userRol)) {
+            mostrarPanelAsignacion(contenedorAcciones, projectId);
+            actionPanelRendered = true;
+        } else if (proyecto.status === 'Diseño en Proceso' && userRol === 'Diseñador') {
+            mostrarPanelSubirPropuesta(contenedorAcciones, projectId);
+            actionPanelRendered = true;
+        } else if (proyecto.status === 'Pendiente Aprobación Interna' && ['Coordinador'].includes(userRol)) {
+            mostrarPanelRevisarPropuesta(contenedorAcciones, projectId, proyecto);
+            actionPanelRendered = true;
+        } else if (proyecto.status === 'Pendiente Aprobación Cliente' && ['Asesor'].includes(userRol)) {
+            mostrarPanelAprobarCliente(contenedorAcciones, projectId, proyecto);
+            actionPanelRendered = true;
+        } else if (proyecto.status === 'Pendiente de Proforma' && userRol === 'Diseñador') {
+            mostrarPanelSubirProforma(contenedorAcciones, projectId);
+            actionPanelRendered = true;
+        } else if (proyecto.status === 'Pendiente Aprobación Proforma' && ['Asesor'].includes(userRol)) {
+            mostrarPanelRevisionProforma(contenedorAcciones, projectId, proyecto);
+            actionPanelRendered = true;
+        } else if (['En Lista de Producción', 'En Diagramación', 'En Impresión', 'En Calandrado', 'En Confección', 'Supervisión de Calidad'].includes(proyecto.status) && ['Coordinador'].includes(userRol)) {
+            mostrarPanelProduccion(contenedorAcciones, proyecto);
+            actionPanelRendered = true;
+        }
+
+        if (!actionPanelRendered) {
+            contenedorAcciones.innerHTML = `<p>No hay acciones disponibles para tu rol (<strong>${userRol}</strong>) en el estado actual del proyecto (<strong>${proyecto.status}</strong>).</p>`;
+        }
     }
 }
 
 async function mostrarPanelAsignacion(container, projectId) {
-    container.innerHTML = `<h3>Asignar Tarea</h3><div class="form-group"><label for="designer-select">Diseñador:</label><select id="designer-select" required><option value="">Cargando...</option></select></div><button id="assign-designer-btn">Asignar</button><p id="assign-error" style="color: red; display: none;"></p>`;
-    const select = document.getElementById('designer-select');
+    const panelId = `panel-asignacion-${Math.random()}`; // ID único para evitar conflictos
+    const div = document.createElement('div');
+    div.innerHTML = `<h3>Asignar Tarea</h3><div class="form-group"><label for="designer-select-${panelId}">Diseñador:</label><select id="designer-select-${panelId}" required><option value="">Cargando...</option></select></div><button id="assign-designer-btn-${panelId}">Asignar</button><p id="assign-error-${panelId}" style="color: red; display: none;"></p>`;
+    container.appendChild(div);
+
+    const select = document.getElementById(`designer-select-${panelId}`);
     try {
         const res = await fetch('/api/designers');
         if (!res.ok) throw new Error('No se pudieron cargar los diseñadores.');
         const disenadores = await res.json();
         select.innerHTML = '<option value="">-- Seleccione --</option>';
         disenadores.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = d.nombre; select.appendChild(o); });
-    } catch (e) { document.getElementById('assign-error').textContent = 'Error al cargar la lista.'; document.getElementById('assign-error').style.display = 'block'; }
-    document.getElementById('assign-designer-btn').addEventListener('click', async () => {
+    } catch (e) { document.getElementById(`assign-error-${panelId}`).textContent = 'Error al cargar la lista.'; document.getElementById(`assign-error-${panelId}`).style.display = 'block'; }
+    
+    document.getElementById(`assign-designer-btn-${panelId}`).addEventListener('click', async () => {
         const diseñadorId = select.value;
         if (!diseñadorId) { alert('Seleccione un diseñador.'); return; }
         try {
@@ -118,9 +162,13 @@ async function mostrarPanelAsignacion(container, projectId) {
 }
 
 async function mostrarPanelSubirPropuesta(container, projectId) {
-    container.innerHTML = `<h3>Subir Propuesta</h3><div class="form-group"><label for="propuesta-file">Archivo:</label><input type="file" id="propuesta-file" name="propuesta_diseno" required></div><button id="upload-propuesta-btn">Subir</button><p id="upload-error" style="color: red; display: none;"></p>`;
-    document.getElementById('upload-propuesta-btn').addEventListener('click', async () => {
-        const fileInput = document.getElementById('propuesta-file');
+    const panelId = `panel-propuesta-${Math.random()}`;
+    const div = document.createElement('div');
+    div.innerHTML = `<h3>Subir Propuesta</h3><div class="form-group"><label for="propuesta-file-${panelId}">Archivo:</label><input type="file" id="propuesta-file-${panelId}" name="propuesta_diseno" required></div><button id="upload-propuesta-btn-${panelId}">Subir</button><p id="upload-error-${panelId}" style="color: red; display: none;"></p>`;
+    container.appendChild(div);
+
+    document.getElementById(`upload-propuesta-btn-${panelId}`).addEventListener('click', async () => {
+        const fileInput = document.getElementById(`propuesta-file-${panelId}`);
         if (!fileInput.files[0]) { alert('Seleccione un archivo.'); return; }
         const formData = new FormData();
         formData.append('propuesta_diseno', fileInput.files[0]);
@@ -128,15 +176,19 @@ async function mostrarPanelSubirPropuesta(container, projectId) {
             const res = await fetch(`/api/proyectos/${projectId}/subir-propuesta`, { method: 'PUT', body: formData });
             if (!res.ok) throw new Error((await res.json()).message);
             alert('Propuesta subida.'); window.location.reload();
-        } catch (e) { document.getElementById('upload-error').textContent = `Error: ${e.message}`; document.getElementById('upload-error').style.display = 'block'; }
+        } catch (e) { document.getElementById(`upload-error-${panelId}`).textContent = `Error: ${e.message}`; document.getElementById(`upload-error-${panelId}`).style.display = 'block'; }
     });
 }
 
 async function mostrarPanelRevisarPropuesta(container, projectId, proyecto) {
     const fileName = proyecto.propuesta_diseno_url ? proyecto.propuesta_diseno_url.split(/[\\/]/).pop() : 'N/A';
-    container.innerHTML = `<h3>Revisión Interna</h3><div class="card"><p><strong>Archivo:</strong> <a href="/${proyecto.propuesta_diseno_url}" target="_blank">${fileName}</a></p><div class="button-group"><button id="aprobar-interno-btn">Aprobar</button><button id="solicitar-mejora-btn">Solicitar Cambios</button></div></div>`;
-    document.getElementById('aprobar-interno-btn').addEventListener('click', async () => { if (!confirm('¿Aprobar esta propuesta?')) return; try { const res = await fetch(`/api/proyectos/${projectId}/aprobar-interno`, { method: 'PUT' }); if (!res.ok) throw new Error('Error en servidor.'); alert('Propuesta aprobada.'); window.location.reload(); } catch (e) { alert(`Error: ${e.message}`); } });
-    document.getElementById('solicitar-mejora-btn').addEventListener('click', async () => {
+    const panelId = `panel-revisar-${Math.random()}`;
+    const div = document.createElement('div');
+    div.innerHTML = `<h3>Revisión Interna</h3><div class="card"><p><strong>Archivo:</strong> <a href="/${proyecto.propuesta_diseno_url}" target="_blank">${fileName}</a></p><div class="button-group"><button id="aprobar-interno-btn-${panelId}">Aprobar</button><button id="solicitar-mejora-btn-${panelId}">Solicitar Cambios</button></div></div>`;
+    container.appendChild(div);
+
+    document.getElementById(`aprobar-interno-btn-${panelId}`).addEventListener('click', async () => { if (!confirm('¿Aprobar esta propuesta?')) return; try { const res = await fetch(`/api/proyectos/${projectId}/aprobar-interno`, { method: 'PUT' }); if (!res.ok) throw new Error('Error en servidor.'); alert('Propuesta aprobada.'); window.location.reload(); } catch (e) { alert(`Error: ${e.message}`); } });
+    document.getElementById(`solicitar-mejora-btn-${panelId}`).addEventListener('click', async () => {
         const comentarios = prompt('Escribe los cambios para el diseñador:');
         if (!comentarios || comentarios.trim() === '') return;
         try {
@@ -148,9 +200,13 @@ async function mostrarPanelRevisarPropuesta(container, projectId, proyecto) {
 
 async function mostrarPanelAprobarCliente(container, projectId, proyecto) {
     const fileName = proyecto.propuesta_diseno_url ? proyecto.propuesta_diseno_url.split(/[\\/]/).pop() : 'N/A';
-    container.innerHTML = `<h3>Aprobación Cliente</h3><div class="card"><p><strong>Propuesta:</strong> <a href="/${proyecto.propuesta_diseno_url}" target="_blank">${fileName}</a></p><hr><div class="button-group"><button id="aprobar-cliente-btn">Confirmar Aprobación</button><button id="solicitar-mejora-cliente-btn">Solicitar Cambios</button></div></div>`;
-    document.getElementById('aprobar-cliente-btn').addEventListener('click', async () => { if (!confirm('¿Confirmas que el cliente aprobó el diseño?')) return; try { const res = await fetch(`/api/proyectos/${projectId}/aprobar-cliente`, { method: 'PUT' }); if (!res.ok) throw new Error('Error en servidor.'); alert('Aprobación registrada.'); window.location.reload(); } catch (e) { alert(`Error: ${e.message}`); } });
-    document.getElementById('solicitar-mejora-cliente-btn').addEventListener('click', async () => {
+    const panelId = `panel-cliente-${Math.random()}`;
+    const div = document.createElement('div');
+    div.innerHTML = `<h3>Aprobación Cliente</h3><div class="card"><p><strong>Propuesta:</strong> <a href="/${proyecto.propuesta_diseno_url}" target="_blank">${fileName}</a></p><hr><div class="button-group"><button id="aprobar-cliente-btn-${panelId}">Confirmar Aprobación</button><button id="solicitar-mejora-cliente-btn-${panelId}">Solicitar Cambios</button></div></div>`;
+    container.appendChild(div);
+    
+    document.getElementById(`aprobar-cliente-btn-${panelId}`).addEventListener('click', async () => { if (!confirm('¿Confirmas que el cliente aprobó el diseño?')) return; try { const res = await fetch(`/api/proyectos/${projectId}/aprobar-cliente`, { method: 'PUT' }); if (!res.ok) throw new Error('Error en servidor.'); alert('Aprobación registrada.'); window.location.reload(); } catch (e) { alert(`Error: ${e.message}`); } });
+    document.getElementById(`solicitar-mejora-cliente-btn-${panelId}`).addEventListener('click', async () => {
         const comentarios = prompt('Escribe los cambios del cliente:');
         if (!comentarios || comentarios.trim() === '') return;
         try {
@@ -161,9 +217,13 @@ async function mostrarPanelAprobarCliente(container, projectId, proyecto) {
 }
 
 async function mostrarPanelSubirProforma(container, projectId) {
-    container.innerHTML = `<h3>Cargar Proforma</h3><div class="card"><p>El diseño fue aprobado. Sube la proforma.</p><div class="form-group"><label for="proforma-file">Archivo:</label><input type="file" id="proforma-file" name="proforma" required></div><button id="upload-proforma-btn">Subir Proforma</button></div>`;
-    document.getElementById('upload-proforma-btn').addEventListener('click', async () => {
-        const fileInput = document.getElementById('proforma-file');
+    const panelId = `panel-subir-proforma-${Math.random()}`;
+    const div = document.createElement('div');
+    div.innerHTML = `<h3>Cargar Proforma</h3><div class="card"><p>El diseño fue aprobado. Sube la proforma.</p><div class="form-group"><label for="proforma-file-${panelId}">Archivo:</label><input type="file" id="proforma-file-${panelId}" name="proforma" required></div><button id="upload-proforma-btn-${panelId}">Subir Proforma</button></div>`;
+    container.appendChild(div);
+
+    document.getElementById(`upload-proforma-btn-${panelId}`).addEventListener('click', async () => {
+        const fileInput = document.getElementById(`proforma-file-${panelId}`);
         if (!fileInput.files[0]) { alert('Seleccione un archivo.'); return; }
         const formData = new FormData();
         formData.append('proforma', fileInput.files[0]);
@@ -176,7 +236,9 @@ async function mostrarPanelSubirProforma(container, projectId) {
 
 async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
     const proformaFileName = proyecto.proforma_url ? proyecto.proforma_url.split(/[\\/]/).pop() : 'No disponible';
-    container.innerHTML = `
+    const panelId = `panel-revision-proforma-${Math.random()}`;
+    const div = document.createElement('div');
+    div.innerHTML = `
         <h2>Revisión de Proforma</h2>
         <div class="card">
             <div class="card-body">
@@ -185,17 +247,19 @@ async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
                 <hr>
                 <h4>Autorización Final de Producción</h4>
                 <div class="mb-3">
-                    <label for="listado-final-input" class="form-label"><strong>Paso 1:</strong> Cargar listado final de clientes (Obligatorio)</label>
-                    <input class="form-control" type="file" id="listado-final-input" required>
+                    <label for="listado-final-input-${panelId}" class="form-label"><strong>Paso 1:</strong> Cargar listado final de clientes (Obligatorio)</label>
+                    <input class="form-control" type="file" id="listado-final-input-${panelId}" required>
                 </div>
-                <button id="autorizar-produccion-btn" class="btn btn-success w-100"><strong>Paso 2:</strong> Autorizar e Iniciar Producción</button>
+                <button id="autorizar-produccion-btn-${panelId}" class="btn btn-success w-100"><strong>Paso 2:</strong> Autorizar e Iniciar Producción</button>
                 <hr>
-                <button id="solicitar-mejora-proforma-btn" class="btn btn-warning w-100 mt-2">Solicitar Modificación en Proforma</button>
+                <button id="solicitar-mejora-proforma-btn-${panelId}" class="btn btn-warning w-100 mt-2">Solicitar Modificación en Proforma</button>
             </div>
         </div>
     `;
-    document.getElementById('autorizar-produccion-btn').addEventListener('click', async () => {
-        const listadoInput = document.getElementById('listado-final-input');
+    container.appendChild(div);
+
+    document.getElementById(`autorizar-produccion-btn-${panelId}`).addEventListener('click', async () => {
+        const listadoInput = document.getElementById(`listado-final-input-${panelId}`);
         const listadoFile = listadoInput.files[0];
         if (!listadoFile) { alert('Debes cargar el archivo con el listado final para poder autorizar.'); return; }
         if (!confirm('¿Estás seguro de que quieres autorizar el inicio de la producción?')) return;
@@ -208,7 +272,8 @@ async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
             window.location.reload();
         } catch (error) { alert(`Error: ${error.message}`); }
     });
-    document.getElementById('solicitar-mejora-proforma-btn').addEventListener('click', async () => {
+    
+    document.getElementById(`solicitar-mejora-proforma-btn-${panelId}`).addEventListener('click', async () => {
         const comentarios = prompt('Escriba los cambios necesarios para la proforma:');
         if (comentarios === null || comentarios.trim() === "") return;
         try {
@@ -224,6 +289,8 @@ async function mostrarPanelProduccion(container, proyecto) {
     const projectId = proyecto.id;
     const estadoActual = proyecto.status;
     let panelHTML = '';
+    const panelId = `panel-produccion-${Math.random()}`;
+    const div = document.createElement('div');
 
     const flujo = {
         'En Lista de Producción': { texto: 'Pasar a Diagramación', siguienteEstado: 'En Diagramación' },
@@ -235,20 +302,21 @@ async function mostrarPanelProduccion(container, proyecto) {
 
     if (flujo[estadoActual]) {
         const accion = flujo[estadoActual];
-        panelHTML = `<button id="avanzar-btn" class="btn btn-primary">${accion.texto}</button>`;
+        panelHTML = `<button id="avanzar-btn-${panelId}" class="btn btn-primary">${accion.texto}</button>`;
     } else if (estadoActual === 'Supervisión de Calidad') {
         panelHTML = `
             <h4>Decisión Final de Calidad</h4>
             <div class="button-group">
-                <button id="aprobar-calidad-btn" class="btn btn-success">Aprobar Calidad / Listo para Entrega</button>
-                <button id="reportar-incidencia-btn" class="btn btn-warning">Reportar Incidencia</button>
+                <button id="aprobar-calidad-btn-${panelId}" class="btn btn-success">Aprobar Calidad / Listo para Entrega</button>
+                <button id="reportar-incidencia-btn-${panelId}" class="btn btn-warning">Reportar Incidencia</button>
             </div>
         `;
     }
 
-    container.innerHTML = `<div class="card">${panelHTML}</div>`;
+    div.innerHTML = `<div class="card">${panelHTML}</div>`;
+    container.appendChild(div);
 
-    const avanzarBtn = document.getElementById('avanzar-btn');
+    const avanzarBtn = document.getElementById(`avanzar-btn-${panelId}`);
     if (avanzarBtn) {
         avanzarBtn.addEventListener('click', async () => {
             const accion = flujo[estadoActual];
@@ -262,7 +330,7 @@ async function mostrarPanelProduccion(container, proyecto) {
         });
     }
 
-    const aprobarCalidadBtn = document.getElementById('aprobar-calidad-btn');
+    const aprobarCalidadBtn = document.getElementById(`aprobar-calidad-btn-${panelId}`);
     if (aprobarCalidadBtn) {
         aprobarCalidadBtn.addEventListener('click', async () => {
             if (!confirm('¿Estás seguro de aprobar la calidad y marcar el proyecto como listo para entrega?')) return;
@@ -275,7 +343,7 @@ async function mostrarPanelProduccion(container, proyecto) {
         });
     }
 
-    const reportarIncidenciaBtn = document.getElementById('reportar-incidencia-btn');
+    const reportarIncidenciaBtn = document.getElementById(`reportar-incidencia-btn-${panelId}`);
     if (reportarIncidenciaBtn) {
         reportarIncidenciaBtn.addEventListener('click', async () => {
             const comentarios = prompt('Por favor, describe la incidencia o las mejoras requeridas:');
