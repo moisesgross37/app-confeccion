@@ -6,7 +6,36 @@
     <title>Detalle de Proyecto</title>
     <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
     <link rel="stylesheet" href="confeccion_estilos.css">
-</head>
+
+    <style>
+        .gallery-section {
+            padding: 1em;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            margin-bottom: 1.5em;
+            border-radius: 6px;
+        }
+        .image-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .image-gallery img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 2px solid #ccc;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .image-gallery img:hover {
+            transform: scale(1.05);
+            border-color: #007bff;
+        }
+    </style>
+    </head>
 <body>
     <header>
         <nav>
@@ -15,6 +44,11 @@
         <h1>Detalle de Proyecto</h1>
     </header>
 
+    <section id="galeria-referencias" class="gallery-section">
+        <h2>Imágenes de Referencia</h2>
+        <div class="image-gallery" id="contenedor-imagenes">
+            </div>
+    </section>
     <main class="project-detail-grid">
         
         <section id="detalles-principales">
