@@ -69,15 +69,14 @@ const initializeDatabase = async () => {
                 historial_incidencias JSONB
             );
         `);
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS "confeccion_session" (
-                "sid" varchar NOT NULL COLLATE "default",
-                "sess" json NOT NULL,
-                "expire" timestamp(6) NOT NULL
-            ) WITH (OIDS=FALSE);
-            ALTER TABLE "confeccion_session" ADD CONSTRAINT "confeccion_session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
-        `);
-        
+        // REEMPLÁZALO CON ESTE BLOQUE
+await client.query(`
+    CREATE TABLE IF NOT EXISTS "confeccion_session" (
+        "sid" varchar NOT NULL PRIMARY KEY,
+        "sess" json NOT NULL,
+        "expire" timestamp(6) NOT NULL
+    );
+`);
         const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
         if (adminUser.rows.length === 0) {
             console.log("Usuario 'admin' no encontrado. Creando usuario por defecto...");
