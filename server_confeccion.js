@@ -124,8 +124,20 @@ const requireLogin = (req, res, next) => {
 };
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => { const dir = './uploads_confeccion'; if (!fs.existsSync(dir)){ fs.mkdirSync(dir); } cb(null, dir); },
-    filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+    destination: (req, file, cb) => {
+        const dir = './uploads_confeccion';
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir);
+        }
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        // Lógica mejorada para evitar nombres corruptos y dobles extensiones
+        const fileExt = path.extname(file.originalname); // Extrae la extensión original (ej: '.pdf')
+        const baseName = path.basename(file.originalname, fileExt); // Extrae el nombre sin la extensión
+        const finalFileName = `${Date.now()}-${baseName.replace(/[^a-zA-Z0-9]/g, '_')}${fileExt}`; // Limpia caracteres especiales y une todo
+        cb(null, finalFileName);
+    }
 });
 const upload = multer({ storage: storage });
 
