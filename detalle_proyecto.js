@@ -162,7 +162,6 @@ function renderizarPagina(proyecto, user) {
             contenedorAcciones.innerHTML = `<p>No hay acciones disponibles para tu rol (<strong>${userRol}</strong>) en el estado actual del proyecto (<strong>${proyecto.status}</strong>).</p>`;
         }
     }
-}
 
 async function mostrarPanelAsignacion(container, projectId) {
     const panelId = `panel-asignacion-${Math.random()}`; // ID único para evitar conflictos
