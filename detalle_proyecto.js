@@ -33,6 +33,44 @@ function renderizarPagina(proyecto, user) {
     document.getElementById('estado-proyecto').textContent = proyecto.status || 'N/A';
     document.getElementById('detalles-proyecto').textContent = proyecto.detalles_solicitud || 'N/A';
 
+    // ...esta línea ya debería estar en tu archivo
+document.getElementById('detalles-proyecto').textContent = proyecto.detalles_solicitud || 'N/A';
+
+// ==========================================================
+// ===== INICIO: AÑADIR ESTE BLOQUE PARA MOSTRAR IMÁGENES =====
+// ==========================================================
+
+const contenedorImagenes = document.getElementById('contenedor-imagenes');
+contenedorImagenes.innerHTML = ''; // Limpiamos el contenedor por si acaso
+
+if (proyecto.imagenes_referencia && proyecto.imagenes_referencia.length > 0) {
+    // Si el proyecto tiene imágenes, las creamos y las mostramos
+    proyecto.imagenes_referencia.forEach(rutaImagen => {
+        const img = document.createElement('img');
+        // La ruta guardada es 'uploads_confeccion/imagen.jpg'.
+        // Añadimos una barra '/' al principio para que la URL sea correcta.
+        img.src = `/${rutaImagen}`;
+        img.alt = 'Imagen de Referencia';
+
+        // Hacemos que la imagen se pueda abrir en una nueva pestaña al hacer clic
+        img.addEventListener('click', () => {
+            window.open(img.src, '_blank');
+        });
+
+        contenedorImagenes.appendChild(img);
+    });
+} else {
+    // Si no hay imágenes, mostramos un mensaje claro
+    contenedorImagenes.innerHTML = '<p>No se adjuntaron imágenes de referencia para este proyecto.</p>';
+}
+
+// ==========================================================
+// ===== FIN: DEL BLOQUE AÑADIDO ============================
+// ==========================================================
+
+if (proyecto.listado_final_url) {
+// ... el resto de la función continúa aquí
+    
     if (proyecto.listado_final_url) {
         const detallesSection = document.getElementById('detalles-principales');
         const p = document.createElement('p');
