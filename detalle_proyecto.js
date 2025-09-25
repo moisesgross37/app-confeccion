@@ -25,16 +25,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function renderizarPagina(proyecto, user) {
+    // ===== INICIO: CORREGIR ESTAS LÍNEAS =====
     document.getElementById('codigo-proyecto').textContent = proyecto.codigo_proyecto || 'N/A';
     document.getElementById('centro-proyecto').textContent = proyecto.cliente || 'N/A';
     document.getElementById('asesor-proyecto').textContent = proyecto.nombre_asesor || 'N/A';
-    // ===== MODIFICACIÓN 1: LÍNEA AÑADIDA =====
     document.getElementById('disenador-proyecto').textContent = proyecto.nombre_disenador || 'No Asignado';
     document.getElementById('estado-proyecto').textContent = proyecto.status || 'N/A';
     document.getElementById('detalles-proyecto').textContent = proyecto.detalles_solicitud || 'N/A';
+    // ===== FIN: DE LA CORRECCIÓN =====
 
-    // ...esta línea ya debería estar en tu archivo
-document.getElementById('detalles-proyecto').textContent = proyecto.detalles_solicitud || 'N/A';
+    // ...el resto de la función continúa igual
 
 // ==========================================================
 // ===== INICIO: AÑADIR ESTE BLOQUE PARA MOSTRAR IMÁGENES =====
