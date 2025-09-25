@@ -33,18 +33,29 @@ function renderizarPagina(proyecto, user) {
     document.getElementById('estado-proyecto').textContent = proyecto.status || 'N/A';
     document.getElementById('detalles-proyecto').textContent = proyecto.detalles_solicitud || 'N/A';
 
-    // 2. Muestra las imágenes de referencia si existen.
+    // 2. Muestra las imágenes de referencia y los enlaces a otros archivos.
     const contenedorImagenes = document.getElementById('contenedor-imagenes');
-    if (contenedorImagenes) { // Se asegura de que el contenedor exista en el HTML
-        contenedorImagenes.innerHTML = ''; // Limpia el contenedor
+    if (contenedorImagenes) {
+        contenedorImagenes.innerHTML = '';
         if (proyecto.imagenes_referencia && proyecto.imagenes_referencia.length > 0) {
             proyecto.imagenes_referencia.forEach(rutaImagen => {
-                const img = document.createElement('img');
-                img.src = `/${rutaImagen}`;
-                img.alt = 'Imagen de Referencia';
-                img.style = 'width: 120px; height: 120px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #ccc;';
-                img.onclick = () => window.open(img.src, '_blank');
-                contenedorImagenes.appendChild(img);
+                const isImage = /\.(jpg|jpeg|png|gif)$/i.test(rutaImagen);
+                if (isImage) {
+                    const img = document.createElement('img');
+                    img.src = `/${rutaImagen}`;
+                    img.alt = 'Imagen de Referencia';
+                    img.style = 'width: 120px; height: 120px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #ccc;';
+                    img.onclick = () => window.open(img.src, '_blank');
+                    contenedorImagenes.appendChild(img);
+                } else {
+                    const fileName = rutaImagen.split(/[\\/]/).pop();
+                    const link = document.createElement('a');
+                    link.href = `/${rutaImagen}`;
+                    link.textContent = `Descargar: ${fileName}`;
+                    link.target = '_blank';
+                    link.style = 'display: block; margin-bottom: 5px;';
+                    contenedorImagenes.appendChild(link);
+                }
             });
         } else {
             contenedorImagenes.innerHTML = '<p>No se adjuntaron imágenes de referencia para este proyecto.</p>';
@@ -54,9 +65,12 @@ function renderizarPagina(proyecto, user) {
     // 3. Muestra el enlace para descargar el listado final, si existe.
     if (proyecto.listado_final_url) {
         const detallesSection = document.getElementById('detalles-principales');
-        const p = document.createElement('p');
-        p.innerHTML = `<strong>Listado Final de Clientes:</strong> <a href="/${proyecto.listado_final_url}" target="_blank" class="button">Descargar Listado</a>`;
-        detallesSection.appendChild(p);
+        if (!document.getElementById('listado-final-link')) {
+            const p = document.createElement('p');
+            p.id = 'listado-final-link';
+            p.innerHTML = `<strong>Listado Final de Clientes:</strong> <a href="/${proyecto.listado_final_url}" target="_blank" class="button">Descargar Listado</a>`;
+            detallesSection.appendChild(p);
+        }
     }
 
     // 4. Calcula y muestra los contadores de días.
@@ -86,24 +100,14 @@ function renderizarPagina(proyecto, user) {
         });
     }
 
-    // 6. Prepara las variables para la lógica de acciones.
+    // 6. Lógica completa para mostrar los paneles de "Flujo de Trabajo" según el rol.
     const contenedorAcciones = document.getElementById('flujo-trabajo');
     const userRol = user.rol;
     const projectId = proyecto.id;
 
-    // Aquí continúa toda la lógica que ya tenías para mostrar los paneles de acción según el rol del usuario...
     if (userRol === 'Administrador') {
-        // ...
-    } else {
-        // ...
-    }
-}
-    // ===== MODIFICACIÓN 2: LÓGICA DE PERMISOS REEMPLAZADA =====
-    if (userRol === 'Administrador') {
-        // Si es admin, muestra TODOS los paneles de acción posibles para tener control total
         contenedorAcciones.innerHTML = '<h2>Acciones de Administrador (Vista Total)</h2>';
         
-        // Creamos contenedores para cada panel para que no se sobreescriban
         const adminContainerAsignacion = document.createElement('div');
         contenedorAcciones.appendChild(adminContainerAsignacion);
         mostrarPanelAsignacion(adminContainerAsignacion, projectId);
@@ -133,7 +137,6 @@ function renderizarPagina(proyecto, user) {
         mostrarPanelProduccion(adminContainerProduccion, proyecto);
 
     } else {
-        // Si NO es admin, aplica la lógica de roles original
         let actionPanelRendered = false;
         if (proyecto.status === 'Diseño Pendiente de Asignación' && ['Coordinador'].includes(userRol)) {
             mostrarPanelAsignacion(contenedorAcciones, projectId);
@@ -162,8 +165,8 @@ function renderizarPagina(proyecto, user) {
             contenedorAcciones.innerHTML = `<p>No hay acciones disponibles para tu rol (<strong>${userRol}</strong>) en el estado actual del proyecto (<strong>${proyecto.status}</strong>).</p>`;
         }
     }
-
-async function mostrarPanelAsignacion(container, projectId) {
+}
+}async function mostrarPanelAsignacion(container, projectId) {
     const panelId = `panel-asignacion-${Math.random()}`; // ID único para evitar conflictos
     const div = document.createElement('div');
     div.innerHTML = `<h3>Asignar Tarea</h3><div class="form-group"><label for="designer-select-${panelId}">Diseñador:</label><select id="designer-select-${panelId}" required><option value="">Cargando...</option></select></div><button id="assign-designer-btn-${panelId}">Asignar</button><p id="assign-error-${panelId}" style="color: red; display: none;"></p>`;
