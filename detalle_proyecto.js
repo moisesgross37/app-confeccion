@@ -166,7 +166,7 @@ function renderizarPagina(proyecto, user) {
         }
     }
 }
-}async function mostrarPanelAsignacion(container, projectId) {
+async function mostrarPanelAsignacion(container, projectId) {
     const panelId = `panel-asignacion-${Math.random()}`; // ID único para evitar conflictos
     const div = document.createElement('div');
     div.innerHTML = `<h3>Asignar Tarea</h3><div class="form-group"><label for="designer-select-${panelId}">Diseñador:</label><select id="designer-select-${panelId}" required><option value="">Cargando...</option></select></div><button id="assign-designer-btn-${panelId}">Asignar</button><p id="assign-error-${panelId}" style="color: red; display: none;"></p>`;
