@@ -242,6 +242,61 @@ app.get('/api/proyectos', requireLogin, async (req, res) => {
     }
 });
 
+// Pega este bloque en la sección --- RUTAS DE API ---
+
+app.delete('/api/solicitudes/:id', requireLogin, checkRole(['Administrador']), async (req, res) => {
+    const { id } = req.params;
+    console.log(`Petición para eliminar proyecto con ID: ${id}`);
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN'); // Iniciar transacción
+
+        // 1. Obtener las rutas de los archivos antes de borrar el proyecto
+        const fileResult = await client.query(
+            'SELECT imagenes_referencia, propuesta_diseno_url, proforma_url, listado_final_url FROM confeccion_projects WHERE id = $1',
+            [id]
+        );
+
+        if (fileResult.rows.length === 0) {
+            return res.status(404).json({ message: 'Proyecto no encontrado.' });
+        }
+
+        const projectFiles = fileResult.rows[0];
+
+        // 2. Eliminar el proyecto de la base de datos
+        await client.query('DELETE FROM confeccion_projects WHERE id = $1', [id]);
+
+        await client.query('COMMIT'); // Confirmar transacción
+
+        // 3. Eliminar los archivos físicos del servidor
+        const filesToDelete = [
+            ...(projectFiles.imagenes_referencia || []),
+            projectFiles.propuesta_diseno_url,
+            projectFiles.proforma_url,
+            projectFiles.listado_final_url
+        ].filter(Boolean); // Filtrar para quitar valores nulos o vacíos
+
+        filesToDelete.forEach(filePath => {
+            const fullPath = path.join(__dirname, filePath);
+            if (fs.existsSync(fullPath)) {
+                fs.unlink(fullPath, err => {
+                    if (err) console.error(`Error al eliminar el archivo ${fullPath}:`, err);
+                    else console.log(`Archivo eliminado: ${fullPath}`);
+                });
+            }
+        });
+
+        res.status(200).json({ message: 'Solicitud de confección eliminada con éxito.' });
+
+    } catch (err) {
+        await client.query('ROLLBACK'); // Revertir en caso de error
+        console.error('Error al eliminar la solicitud de confección:', err);
+        res.status(500).json({ message: 'Error en el servidor al intentar eliminar la solicitud.' });
+    } finally {
+        client.release();
+    }
+});
 // =========================================================================
 // ======================= ÚNICA MODIFICACIÓN AQUÍ =======================
 // =========================================================================
