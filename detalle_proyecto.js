@@ -25,52 +25,33 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function renderizarPagina(proyecto, user) {
-    // ===== INICIO: CORREGIR ESTAS LÍNEAS =====
+    // 1. Rellena la información principal del proyecto en el HTML.
     document.getElementById('codigo-proyecto').textContent = proyecto.codigo_proyecto || 'N/A';
     document.getElementById('centro-proyecto').textContent = proyecto.cliente || 'N/A';
     document.getElementById('asesor-proyecto').textContent = proyecto.nombre_asesor || 'N/A';
     document.getElementById('disenador-proyecto').textContent = proyecto.nombre_disenador || 'No Asignado';
     document.getElementById('estado-proyecto').textContent = proyecto.status || 'N/A';
     document.getElementById('detalles-proyecto').textContent = proyecto.detalles_solicitud || 'N/A';
-    // ===== FIN: DE LA CORRECCIÓN =====
 
-    // ...el resto de la función continúa igual
+    // 2. Muestra las imágenes de referencia si existen.
+    const contenedorImagenes = document.getElementById('contenedor-imagenes');
+    if (contenedorImagenes) { // Se asegura de que el contenedor exista en el HTML
+        contenedorImagenes.innerHTML = ''; // Limpia el contenedor
+        if (proyecto.imagenes_referencia && proyecto.imagenes_referencia.length > 0) {
+            proyecto.imagenes_referencia.forEach(rutaImagen => {
+                const img = document.createElement('img');
+                img.src = `/${rutaImagen}`;
+                img.alt = 'Imagen de Referencia';
+                img.style = 'width: 120px; height: 120px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #ccc;';
+                img.onclick = () => window.open(img.src, '_blank');
+                contenedorImagenes.appendChild(img);
+            });
+        } else {
+            contenedorImagenes.innerHTML = '<p>No se adjuntaron imágenes de referencia para este proyecto.</p>';
+        }
+    }
 
-// ==========================================================
-// ===== INICIO: AÑADIR ESTE BLOQUE PARA MOSTRAR IMÁGENES =====
-// ==========================================================
-
-const contenedorImagenes = document.getElementById('contenedor-imagenes');
-contenedorImagenes.innerHTML = ''; // Limpiamos el contenedor por si acaso
-
-if (proyecto.imagenes_referencia && proyecto.imagenes_referencia.length > 0) {
-    // Si el proyecto tiene imágenes, las creamos y las mostramos
-    proyecto.imagenes_referencia.forEach(rutaImagen => {
-        const img = document.createElement('img');
-        // La ruta guardada es 'uploads_confeccion/imagen.jpg'.
-        // Añadimos una barra '/' al principio para que la URL sea correcta.
-        img.src = `/${rutaImagen}`;
-        img.alt = 'Imagen de Referencia';
-
-        // Hacemos que la imagen se pueda abrir en una nueva pestaña al hacer clic
-        img.addEventListener('click', () => {
-            window.open(img.src, '_blank');
-        });
-
-        contenedorImagenes.appendChild(img);
-    });
-} else {
-    // Si no hay imágenes, mostramos un mensaje claro
-    contenedorImagenes.innerHTML = '<p>No se adjuntaron imágenes de referencia para este proyecto.</p>';
-}
-
-// ==========================================================
-// ===== FIN: DEL BLOQUE AÑADIDO ============================
-// ==========================================================
-
-if (proyecto.listado_final_url) {
-// ... el resto de la función continúa aquí
-    
+    // 3. Muestra el enlace para descargar el listado final, si existe.
     if (proyecto.listado_final_url) {
         const detallesSection = document.getElementById('detalles-principales');
         const p = document.createElement('p');
@@ -78,6 +59,7 @@ if (proyecto.listado_final_url) {
         detallesSection.appendChild(p);
     }
 
+    // 4. Calcula y muestra los contadores de días.
     const diasTotales = Math.ceil((new Date() - new Date(proyecto.fecha_creacion)) / (1000 * 60 * 60 * 24)) || 1;
     document.getElementById('dias-totales').textContent = diasTotales;
     
@@ -88,25 +70,34 @@ if (proyecto.listado_final_url) {
         document.getElementById('dias-en-produccion').textContent = '--';
     }
     
+    // 5. Construye y muestra el historial de fechas del proyecto.
     const historialFechasElement = document.getElementById('historial-fechas');
     historialFechasElement.innerHTML = '';
-    if(proyecto.fecha_creacion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_creacion).toLocaleDateString()}: Solicitud Creada.</li>`;
-    if(proyecto.fecha_de_asignacion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_de_asignacion).toLocaleDateString()}: Diseño Asignado.</li>`;
-    if(proyecto.fecha_propuesta) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_propuesta).toLocaleDateString()}: Propuesta enviada a revisión.</li>`;
-    if(proyecto.fecha_aprobacion_interna) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_aprobacion_interna).toLocaleDateString()}: Aprobado internamente.</li>`;
-    if(proyecto.fecha_aprobacion_cliente) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_aprobacion_cliente).toLocaleDateString()}: Aprobado por cliente.</li>`;
-    if(proyecto.fecha_proforma_subida) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_proforma_subida).toLocaleDateString()}: Proforma subida a revisión.</li>`;
-    if(proyecto.fecha_autorizacion_produccion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_autorizacion_produccion).toLocaleDateString()}: <b>Producción Autorizada.</b></li>`;
+    if (proyecto.fecha_creacion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_creacion).toLocaleDateString()}: Solicitud Creada.</li>`;
+    if (proyecto.fecha_de_asignacion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_de_asignacion).toLocaleDateString()}: Diseño Asignado.</li>`;
+    if (proyecto.fecha_propuesta) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_propuesta).toLocaleDateString()}: Propuesta enviada a revisión.</li>`;
+    if (proyecto.fecha_aprobacion_interna) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_aprobacion_interna).toLocaleDateString()}: Aprobado internamente.</li>`;
+    if (proyecto.fecha_aprobacion_cliente) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_aprobacion_cliente).toLocaleDateString()}: Aprobado por cliente.</li>`;
+    if (proyecto.fecha_proforma_subida) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_proforma_subida).toLocaleDateString()}: Proforma subida a revisión.</li>`;
+    if (proyecto.fecha_autorizacion_produccion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_autorizacion_produccion).toLocaleDateString()}: <b>Producción Autorizada.</b></li>`;
     if (proyecto.historial_produccion && proyecto.historial_produccion.length > 0) {
         proyecto.historial_produccion.forEach(etapa => {
             historialFechasElement.innerHTML += `<li>${new Date(etapa.fecha).toLocaleDateString()}: Pasó a <b>${etapa.etapa}</b>.</li>`;
         });
     }
 
+    // 6. Prepara las variables para la lógica de acciones.
     const contenedorAcciones = document.getElementById('flujo-trabajo');
     const userRol = user.rol;
     const projectId = proyecto.id;
 
+    // Aquí continúa toda la lógica que ya tenías para mostrar los paneles de acción según el rol del usuario...
+    if (userRol === 'Administrador') {
+        // ...
+    } else {
+        // ...
+    }
+}
     // ===== MODIFICACIÓN 2: LÓGICA DE PERMISOS REEMPLAZADA =====
     if (userRol === 'Administrador') {
         // Si es admin, muestra TODOS los paneles de acción posibles para tener control total
