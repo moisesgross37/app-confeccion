@@ -26,6 +26,9 @@ const pool = new Pool({
     }
 });
 
+// ===== AÑADE ESTA LÍNEA DE DIAGNÓSTICO AQUÍ =====
+console.log("VERIFICANDO CONEXIÓN A DB:", pool.options);
+
 // --- Inicialización de la Base de Datos ---
 const initializeDatabase = async () => {
     const client = await pool.connect();
