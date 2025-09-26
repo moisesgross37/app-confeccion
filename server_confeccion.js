@@ -418,7 +418,21 @@ app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñad
     } catch (err) { res.status(500).json({ message: 'Error al subir propuesta' }); }
 });
 
-app.put('/api/proyectos/:id/aprobar-interno', requireLogin, checkRole(['Administrador', 'Coordinador']), (req, res) => updateProjectStatus('Pendiente Aprobación Cliente', req.params.id).then(r => res.json(r.rows[0])).catch(err => res.status(500).json(err)));
+app.put('/api/proyectos/:id/aprobar-interno', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+    try {
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET status = 'Pendiente Aprobación Cliente', 
+                 fecha_aprobacion_interna = NOW() 
+             WHERE id = $1 RETURNING *`,
+            [req.params.id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error al aprobar internamente:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+});
 app.put('/api/proyectos/:id/aprobar-cliente', requireLogin, checkRole(['Asesor', 'Administrador']), (req, res) => updateProjectStatus('Pendiente de Proforma', req.params.id).then(r => res.json(r.rows[0])).catch(err => res.status(500).json(err)));
 app.put('/api/proyectos/:id/aprobar-calidad', requireLogin, checkRole(['Administrador', 'Coordinador']), (req, res) => updateProjectStatus('Listo para Entrega', req.params.id).then(r => res.json(r.rows[0])).catch(err => res.status(500).json(err)));
 
