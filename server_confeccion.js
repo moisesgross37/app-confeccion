@@ -365,7 +365,8 @@ app.put('/api/proyectos/:id/asignar', requireLogin, checkRole(['Administrador', 
     } catch (err) { res.status(500).json({ message: 'Error al asignar proyecto' }); }
 });
 
-app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñador']), upload.single('propuesta_diseno'), async (req, res) => {
+// LÍNEA CORREGIDA
+app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñador', 'Administrador']), upload.single('propuesta_diseno'), async (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
     try {
         const result = await pool.query('UPDATE confeccion_projects SET propuesta_diseno_url = $1, fecha_propuesta = NOW(), status = $2 WHERE id = $3 RETURNING *', [req.file.path, 'Pendiente Aprobación Interna', req.params.id]);
