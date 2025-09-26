@@ -417,7 +417,32 @@ app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñad
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ message: 'Error al subir propuesta' }); }
 });
+app.put('/api/proyectos/:id/subir-proforma', requireLogin, checkRole(['Administrador', 'Diseñador']), upload.single('proforma'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ message: 'No se ha subido ningún archivo de proforma.' });
+    }
 
+    try {
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET proforma_url = $1, 
+                 fecha_proforma_subida = NOW(), 
+                 status = 'Pendiente Aprobación Proforma' 
+             WHERE id = $2 RETURNING *`,
+            [req.file.path, req.params.id]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Proyecto no encontrado.' });
+        }
+
+        res.json(result.rows[0]);
+
+    } catch (err) {
+        console.error('Error al subir la proforma:', err);
+        res.status(500).json({ message: 'Error en el servidor al subir la proforma.' });
+    }
+});
 app.put('/api/proyectos/:id/aprobar-interno', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     try {
         const result = await pool.query(
