@@ -501,11 +501,20 @@ app.put('/api/proyectos/:id/autorizar-produccion', requireLogin, checkRole(['Ase
 app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     const { nuevaEtapa } = req.body;
     try {
-        const result = await pool.query('UPDATE confeccion_projects SET status = $1, historial_produccion = historial_produccion || $2::jsonb WHERE id = $3 RETURNING *', [nuevaEtapa, JSON.stringify({ etapa: nuevaEtapa, fecha: new Date() }), req.params.id]);
+        // ---- LA CORRECCIÓN ESTÁ EN LA SIGUIENTE CONSULTA ----
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET status = $1, 
+                 historial_produccion = COALESCE(historial_produccion, '[]'::jsonb) || $2::jsonb 
+             WHERE id = $3 RETURNING *`,
+            [nuevaEtapa, JSON.stringify({ etapa: nuevaEtapa, fecha: new Date() }), req.params.id]
+        );
         res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ message: 'Error al avanzar etapa' }); }
-});
-// Servidor de archivos estáticos (Debe ir al final de todas las rutas)
+    } catch (err) {
+        console.error('Error al avanzar la etapa de producción:', err);
+        res.status(500).json({ message: 'Error al avanzar etapa' });
+    }
+});// Servidor de archivos estáticos (Debe ir al final de todas las rutas)
 app.use(express.static(path.join(__dirname)));
 
 // Función para iniciar el servidor
