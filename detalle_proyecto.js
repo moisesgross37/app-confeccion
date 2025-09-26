@@ -84,88 +84,81 @@ function renderizarPagina(proyecto, user) {
         document.getElementById('dias-en-produccion').textContent = '--';
     }
     
-    // 5. Construye y muestra el historial de fechas del proyecto.
-    const historialFechasElement = document.getElementById('historial-fechas');
-    historialFechasElement.innerHTML = '';
-    if (proyecto.fecha_creacion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_creacion).toLocaleDateString()}: Solicitud Creada.</li>`;
-    if (proyecto.fecha_de_asignacion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_de_asignacion).toLocaleDateString()}: Diseño Asignado.</li>`;
-    if (proyecto.fecha_propuesta) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_propuesta).toLocaleDateString()}: Propuesta enviada a revisión.</li>`;
-    if (proyecto.fecha_aprobacion_interna) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_aprobacion_interna).toLocaleDateString()}: Aprobado internamente.</li>`;
-    if (proyecto.fecha_aprobacion_cliente) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_aprobacion_cliente).toLocaleDateString()}: Aprobado por cliente.</li>`;
-    if (proyecto.fecha_proforma_subida) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_proforma_subida).toLocaleDateString()}: Proforma subida a revisión.</li>`;
-    if (proyecto.fecha_autorizacion_produccion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_autorizacion_produccion).toLocaleDateString()}: <b>Producción Autorizada.</b></li>`;
-    if (proyecto.historial_produccion && proyecto.historial_produccion.length > 0) {
-        proyecto.historial_produccion.forEach(etapa => {
-            historialFechasElement.innerHTML += `<li>${new Date(etapa.fecha).toLocaleDateString()}: Pasó a <b>${etapa.etapa}</b>.</li>`;
-        });
-    }
+    // 5. Construye y muestra el historial de fechas y revisiones del proyecto.
+const historialFechasElement = document.getElementById('historial-fechas');
+historialFechasElement.innerHTML = '';
+if (proyecto.fecha_creacion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_creacion).toLocaleDateString()}: Solicitud Creada.</li>`;
+if (proyecto.fecha_de_asignacion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_de_asignacion).toLocaleDateString()}: Diseño Asignado.</li>`;
+if (proyecto.fecha_propuesta) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_propuesta).toLocaleDateString()}: Propuesta enviada a revisión.</li>`;
 
-    // 6. Lógica completa para mostrar los paneles de "Flujo de Trabajo" según el rol.
+// ===== LÓGICA AÑADIDA PARA MOSTRAR REVISIONES =====
+if (proyecto.historial_revisiones && proyecto.historial_revisiones.length > 0) {
+    proyecto.historial_revisiones.forEach(revision => {
+        historialFechasElement.innerHTML += `<li style="color: #d9534f;"><b>${new Date(revision.fecha).toLocaleDateString()}: Develto por ${revision.rol} (${revision.usuario}) con el comentario:</b> "${revision.comentario}"</li>`;
+    });
+}
+// ===== FIN DE LA LÓGICA AÑADIDA =====
+
+if (proyecto.fecha_aprobacion_interna) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_aprobacion_interna).toLocaleDateString()}: Aprobado internamente.</li>`;
+if (proyecto.fecha_aprobacion_cliente) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_aprobacion_cliente).toLocaleDateString()}: Aprobado por cliente.</li>`;
+if (proyecto.fecha_proforma_subida) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_proforma_subida).toLocaleDateString()}: Proforma subida a revisión.</li>`;
+if (proyecto.fecha_autorizacion_produccion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_autorizacion_produccion).toLocaleDateString()}: <b>Producción Autorizada.</b></li>`;
+if (proyecto.historial_produccion && proyecto.historial_produccion.length > 0) {
+    proyecto.historial_produccion.forEach(etapa => {
+        historialFechasElement.innerHTML += `<li>${new Date(etapa.fecha).toLocaleDateString()}: Pasó a <b>${etapa.etapa}</b>.</li>`;
+    });
+}
+
+   // 6. Lógica completa para mostrar los paneles de "Flujo de Trabajo" según el rol.
     const contenedorAcciones = document.getElementById('flujo-trabajo');
     const userRol = user.rol;
     const projectId = proyecto.id;
+    let actionPanelRendered = false;
 
-    if (userRol === 'Administrador') {
-        contenedorAcciones.innerHTML = '<h2>Acciones de Administrador (Vista Total)</h2>';
-        
-        const adminContainerAsignacion = document.createElement('div');
-        contenedorAcciones.appendChild(adminContainerAsignacion);
-        mostrarPanelAsignacion(adminContainerAsignacion, projectId);
-
-        const adminContainerPropuesta = document.createElement('div');
-        contenedorAcciones.appendChild(adminContainerPropuesta);
-        mostrarPanelSubirPropuesta(adminContainerPropuesta, projectId);
-
-        const adminContainerRevisar = document.createElement('div');
-        contenedorAcciones.appendChild(adminContainerRevisar);
-        mostrarPanelRevisarPropuesta(adminContainerRevisar, projectId, proyecto);
-
-        const adminContainerCliente = document.createElement('div');
-        contenedorAcciones.appendChild(adminContainerCliente);
-        mostrarPanelAprobarCliente(adminContainerCliente, projectId, proyecto);
-
-        const adminContainerProforma = document.createElement('div');
-        contenedorAcciones.appendChild(adminContainerProforma);
-        mostrarPanelSubirProforma(adminContainerProforma, projectId);
-
-        const adminContainerRevisionProforma = document.createElement('div');
-        contenedorAcciones.appendChild(adminContainerRevisionProforma);
-        mostrarPanelRevisionProforma(adminContainerRevisionProforma, projectId, proyecto);
-        
-        const adminContainerProduccion = document.createElement('div');
-        contenedorAcciones.appendChild(adminContainerProduccion);
-        mostrarPanelProduccion(adminContainerProduccion, proyecto);
-
-    } else {
-        let actionPanelRendered = false;
-        if (proyecto.status === 'Diseño Pendiente de Asignación' && ['Coordinador'].includes(userRol)) {
-            mostrarPanelAsignacion(contenedorAcciones, projectId);
-            actionPanelRendered = true;
-        } else if (proyecto.status === 'Diseño en Proceso' && userRol === 'Diseñador') {
-            mostrarPanelSubirPropuesta(contenedorAcciones, projectId);
-            actionPanelRendered = true;
-        } else if (proyecto.status === 'Pendiente Aprobación Interna' && ['Coordinador'].includes(userRol)) {
-            mostrarPanelRevisarPropuesta(contenedorAcciones, projectId, proyecto);
-            actionPanelRendered = true;
-        } else if (proyecto.status === 'Pendiente Aprobación Cliente' && ['Asesor'].includes(userRol)) {
-            mostrarPanelAprobarCliente(contenedorAcciones, projectId, proyecto);
-            actionPanelRendered = true;
-        } else if (proyecto.status === 'Pendiente de Proforma' && userRol === 'Diseñador') {
-            mostrarPanelSubirProforma(contenedorAcciones, projectId);
-            actionPanelRendered = true;
-        } else if (proyecto.status === 'Pendiente Aprobación Proforma' && ['Asesor'].includes(userRol)) {
-            mostrarPanelRevisionProforma(contenedorAcciones, projectId, proyecto);
-            actionPanelRendered = true;
-        } else if (['En Lista de Producción', 'En Diagramación', 'En Impresión', 'En Calandrado', 'En Confección', 'Supervisión de Calidad'].includes(proyecto.status) && ['Coordinador'].includes(userRol)) {
-            mostrarPanelProduccion(contenedorAcciones, proyecto);
-            actionPanelRendered = true;
-        }
-
-        if (!actionPanelRendered) {
-            contenedorAcciones.innerHTML = `<p>No hay acciones disponibles para tu rol (<strong>${userRol}</strong>) en el estado actual del proyecto (<strong>${proyecto.status}</strong>).</p>`;
-        }
+    // La lógica ahora es la misma para todos los roles, incluyendo al Administrador.
+    // El Administrador simplemente tiene acceso a más `if` que los otros roles.
+    
+    // Panel de Asignación
+    if (proyecto.status === 'Diseño Pendiente de Asignación' && ['Administrador', 'Coordinador'].includes(userRol)) {
+        mostrarPanelAsignacion(contenedorAcciones, projectId);
+        actionPanelRendered = true;
+    } 
+    // Panel para Subir Propuesta
+    else if (proyecto.status === 'Diseño en Proceso' && ['Administrador', 'Diseñador'].includes(userRol)) {
+        // Le pasamos el objeto 'proyecto' para que pueda mostrar los comentarios de revisión
+        mostrarPanelSubirPropuesta(contenedorAcciones, projectId, proyecto);
+        actionPanelRendered = true;
+    } 
+    // Panel para Revisión Interna
+    else if (proyecto.status === 'Pendiente Aprobación Interna' && ['Administrador', 'Coordinador'].includes(userRol)) {
+        mostrarPanelRevisarPropuesta(contenedorAcciones, projectId, proyecto);
+        actionPanelRendered = true;
+    } 
+    // Panel para Aprobación del Cliente
+    else if (proyecto.status === 'Pendiente Aprobación Cliente' && ['Administrador', 'Asesor'].includes(userRol)) {
+        mostrarPanelAprobarCliente(contenedorAcciones, projectId, proyecto);
+        actionPanelRendered = true;
+    } 
+    // Panel para Cargar Proforma
+    else if (proyecto.status === 'Pendiente de Proforma' && ['Administrador', 'Diseñador'].includes(userRol)) {
+        mostrarPanelSubirProforma(contenedorAcciones, projectId);
+        actionPanelRendered = true;
+    } 
+    // Panel para Revisar Proforma y Autorizar Producción
+    else if (proyecto.status === 'Pendiente Aprobación Proforma' && ['Administrador', 'Asesor'].includes(userRol)) {
+        mostrarPanelRevisionProforma(contenedorAcciones, projectId, proyecto);
+        actionPanelRendered = true;
+    } 
+    // Panel de Flujo de Producción
+    else if (['En Lista de Producción', 'En Diagramación', 'En Impresión', 'En Calandrado', 'En Confección', 'Supervisión de Calidad'].includes(proyecto.status) && ['Administrador', 'Coordinador'].includes(userRol)) {
+        mostrarPanelProduccion(contenedorAcciones, proyecto);
+        actionPanelRendered = true;
     }
-}
+
+    // Mensaje por defecto si no hay acciones para el rol en el estado actual
+    if (!actionPanelRendered) {
+        contenedorAcciones.innerHTML = `<h2>Flujo de Trabajo</h2><p>No hay acciones disponibles para tu rol (<strong>${userRol}</strong>) en el estado actual del proyecto (<strong>${proyecto.status}</strong>).</p>`;
+    }
 async function mostrarPanelAsignacion(container, projectId) {
     const panelId = `panel-asignacion-${Math.random()}`; // ID único para evitar conflictos
     const div = document.createElement('div');
@@ -191,26 +184,68 @@ async function mostrarPanelAsignacion(container, projectId) {
         } catch (e) { alert(`Error: ${e.message}`); }
     });
 }
+async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
+    let revisionHtml = '';
+    
+    // ===== INICIO: CÓDIGO AÑADIDO PARA MOSTRAR COMENTARIOS DE REVISIÓN =====
+    if (proyecto && proyecto.historial_revisiones && proyecto.historial_revisiones.length > 0) {
+        // Obtenemos la última revisión del historial
+        const ultimaRevision = proyecto.historial_revisiones[proyecto.historial_revisiones.length - 1];
+        
+        // Creamos un bloque de HTML para mostrar el comentario de forma destacada
+        revisionHtml = `
+            <div style="background-color: #fcf8e3; border: 1px solid #faebcc; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                <h4 style="margin-top: 0; color: #8a6d3b;">Devuelto con Cambios Solicitados</h4>
+                <p style="margin-bottom: 5px;"><strong>Fecha:</strong> ${new Date(ultimaRevision.fecha).toLocaleString()}</p>
+                <p style="margin-bottom: 0;"><strong>Comentario de ${ultimaRevision.rol}:</strong> "${ultimaRevision.comentario}"</p>
+            </div>
+        `;
+    }
+    // ===== FIN: CÓDIGO AÑADIDO =====
 
-async function mostrarPanelSubirPropuesta(container, projectId) {
     const panelId = `panel-propuesta-${Math.random()}`;
     const div = document.createElement('div');
-    div.innerHTML = `<h3>Subir Propuesta</h3><div class="form-group"><label for="propuesta-file-${panelId}">Archivo:</label><input type="file" id="propuesta-file-${panelId}" name="propuesta_diseno" required></div><button id="upload-propuesta-btn-${panelId}">Subir</button><p id="upload-error-${panelId}" style="color: red; display: none;"></p>`;
+
+    // Se añade la variable 'revisionHtml' al principio del panel para que se muestre arriba
+    div.innerHTML = `
+        <h3>Subir Propuesta</h3>
+        ${revisionHtml}
+        <div class="form-group">
+            <label for="propuesta-file-${panelId}">Archivo:</label>
+            <input type="file" id="propuesta-file-${panelId}" name="propuesta_diseno" required>
+        </div>
+        <button id="upload-propuesta-btn-${panelId}">Subir</button>
+        <p id="upload-error-${panelId}" style="color: red; display: none;"></p>
+    `;
+    
     container.appendChild(div);
 
     document.getElementById(`upload-propuesta-btn-${panelId}`).addEventListener('click', async () => {
         const fileInput = document.getElementById(`propuesta-file-${panelId}`);
-        if (!fileInput.files[0]) { alert('Seleccione un archivo.'); return; }
+        if (!fileInput.files[0]) {
+            alert('Seleccione un archivo.');
+            return;
+        }
+        
         const formData = new FormData();
         formData.append('propuesta_diseno', fileInput.files[0]);
+        
         try {
             const res = await fetch(`/api/proyectos/${projectId}/subir-propuesta`, { method: 'PUT', body: formData });
-            if (!res.ok) throw new Error((await res.json()).message);
-            alert('Propuesta subida.'); window.location.reload();
-        } catch (e) { document.getElementById(`upload-error-${panelId}`).textContent = `Error: ${e.message}`; document.getElementById(`upload-error-${panelId}`).style.display = 'block'; }
+            if (!res.ok) {
+                // Intentamos leer el mensaje de error del servidor
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Error desconocido del servidor.');
+            }
+            alert('Propuesta subida con éxito.');
+            window.location.reload();
+        } catch (e) {
+            const errorElement = document.getElementById(`upload-error-${panelId}`);
+            errorElement.textContent = `Error: ${e.message}`;
+            errorElement.style.display = 'block';
+        }
     });
 }
-
 async function mostrarPanelRevisarPropuesta(container, projectId, proyecto) {
     const fileName = proyecto.propuesta_diseno_url ? proyecto.propuesta_diseno_url.split(/[\\/]/).pop() : 'N/A';
     const panelId = `panel-revisar-${Math.random()}`;
