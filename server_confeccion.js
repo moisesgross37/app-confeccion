@@ -497,7 +497,45 @@ app.put('/api/proyectos/:id/autorizar-produccion', requireLogin, checkRole(['Ase
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ message: 'Error al autorizar producción' }); }
 });
+// Pega este bloque en tu server_confeccion.js
 
+app.put('/api/proyectos/:id/reportar-incidencia', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+    const { id } = req.params;
+    const { comentarios } = req.body;
+
+    if (!comentarios) {
+        return res.status(400).json({ message: 'El comentario es obligatorio para reportar una incidencia.' });
+    }
+
+    try {
+        const nuevaIncidencia = {
+            fecha: new Date(),
+            usuario: req.session.user.username,
+            comentario: comentarios
+        };
+
+        // Actualizamos el proyecto:
+        // 1. Cambiamos el estado de vuelta a 'En Confección'.
+        // 2. Añadimos el reporte al historial de incidencias.
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET status = 'En Confección', 
+                 historial_incidencias = COALESCE(historial_incidencias, '[]'::jsonb) || $1::jsonb 
+             WHERE id = $2 RETURNING *`,
+            [JSON.stringify(nuevaIncidencia), id]
+        );
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Proyecto no encontrado.' });
+        }
+
+        res.json(result.rows[0]);
+
+    } catch (err) {
+        console.error('Error al reportar incidencia:', err);
+        res.status(500).json({ message: 'Error en el servidor al reportar la incidencia.' });
+    }
+});
 app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     const { nuevaEtapa } = req.body;
     try {
