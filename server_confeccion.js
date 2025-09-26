@@ -433,8 +433,37 @@ app.put('/api/proyectos/:id/aprobar-interno', requireLogin, checkRole(['Administ
         res.status(500).json({ message: 'Error en el servidor' });
     }
 });
-app.put('/api/proyectos/:id/aprobar-cliente', requireLogin, checkRole(['Asesor', 'Administrador']), (req, res) => updateProjectStatus('Pendiente de Proforma', req.params.id).then(r => res.json(r.rows[0])).catch(err => res.status(500).json(err)));
-app.put('/api/proyectos/:id/aprobar-calidad', requireLogin, checkRole(['Administrador', 'Coordinador']), (req, res) => updateProjectStatus('Listo para Entrega', req.params.id).then(r => res.json(r.rows[0])).catch(err => res.status(500).json(err)));
+app.put('/api/proyectos/:id/aprobar-cliente', requireLogin, checkRole(['Asesor', 'Administrador']), async (req, res) => {
+    try {
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET status = 'Pendiente de Proforma', 
+                 fecha_aprobacion_cliente = NOW() 
+             WHERE id = $1 RETURNING *`,
+            [req.params.id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error al registrar la aprobación del cliente:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+});
+
+app.put('/api/proyectos/:id/aprobar-calidad', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+    try {
+        // Nota: No existe un campo 'fecha_aprobacion_calidad', por lo que solo actualizamos el estado.
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET status = 'Listo para Entrega' 
+             WHERE id = $1 RETURNING *`,
+            [req.params.id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error al aprobar calidad:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+});
 
 app.put('/api/proyectos/:id/autorizar-produccion', requireLogin, checkRole(['Asesor', 'Administrador']), upload.single('listado_final'), async (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'El listado final es un archivo obligatorio.' });
@@ -451,7 +480,6 @@ app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administra
         res.json(result.rows[0]);
     } catch (err) { res.status(500).json({ message: 'Error al avanzar etapa' }); }
 });
-
 // Servidor de archivos estáticos (Debe ir al final de todas las rutas)
 app.use(express.static(path.join(__dirname)));
 
