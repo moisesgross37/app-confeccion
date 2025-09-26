@@ -140,7 +140,6 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
-const upload = multer({ storage: storage });
 
 // --- Rutas de Autenticación ---
 app.get('/login.html', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
