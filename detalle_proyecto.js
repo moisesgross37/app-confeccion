@@ -352,12 +352,29 @@ async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
     });
 }
 
+// Reemplaza la función completa en detalle_proyecto.js
+
 async function mostrarPanelProduccion(container, proyecto) {
     const projectId = proyecto.id;
     const estadoActual = proyecto.status;
     let panelHTML = '';
     const panelId = `panel-produccion-${Math.random()}`;
     const div = document.createElement('div');
+    let incidenciaHtml = '';
+
+    // ===== INICIO: CÓDIGO AÑADIDO PARA MOSTRAR INCIDENCIAS =====
+    // Si el proyecto está 'En Confección' y tiene un historial de incidencias, mostramos la última.
+    if (estadoActual === 'En Confección' && proyecto.historial_incidencias && proyecto.historial_incidencias.length > 0) {
+        const ultimaIncidencia = proyecto.historial_incidencias[proyecto.historial_incidencias.length - 1];
+        incidenciaHtml = `
+            <div style="background-color: #f2dede; border: 1px solid #ebccd1; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                <h4 style="margin-top: 0; color: #a94442;">🚨 Incidencia Reportada</h4>
+                <p style="margin-bottom: 5px;"><strong>Fecha:</strong> ${new Date(ultimaIncidencia.fecha).toLocaleString()}</p>
+                <p style="margin-bottom: 0;"><strong>Reportado por (${ultimaIncidencia.usuario}):</strong> "${ultimaIncidencia.comentario}"</p>
+            </div>
+        `;
+    }
+    // ===== FIN: CÓDIGO AÑADIDO =====
 
     const flujo = {
         'En Lista de Producción': { texto: 'Pasar a Diagramación', siguienteEstado: 'En Diagramación' },
@@ -380,9 +397,8 @@ async function mostrarPanelProduccion(container, proyecto) {
         `;
     }
 
-    div.innerHTML = `<div class="card">${panelHTML}</div>`;
+    div.innerHTML = `<div class="card">${incidenciaHtml}${panelHTML}</div>`; // Se añade 'incidenciaHtml'
     container.appendChild(div);
-
     const avanzarBtn = document.getElementById(`avanzar-btn-${panelId}`);
     if (avanzarBtn) {
         avanzarBtn.addEventListener('click', async () => {
