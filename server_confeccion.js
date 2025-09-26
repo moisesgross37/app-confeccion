@@ -123,6 +123,7 @@ const requireLogin = (req, res, next) => {
     next();
 };
 
+// REEMPLÁZALO CON ESTE BLOQUE
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const dir = './uploads_confeccion';
@@ -132,13 +133,13 @@ const storage = multer.diskStorage({
         cb(null, dir);
     },
     filename: (req, file, cb) => {
-        // Lógica mejorada para evitar nombres corruptos y dobles extensiones
-        const fileExt = path.extname(file.originalname); // Extrae la extensión original (ej: '.pdf')
-        const baseName = path.basename(file.originalname, fileExt); // Extrae el nombre sin la extensión
-        const finalFileName = `${Date.now()}-${baseName.replace(/[^a-zA-Z0-9]/g, '_')}${fileExt}`; // Limpia caracteres especiales y une todo
-        cb(null, finalFileName);
+        // Lógica final y simplificada para garantizar nombres únicos y válidos
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const fileExtension = path.extname(file.originalname);
+        cb(null, file.fieldname + '-' + uniqueSuffix + fileExtension);
     }
 });
+const upload = multer({ storage: storage });
 const upload = multer({ storage: storage });
 
 // --- Rutas de Autenticación ---
