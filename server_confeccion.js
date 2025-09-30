@@ -23,9 +23,6 @@ const pool = new Pool({
     }
 });
 
-// ===== AÑADE ESTA LÍNEA DE DIAGNÓSTICO AQUÍ =====
-console.log("VERIFICANDO CONEXIÓN A DB:", pool.options);
-
 // --- Inicialización de la Base de Datos ---
 const initializeDatabase = async () => {
     const client = await pool.connect();
@@ -44,6 +41,8 @@ const initializeDatabase = async () => {
                 name VARCHAR(255) NOT NULL
             );
         `);
+
+        // ===== TABLA DE PROYECTOS (VERSIÓN LIMPIA) =====
         await client.query(`
             CREATE TABLE IF NOT EXISTS confeccion_projects (
                 id SERIAL PRIMARY KEY,
@@ -52,17 +51,13 @@ const initializeDatabase = async () => {
                 cliente VARCHAR(255),
                 nombre_asesor VARCHAR(255),
                 detalles_solicitud TEXT,
-                imagenes_referencia TEXT[],
                 status VARCHAR(100) DEFAULT 'Diseño Pendiente de Asignación',
                 diseñador_id INTEGER,
                 fecha_de_asignacion TIMESTAMPTZ,
-                propuesta_diseno_url VARCHAR(255),
                 fecha_propuesta TIMESTAMPTZ,
                 fecha_aprobacion_interna TIMESTAMPTZ,
                 fecha_aprobacion_cliente TIMESTAMPTZ,
-                proforma_url VARCHAR(255),
                 fecha_proforma_subida TIMESTAMPTZ,
-                listado_final_url VARCHAR(255),
                 fecha_autorizacion_produccion TIMESTAMPTZ,
                 historial_revisiones JSONB,
                 historial_produccion JSONB,
@@ -70,19 +65,17 @@ const initializeDatabase = async () => {
             );
         `);
 
-        // ===== INICIO: CÓDIGO AÑADIDO PARA LA NUEVA TABLA DE ARCHIVOS =====
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS confeccion_archivos (
-                id SERIAL PRIMARY KEY,
-                proyecto_id INTEGER NOT NULL REFERENCES confeccion_projects(id) ON DELETE CASCADE,
-                tipo_archivo VARCHAR(100) NOT NULL,
-                url_archivo VARCHAR(255) NOT NULL,
-                nombre_archivo VARCHAR(255),
-                fecha_subida TIMESTAMPTZ DEFAULT NOW(),
-                subido_por VARCHAR(255)
-            );
-        `);
-        // ===== FIN: CÓDIGO AÑADIDO =====
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS confeccion_archivos (
+                id SERIAL PRIMARY KEY,
+                proyecto_id INTEGER NOT NULL REFERENCES confeccion_projects(id) ON DELETE CASCADE,
+                tipo_archivo VARCHAR(100) NOT NULL,
+                url_archivo VARCHAR(255) NOT NULL,
+                nombre_archivo VARCHAR(255),
+                fecha_subida TIMESTAMPTZ DEFAULT NOW(),
+                subido_por VARCHAR(255)
+            );
+        `);
 
         await client.query(`
             CREATE TABLE IF NOT EXISTS "confeccion_session" (
@@ -92,6 +85,24 @@ const initializeDatabase = async () => {
             );
         `);
 
+        const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
+        if (adminUser.rows.length === 0) {
+            console.log("Usuario 'admin' no encontrado. Creando usuario por defecto...");
+            const defaultPassword = 'admin123';
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
+            await client.query(
+                "INSERT INTO confeccion_users (username, password, rol) VALUES ($1, $2, $3)",
+                ['admin', hashedPassword, 'Administrador']
+            );
+            console.log("Usuario 'admin' creado con éxito.");
+        }
+    } catch (err) {
+        console.error('Error al inicializar la base de datos de confección:', err);
+    } finally {
+        client.release();
+    }
+};
         const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
         if (adminUser.rows.length === 0) {
             console.log("Usuario 'admin' no encontrado. Creando usuario por defecto...");
