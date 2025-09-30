@@ -33,45 +33,49 @@ function renderizarPagina(proyecto, user) {
     document.getElementById('estado-proyecto').textContent = proyecto.status || 'N/A';
     document.getElementById('detalles-proyecto').textContent = proyecto.detalles_solicitud || 'N/A';
 
-    // 2. Muestra las imágenes de referencia y los enlaces a otros archivos.
-    const contenedorImagenes = document.getElementById('contenedor-imagenes');
-    if (contenedorImagenes) {
-        contenedorImagenes.innerHTML = '';
-        if (proyecto.imagenes_referencia && proyecto.imagenes_referencia.length > 0) {
-            proyecto.imagenes_referencia.forEach(rutaImagen => {
-                const isImage = /\.(jpg|jpeg|png|gif)$/i.test(rutaImagen);
-                if (isImage) {
-                    const img = document.createElement('img');
-                    img.src = `/${rutaImagen}`;
-                    img.alt = 'Imagen de Referencia';
-                    img.style = 'width: 120px; height: 120px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #ccc;';
-                    img.onclick = () => window.open(img.src, '_blank');
-                    contenedorImagenes.appendChild(img);
-                } else {
-                    const fileName = rutaImagen.split(/[\\/]/).pop();
-                    const link = document.createElement('a');
-                    link.href = `/${rutaImagen}`;
-                    link.textContent = `Descargar: ${fileName}`;
-                    link.target = '_blank';
-                    link.style = 'display: block; margin-bottom: 5px;';
-                    contenedorImagenes.appendChild(link);
-                }
-            });
-        } else {
-            contenedorImagenes.innerHTML = '<p>No se adjuntaron imágenes de referencia para este proyecto.</p>';
-        }
-    }
+    // AÑADE ESTE BLOQUE EN EL LUGAR DEL QUE BORRASTE
+// 2. Muestra todos los archivos del proyecto, organizados por tipo.
+const archivosReferencia = document.getElementById('archivos-referencia');
+const archivosDiseno = document.getElementById('archivos-propuesta_diseno');
+const archivosProforma = document.getElementById('archivos-proforma');
+const archivosListado = document.getElementById('archivos-listado_final');
 
-    // 3. Muestra el enlace para descargar el listado final, si existe.
-    if (proyecto.listado_final_url) {
-        const detallesSection = document.getElementById('detalles-principales');
-        if (!document.getElementById('listado-final-link')) {
-            const p = document.createElement('p');
-            p.id = 'listado-final-link';
-            p.innerHTML = `<strong>Listado Final de Clientes:</strong> <a href="/${proyecto.listado_final_url}" target="_blank" class="button">Descargar Listado</a>`;
-            detallesSection.appendChild(p);
+// Limpiamos las listas de "Cargando..."
+archivosReferencia.innerHTML = '';
+archivosDiseno.innerHTML = '';
+archivosProforma.innerHTML = '';
+archivosListado.innerHTML = '';
+
+// Verificamos si el proyecto tiene la nueva propiedad 'archivos'
+if (proyecto.archivos && proyecto.archivos.length > 0) {
+    proyecto.archivos.forEach(archivo => {
+        const li = document.createElement('li');
+        const fecha = new Date(archivo.fecha_subida).toLocaleString('es-DO', { dateStyle: 'short', timeStyle: 'short' });
+        li.innerHTML = `<a href="/${archivo.url_archivo}" target="_blank">${archivo.nombre_archivo}</a> <span style="color: #666; font-size: 0.9em;">(Subido por ${archivo.subido_por} - ${fecha})</span>`;
+        
+        // Distribuimos el archivo en su lista correspondiente
+        switch (archivo.tipo_archivo) {
+            case 'referencia':
+                archivosReferencia.appendChild(li);
+                break;
+            case 'propuesta_diseno':
+                archivosDiseno.appendChild(li);
+                break;
+            case 'proforma':
+                archivosProforma.appendChild(li);
+                break;
+            case 'listado_final':
+                archivosListado.appendChild(li);
+                break;
         }
-    }
+    });
+}
+
+// Si después de recorrer, alguna lista sigue vacía, mostramos un mensaje.
+if (archivosReferencia.childElementCount === 0) archivosReferencia.innerHTML = '<li>No hay archivos de referencia.</li>';
+if (archivosDiseno.childElementCount === 0) archivosDiseno.innerHTML = '<li>No hay propuestas de diseño.</li>';
+if (archivosProforma.childElementCount === 0) archivosProforma.innerHTML = '<li>No hay proformas.</li>';
+if (archivosListado.childElementCount === 0) archivosListado.innerHTML = '<li>No hay listados finales.</li>';
 
     // 4. Calcula y muestra los contadores de días.
     const diasTotales = Math.ceil((new Date() - new Date(proyecto.fecha_creacion)) / (1000 * 60 * 60 * 24)) || 1;
@@ -248,10 +252,12 @@ async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
     });
 }
 async function mostrarPanelRevisarPropuesta(container, projectId, proyecto) {
-    const fileName = proyecto.propuesta_diseno_url ? proyecto.propuesta_diseno_url.split(/[\\/]/).pop() : 'N/A';
+    const ultimaPropuesta = proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno');
+const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'N/A';
+const fileUrl = ultimaPropuesta ? `/${ultimaPropuesta.url_archivo}` : '#';
     const panelId = `panel-revisar-${Math.random()}`;
     const div = document.createElement('div');
-    div.innerHTML = `<h3>Revisión Interna</h3><div class="card"><p><strong>Archivo:</strong> <a href="/${proyecto.propuesta_diseno_url}" target="_blank">${fileName}</a></p><div class="button-group"><button id="aprobar-interno-btn-${panelId}">Aprobar</button><button id="solicitar-mejora-btn-${panelId}">Solicitar Cambios</button></div></div>`;
+    div.innerHTML = `<h3>Revisión Interna</h3><div class="card"><p><strong>Archivo:</strong> <a href="${fileUrl}" target="_blank">${fileName}</a></p><div class="button-group"><button id="aprobar-interno-btn-${panelId}">Aprobar</button><button id="solicitar-mejora-btn-${panelId}">Solicitar Cambios</button></div></div>`;
     container.appendChild(div);
 
     document.getElementById(`aprobar-interno-btn-${panelId}`).addEventListener('click', async () => { if (!confirm('¿Aprobar esta propuesta?')) return; try { const res = await fetch(`/api/proyectos/${projectId}/aprobar-interno`, { method: 'PUT' }); if (!res.ok) throw new Error('Error en servidor.'); alert('Propuesta aprobada.'); window.location.reload(); } catch (e) { alert(`Error: ${e.message}`); } });
@@ -266,10 +272,12 @@ async function mostrarPanelRevisarPropuesta(container, projectId, proyecto) {
 }
 
 async function mostrarPanelAprobarCliente(container, projectId, proyecto) {
-    const fileName = proyecto.propuesta_diseno_url ? proyecto.propuesta_diseno_url.split(/[\\/]/).pop() : 'N/A';
+    const ultimaPropuesta = proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno');
+const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'N/A';
+const fileUrl = ultimaPropuesta ? `/${ultimaPropuesta.url_archivo}` : '#';
     const panelId = `panel-cliente-${Math.random()}`;
     const div = document.createElement('div');
-    div.innerHTML = `<h3>Aprobación Cliente</h3><div class="card"><p><strong>Propuesta:</strong> <a href="/${proyecto.propuesta_diseno_url}" target="_blank">${fileName}</a></p><hr><div class="button-group"><button id="aprobar-cliente-btn-${panelId}">Confirmar Aprobación</button><button id="solicitar-mejora-cliente-btn-${panelId}">Solicitar Cambios</button></div></div>`;
+    div.innerHTML = `<h3>Aprobación Cliente</h3><div class="card"><p><strong>Propuesta:</strong> <a href="${fileUrl}" target="_blank">${fileName}</a></p><hr><div class="button-group"><button id="aprobar-cliente-btn-${panelId}">Confirmar Aprobación</button><button id="solicitar-mejora-cliente-btn-${panelId}">Solicitar Cambios</button></div></div>`;
     container.appendChild(div);
     
     document.getElementById(`aprobar-cliente-btn-${panelId}`).addEventListener('click', async () => { if (!confirm('¿Confirmas que el cliente aprobó el diseño?')) return; try { const res = await fetch(`/api/proyectos/${projectId}/aprobar-cliente`, { method: 'PUT' }); if (!res.ok) throw new Error('Error en servidor.'); alert('Aprobación registrada.'); window.location.reload(); } catch (e) { alert(`Error: ${e.message}`); } });
@@ -302,7 +310,9 @@ async function mostrarPanelSubirProforma(container, projectId) {
 }
 
 async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
-    const proformaFileName = proyecto.proforma_url ? proyecto.proforma_url.split(/[\\/]/).pop() : 'No disponible';
+    const ultimaProforma = proyecto.archivos.find(a => a.tipo_archivo === 'proforma');
+const proformaFileName = ultimaProforma ? ultimaProforma.nombre_archivo : 'No disponible';
+const proformaFileUrl = ultimaProforma ? `/${ultimaProforma.url_archivo}` : '#';
     const panelId = `panel-revision-proforma-${Math.random()}`;
     const div = document.createElement('div');
     div.innerHTML = `
@@ -310,7 +320,7 @@ async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
         <div class="card">
             <div class="card-body">
                 <p>El diseñador ha subido la proforma. Por favor, revísala y procede con la autorización final.</p>
-                <p><strong>Proforma:</strong> <a href="/${proyecto.proforma_url}" target="_blank">${proformaFileName}</a></p>
+                <p><strong>Proforma:</strong> <a href="${proformaFileUrl}" target="_blank">${proformaFileName}</a></p>
                 <hr>
                 <h4>Autorización Final de Producción</h4>
                 <div class="mb-3">
