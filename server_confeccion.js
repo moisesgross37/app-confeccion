@@ -28,48 +28,89 @@ console.log("VERIFICANDO CONEXIÓN A DB:", pool.options);
 
 // --- Inicialización de la Base de Datos ---
 const initializeDatabase = async () => {
-    const client = await pool.connect();
-    try {
+    const client = await pool.connect();
+    try {
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS confeccion_users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                rol VARCHAR(50) NOT NULL
+            );
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS confeccion_designers (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL
+            );
+        `);
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS confeccion_projects (
+                id SERIAL PRIMARY KEY,
+                codigo_proyecto VARCHAR(255) UNIQUE NOT NULL,
+                fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
+                cliente VARCHAR(255),
+                nombre_asesor VARCHAR(255),
+                detalles_solicitud TEXT,
+                imagenes_referencia TEXT[],
+                status VARCHAR(100) DEFAULT 'Diseño Pendiente de Asignación',
+                diseñador_id INTEGER,
+                fecha_de_asignacion TIMESTAMPTZ,
+                propuesta_diseno_url VARCHAR(255),
+                fecha_propuesta TIMESTAMPTZ,
+                fecha_aprobacion_interna TIMESTAMPTZ,
+                fecha_aprobacion_cliente TIMESTAMPTZ,
+                proforma_url VARCHAR(255),
+                fecha_proforma_subida TIMESTAMPTZ,
+                listado_final_url VARCHAR(255),
+                fecha_autorizacion_produccion TIMESTAMPTZ,
+                historial_revisiones JSONB,
+                historial_produccion JSONB,
+                historial_incidencias JSONB
+            );
+        `);
+
+        // ===== INICIO: CÓDIGO AÑADIDO PARA LA NUEVA TABLA DE ARCHIVOS =====
         await client.query(`
-            CREATE TABLE IF NOT EXISTS confeccion_users (
+            CREATE TABLE IF NOT EXISTS confeccion_archivos (
                 id SERIAL PRIMARY KEY,
-                username VARCHAR(255) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                rol VARCHAR(50) NOT NULL
+                proyecto_id INTEGER NOT NULL REFERENCES confeccion_projects(id) ON DELETE CASCADE,
+                tipo_archivo VARCHAR(100) NOT NULL,
+                url_archivo VARCHAR(255) NOT NULL,
+                nombre_archivo VARCHAR(255),
+                fecha_subida TIMESTAMPTZ DEFAULT NOW(),
+                subido_por VARCHAR(255)
             );
         `);
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS confeccion_designers (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL
-            );
-        `);
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS confeccion_projects (
-                id SERIAL PRIMARY KEY,
-                codigo_proyecto VARCHAR(255) UNIQUE NOT NULL,
-                fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
-                cliente VARCHAR(255),
-                nombre_asesor VARCHAR(255),
-                detalles_solicitud TEXT,
-                imagenes_referencia TEXT[],
-                status VARCHAR(100) DEFAULT 'Diseño Pendiente de Asignación',
-                diseñador_id INTEGER,
-                fecha_de_asignacion TIMESTAMPTZ,
-                propuesta_diseno_url VARCHAR(255),
-                fecha_propuesta TIMESTAMPTZ,
-                fecha_aprobacion_interna TIMESTAMPTZ,
-                fecha_aprobacion_cliente TIMESTAMPTZ,
-                proforma_url VARCHAR(255),
-                fecha_proforma_subida TIMESTAMPTZ,
-                listado_final_url VARCHAR(255),
-                fecha_autorizacion_produccion TIMESTAMPTZ,
-                historial_revisiones JSONB,
-                historial_produccion JSONB,
-                historial_incidencias JSONB
-            );
-        `);
-        // REEMPLÁZALO CON ESTE BLOQUE
+        // ===== FIN: CÓDIGO AÑADIDO =====
+
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "confeccion_session" (
+                "sid" varchar NOT NULL PRIMARY KEY,
+                "sess" json NOT NULL,
+                "expire" timestamp(6) NOT NULL
+            );
+        `);
+
+        const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
+        if (adminUser.rows.length === 0) {
+            console.log("Usuario 'admin' no encontrado. Creando usuario por defecto...");
+            const defaultPassword = 'admin123';
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
+            await client.query(
+                "INSERT INTO confeccion_users (username, password, rol) VALUES ($1, $2, $3)",
+                ['admin', hashedPassword, 'Administrador']
+            );
+            console.log("Usuario 'admin' creado con éxito.");
+        }
+    } catch (err) {
+        console.error('Error al inicializar la base de datos de confección:', err);
+    } finally {
+        client.release();
+    }
+};
+// REEMPLÁZALO CON ESTE BLOQUE
 await client.query(`
     CREATE TABLE IF NOT EXISTS "confeccion_session" (
         "sid" varchar NOT NULL PRIMARY KEY,
@@ -346,27 +387,42 @@ app.delete('/api/solicitudes/:id', requireLogin, checkRole(['Administrador']), a
 // =========================================================================
 // ======================= ÚNICA MODIFICACIÓN AQUÍ =======================
 // =========================================================================
+// REEMPLAZA TU RUTA '/api/proyectos/:id' ACTUAL CON ESTA
 app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
     try {
-        // ---- CÓDIGO ANTIGUO ----
-        // const result = await pool.query('SELECT * FROM confeccion_projects WHERE id = $1', [req.params.id]);
+        const { id } = req.params;
 
-        // ---- CÓDIGO NUEVO ----
-        // Se añade un LEFT JOIN para unir con la tabla de diseñadores y obtener el nombre.
-        // Se usa LEFT JOIN por si un proyecto aún no tiene diseñador asignado.
-        const query = `
+        // 1. Obtenemos los detalles principales del proyecto y el nombre del diseñador
+        const projectQuery = `
             SELECT p.*, d.name AS nombre_disenador
             FROM confeccion_projects p
             LEFT JOIN confeccion_designers d ON p.diseñador_id = d.id
             WHERE p.id = $1
         `;
-        const result = await pool.query(query, [req.params.id]);
+        const projectResult = await pool.query(projectQuery, [id]);
 
-        if (result.rows.length > 0) res.json(result.rows[0]);
-        else res.status(404).json({ message: 'Proyecto no encontrado' });
-    } catch (err) { res.status(500).json({ message: 'Error al obtener proyecto' }); }
+        if (projectResult.rows.length === 0) {
+            return res.status(404).json({ message: 'Proyecto no encontrado' });
+        }
+        const proyecto = projectResult.rows[0];
+
+        // 2. Obtenemos TODOS los archivos asociados a ese proyecto desde la nueva tabla
+        const filesResult = await pool.query(
+            'SELECT * FROM confeccion_archivos WHERE proyecto_id = $1 ORDER BY fecha_subida DESC',
+            [id]
+        );
+
+        // 3. Añadimos la lista de archivos al objeto del proyecto
+        proyecto.archivos = filesResult.rows;
+
+        // 4. Enviamos todo junto
+        res.json(proyecto);
+
+    } catch (err) {
+        console.error('Error al obtener los detalles del proyecto:', err);
+        res.status(500).json({ message: 'Error en el servidor al obtener el proyecto' });
+    }
 });
-
 app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']), upload.array('imagenes_referencia'), async (req, res) => {
     const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
     try {
@@ -385,12 +441,42 @@ app.get('/api/designers', requireLogin, async (req, res) => {
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error al obtener diseñadores' }); }
 });
 
-app.post('/api/designers', requireLogin, checkRole(['Administrador']), async (req, res) => {
+// REEMPLAZA TU RUTA '/api/solicitudes' ACTUAL CON ESTA
+app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']), upload.array('imagenes_referencia'), async (req, res) => {
+    const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
+    const client = await pool.connect(); // Usaremos una transacción
+
     try {
-        const result = await pool.query('INSERT INTO confeccion_designers (name) VALUES ($1) RETURNING *', [req.body.nombre]);
-        const newDesigner = result.rows[0];
-        res.status(201).json({id: newDesigner.id, nombre: newDesigner.name}); // Devolvemos con 'nombre' para consistencia
-    } catch (err) { console.error(err); res.status(500).json({ message: 'Error al crear diseñador' }); }
+        await client.query('BEGIN'); // Iniciar transacción
+
+        // 1. Insertamos el nuevo proyecto en la tabla principal
+        const projectResult = await client.query(
+            'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud) VALUES ($1, $2, $3, $4) RETURNING *',
+            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud]
+        );
+        const nuevoProyecto = projectResult.rows[0];
+
+        // 2. Si hay imágenes de referencia, las guardamos en la nueva tabla de archivos
+        if (req.files && req.files.length > 0) {
+            for (const file of req.files) {
+                await client.query(
+                    `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
+                     VALUES ($1, $2, $3, $4, $5)`,
+                    [nuevoProyecto.id, 'referencia', file.path, file.originalname, req.session.user.username]
+                );
+            }
+        }
+
+        await client.query('COMMIT'); // Confirmar transacción
+        res.status(201).json(nuevoProyecto);
+
+    } catch (err) {
+        await client.query('ROLLBACK'); // Revertir en caso de error
+        console.error('Error al crear la solicitud:', err);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    } finally {
+        client.release();
+    }
 });
 
 app.delete('/api/designers/:id', requireLogin, checkRole(['Administrador']), async (req, res) => {
@@ -412,37 +498,82 @@ app.put('/api/proyectos/:id/asignar', requireLogin, checkRole(['Administrador', 
 });
 
 // LÍNEA CORREGIDA
+// REEMPLAZA TU RUTA '/subir-propuesta' ACTUAL CON ESTA
 app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñador', 'Administrador']), upload.single('propuesta_diseno'), async (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
+    
+    const { id } = req.params;
+    const client = await pool.connect();
+
     try {
-        const result = await pool.query('UPDATE confeccion_projects SET propuesta_diseno_url = $1, fecha_propuesta = NOW(), status = $2 WHERE id = $3 RETURNING *', [req.file.path, 'Pendiente Aprobación Interna', req.params.id]);
-        res.json(result.rows[0]);
-    } catch (err) { res.status(500).json({ message: 'Error al subir propuesta' }); }
+        await client.query('BEGIN');
+
+        // 1. Guardamos el archivo en la nueva tabla
+        await client.query(
+            `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
+             VALUES ($1, $2, $3, $4, $5)`,
+            [id, 'propuesta_diseno', req.file.path, req.file.originalname, req.session.user.username]
+        );
+
+        // 2. Actualizamos el estado del proyecto y la fecha
+        const projectResult = await client.query(
+            'UPDATE confeccion_projects SET status = $1, fecha_propuesta = NOW() WHERE id = $2 RETURNING *', 
+            ['Pendiente Aprobación Interna', id]
+        );
+
+        await client.query('COMMIT');
+        res.json(projectResult.rows[0]);
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error al subir propuesta:', err);
+        res.status(500).json({ message: 'Error al subir propuesta' });
+    } finally {
+        client.release();
+    }
 });
 app.put('/api/proyectos/:id/subir-proforma', requireLogin, checkRole(['Administrador', 'Diseñador']), upload.single('proforma'), async (req, res) => {
+    // 1. Verificación inicial: nos aseguramos de que se haya subido un archivo.
     if (!req.file) {
         return res.status(400).json({ message: 'No se ha subido ningún archivo de proforma.' });
     }
 
+    const { id } = req.params; // Obtenemos el ID del proyecto desde la URL.
+    const client = await pool.connect(); // Establecemos una conexión con la base de datos para la transacción.
+    
     try {
-        const result = await pool.query(
-            `UPDATE confeccion_projects 
-             SET proforma_url = $1, 
-                 fecha_proforma_subida = NOW(), 
-                 status = 'Pendiente Aprobación Proforma' 
-             WHERE id = $2 RETURNING *`,
-            [req.file.path, req.params.id]
+        // 2. Iniciamos una transacción para asegurar la integridad de los datos.
+        await client.query('BEGIN');
+
+        // 3. Insertamos un nuevo registro en la tabla 'confeccion_archivos'.
+        // Aquí guardamos toda la información relevante del archivo.
+        await client.query(
+            `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
+             VALUES ($1, $2, $3, $4, $5)`,
+            [id, 'proforma', req.file.path, req.file.originalname, req.session.user.username]
         );
 
-        if (result.rowCount === 0) {
-            return res.status(404).json({ message: 'Proyecto no encontrado.' });
-        }
+        // 4. Actualizamos únicamente el estado y la fecha en la tabla 'confeccion_projects'.
+        // Ya no guardamos la URL del archivo aquí.
+        const projectResult = await client.query(
+            'UPDATE confeccion_projects SET status = $1, fecha_proforma_subida = NOW() WHERE id = $2 RETURNING *',
+            ['Pendiente Aprobación Proforma', id]
+        );
 
-        res.json(result.rows[0]);
+        // 5. Si todo ha ido bien, confirmamos los cambios en la base de datos.
+        await client.query('COMMIT');
+
+        // 6. Enviamos el proyecto actualizado como respuesta.
+        res.json(projectResult.rows[0]);
 
     } catch (err) {
+        // 7. Si ocurre cualquier error, revertimos todos los cambios.
+        await client.query('ROLLBACK');
         console.error('Error al subir la proforma:', err);
         res.status(500).json({ message: 'Error en el servidor al subir la proforma.' });
+    } finally {
+        // 8. Liberamos la conexión a la base de datos.
+        client.release();
     }
 });
 app.put('/api/proyectos/:id/aprobar-interno', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
