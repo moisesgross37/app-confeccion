@@ -1,8 +1,4 @@
-// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.7 (PostgreSQL Completo y Corregido) ==============
-// Base de Datos: PostgreSQL en Render
-// Responsabilidad: Gestionar proyectos de diseño, producción y calidad con login propio.
-// =====================================================================================
-// Última prueba de auto-deploy
+// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.7 (PostgreSQL Completo y Corregido)
 
 console.log("--- Servidor de Confección v8.7 con PostgreSQL ---");
 
@@ -278,11 +274,17 @@ app.get('/api/asesores', requireLogin, (req, res) => {
 
 app.get('/api/proyectos', requireLogin, async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM confeccion_projects ORDER BY fecha_creacion DESC');
+        const query = `
+            SELECT p.*, d.name AS nombre_disenador
+            FROM confeccion_projects p
+            LEFT JOIN confeccion_designers d ON p.diseñador_id = d.id
+            ORDER BY p.fecha_creacion DESC
+        `;
+        const result = await pool.query(query);
         res.json(result.rows);
-    } catch (err) { 
+    } catch (err) {
         console.error("Error en /api/proyectos:", err);
-        res.status(500).json({ message: 'Error al obtener proyectos' }); 
+        res.status(500).json({ message: 'Error al obtener proyectos' });
     }
 });
 
