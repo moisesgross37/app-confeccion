@@ -2,6 +2,7 @@
 // Base de Datos: PostgreSQL en Render
 // Responsabilidad: Gestionar proyectos de diseño, producción y calidad con login propio.
 // =====================================================================================
+// Última prueba de auto-deploy
 
 console.log("--- Servidor de Confección v8.7 con PostgreSQL ---");
 
