@@ -22,13 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
 
             // Creamos las celdas de datos
-            row.innerHTML = `
-                <td>${proyecto.codigo_proyecto || proyecto.id}</td>
-                <td>${proyecto.cliente}</td>
-                <td>${proyecto.nombre_asesor}</td>
-                <td><mark>${proyecto.status}</mark></td>
-            `;
-
+          row.innerHTML = `
+    <td>${proyecto.codigo_proyecto || proyecto.id}</td>
+    <td>${proyecto.cliente}</td>
+    <td>${proyecto.nombre_asesor}</td>
+    <td>${proyecto.nombre_disenador || 'No asignado'}</td>
+    <td><mark>${proyecto.status}</mark></td>
+`;
             // ===== INICIO: CÓDIGO AÑADIDO PARA ACCIONES =====
             
             // Creamos la celda para los botones
