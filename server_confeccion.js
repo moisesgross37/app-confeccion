@@ -222,10 +222,6 @@ app.put('/api/proyectos/:id/solicitar-mejora', requireLogin, checkRole(['Adminis
 
 // --- Rutas de Administración de Usuarios (AÑADIDAS Y ADAPTADAS A POSTGRESQL) ---
 app.get('/api/users', requireLogin, checkRole(['Administrador']), async (req, res) => {
-    // ... el resto de tus rutas continúa aquí ...
-});
-// --- Rutas de Administración de Usuarios (AÑADIDAS Y ADAPTADAS A POSTGRESQL) ---
-app.get('/api/users', requireLogin, checkRole(['Administrador']), async (req, res) => {
     try {
         const result = await pool.query('SELECT id, username, rol FROM confeccion_users ORDER BY username ASC');
         res.json(result.rows);
