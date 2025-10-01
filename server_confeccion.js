@@ -111,10 +111,11 @@ const adminUser = await client.query("SELECT * FROM confeccion_users WHERE usern
             await client.query(
                 "INSERT INTO confeccion_users (username, password, rol) VALUES ($1, $2, $3)",
                 ['admin', hashedPassword, 'Administrador']
-            );
+    );
             console.log("Usuario 'admin' creado con éxito.");
         }
-    } catch (err) {
+    } // <--- ESTA ES LA LLAVE QUE FALTABA Y CIERRA EL BLOQUE 'try'
+    catch (err) {
         console.error('Error al inicializar la base de datos de confección:', err);
     } finally {
         client.release();
