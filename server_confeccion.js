@@ -376,11 +376,11 @@ app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al obtener el proyecto' });
     }
 });
-// REEMPLAZA TU RUTA '/api/solicitudes' COMPLETA CON ESTA VERSIÓN
+// REEMPLAZA TU RUTA '/api/solicitudes' COMPLETA CON ESTA VERSIÓN FINAL
 app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']), upload.array('imagenes_referencia'), async (req, res) => {
-
+    
     console.log("DATOS RECIBIDOS EN EL SERVIDOR:", { body: req.body, files: req.files });
-
+    
     const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
     const client = await pool.connect();
 
@@ -395,11 +395,7 @@ app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']
 
         if (req.files && req.files.length > 0) {
             for (const file of req.files) {
-
-                // ===== INICIO: LÍNEA DE DIAGNÓSTICO FINAL AÑADIDA =====
                 console.log(`INTENTANDO GUARDAR ARCHIVO PARA PROYECTO ID ${nuevoProyecto.id}:`, file.originalname);
-                // ===== FIN: LÍNEA DE DIAGNÓSTICO FINAL AÑADIDA =====
-
                 await client.query(
                     `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
                      VALUES ($1, $2, $3, $4, $5)`,
@@ -409,6 +405,12 @@ app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']
         }
 
         await client.query('COMMIT');
+
+        // ===== INICIO: VERIFICACIÓN FINAL AÑADIDA =====
+        const verificationResult = await client.query('SELECT * FROM confeccion_archivos WHERE proyecto_id = $1', [nuevoProyecto.id]);
+        console.log(`VERIFICACIÓN POST-GUARDADO PARA PROYECTO ID ${nuevoProyecto.id}:`, verificationResult.rows);
+        // ===== FIN: VERIFICACIÓN FINAL AÑADIDA =====
+
         res.status(201).json(nuevoProyecto);
 
     } catch (err) {
