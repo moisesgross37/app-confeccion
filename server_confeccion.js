@@ -393,49 +393,43 @@ app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al obtener el proyecto' });
     }
 });
-// REEMPLAZA TU RUTA '/api/solicitudes' COMPLETA CON ESTA VERSIÓN FINAL
-app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']), upload.array('imagenes_referencia'), async (req, res) => {
-    
-    console.log("DATOS RECIBIDOS EN EL SERVIDOR:", { body: req.body, files: req.files });
-    
-    const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
+app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador', 'Coordinador']), async (req, res) => {
+    // Con el nuevo sistema, ya no se usa "multer" aquí.
+    // Los datos, incluyendo la lista de archivos, vienen en el cuerpo de la petición (req.body).
+    const { nombre_centro, nombre_asesor, detalles_solicitud, archivos } = req.body;
     const client = await pool.connect();
 
     try {
-        await client.query('BEGIN');
+        await client.query('BEGIN'); // Iniciar transacción para seguridad
 
+        // 1. Creamos el proyecto en la base de datos con los datos de texto.
         const projectResult = await client.query(
             'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud) VALUES ($1, $2, $3, $4) RETURNING *',
             [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud]
         );
         const nuevoProyecto = projectResult.rows[0];
 
-        if (req.files && req.files.length > 0) {
-            for (const file of req.files) {
-                console.log(`INTENTANDO GUARDAR ARCHIVO PARA PROYECTO ID ${nuevoProyecto.id}:`, file.originalname);
+        // 2. Si el frontend nos envió una lista de archivos previamente subidos, los asociamos al proyecto.
+        if (archivos && archivos.length > 0) {
+            for (const file of archivos) {
+                // Insertamos cada archivo en nuestra nueva tabla 'confeccion_archivos'.
                 await client.query(
                     `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
                      VALUES ($1, $2, $3, $4, $5)`,
-                    [nuevoProyecto.id, 'referencia', file.path, file.originalname, req.session.user.username]
+                    [nuevoProyecto.id, 'referencia', file.filePath, file.fileName, req.session.user.username]
                 );
             }
         }
 
-        await client.query('COMMIT');
-
-        // ===== INICIO: VERIFICACIÓN FINAL AÑADIDA =====
-        const verificationResult = await client.query('SELECT * FROM confeccion_archivos WHERE proyecto_id = $1', [nuevoProyecto.id]);
-        console.log(`VERIFICACIÓN POST-GUARDADO PARA PROYECTO ID ${nuevoProyecto.id}:`, verificationResult.rows);
-        // ===== FIN: VERIFICACIÓN FINAL AÑADIDA =====
-
+        await client.query('COMMIT'); // Confirmamos todos los cambios en la base de datos.
         res.status(201).json(nuevoProyecto);
 
     } catch (err) {
-        await client.query('ROLLBACK');
+        await client.query('ROLLBACK'); // Si algo falla, revertimos todo.
         console.error('Error al crear la solicitud:', err);
         res.status(500).json({ error: 'Error interno del servidor' });
     } finally {
-        client.release();
+        client.release(); // Liberamos la conexión.
     }
 });
 app.get('/api/designers', requireLogin, async (req, res) => {
