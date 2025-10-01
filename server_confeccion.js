@@ -102,7 +102,8 @@ const initializeDatabase = async () => {
     } finally {
         client.release();
     }
-};        const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
+};        
+const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
         if (adminUser.rows.length === 0) {
             console.log("Usuario 'admin' no encontrado. Creando usuario por defecto...");
             const defaultPassword = 'admin123';
