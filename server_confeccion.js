@@ -102,26 +102,7 @@ const initializeDatabase = async () => {
     } finally {
         client.release();
     }
-const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
-        if (adminUser.rows.length === 0) {
-            console.log("Usuario 'admin' no encontrado. Creando usuario por defecto...");
-            const defaultPassword = 'admin123';
-            const saltRounds = 10;
-            const hashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
-            await client.query(
-                "INSERT INTO confeccion_users (username, password, rol) VALUES ($1, $2, $3)",
-                ['admin', hashedPassword, 'Administrador']
-    );
-            console.log("Usuario 'admin' creado con éxito.");
-        }
-    } // <--- ESTA ES LA LLAVE QUE FALTABA Y CIERRA EL BLOQUE 'try'
-    catch (err) {
-        console.error('Error al inicializar la base de datos de confección:', err);
-    } finally {
-        client.release();
-    }
-};
-// --- Middleware y Configs ---
+};// --- Middleware y Configs ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads_confeccion', express.static(path.join(__dirname, 'uploads_confeccion')));
