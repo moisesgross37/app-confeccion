@@ -28,7 +28,7 @@ const initializeDatabase = async () => {
     const client = await pool.connect();
     try {
         await client.query(`
-            CREATE TABLE IF NOT EXISTS confeccion_users (
+        CREATE TABLE IF NOT EXISTS confeccion_users (
                 id SERIAL PRIMARY KEY,
                 username VARCHAR(255) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL,
