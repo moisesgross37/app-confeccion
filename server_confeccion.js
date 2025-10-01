@@ -176,9 +176,7 @@ app.get('/detalle_proyecto.html', requireLogin, checkRole(confeccionRoles), (req
 app.get('/admin_diseñadores.html', requireLogin, checkRole(['Administrador']), (req, res) => res.sendFile(path.join(__dirname, 'admin_diseñadores.html')));
 
 // --- RUTAS DE API ---
-// --- RUTAS DE API ---
 
-// ===== PEGA EL NUEVO CÓDIGO AQUÍ =====
 app.put('/api/proyectos/:id/solicitar-mejora', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     const { id } = req.params;
     const { comentarios } = req.body;
@@ -214,7 +212,6 @@ app.put('/api/proyectos/:id/solicitar-mejora', requireLogin, checkRole(['Adminis
         res.status(500).json({ message: 'Error en el servidor al solicitar la mejora.' });
     }
 });
-// ===== FIN DEL NUEVO CÓDIGO =====
 
 
 // --- Rutas de Administración de Usuarios (AÑADIDAS Y ADAPTADAS A POSTGRESQL) ---
@@ -289,7 +286,6 @@ app.get('/api/proyectos', requireLogin, async (req, res) => {
     }
 });
 
-// Pega este bloque en la sección --- RUTAS DE API ---
 
 app.delete('/api/solicitudes/:id', requireLogin, checkRole(['Administrador']), async (req, res) => {
     const { id } = req.params;
@@ -344,10 +340,7 @@ app.delete('/api/solicitudes/:id', requireLogin, checkRole(['Administrador']), a
         client.release();
     }
 });
-// =========================================================================
-// ======================= ÚNICA MODIFICACIÓN AQUÍ =======================
-// =========================================================================
-// REEMPLAZA TU RUTA '/api/proyectos/:id' ACTUAL CON ESTA
+
 app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
     try {
         const { id } = req.params;
@@ -383,20 +376,49 @@ app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al obtener el proyecto' });
     }
 });
+// REEMPLAZA TU RUTA '/api/solicitudes' COMPLETA CON ESTA VERSIÓN
 app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']), upload.array('imagenes_referencia'), async (req, res) => {
-// ===== INICIO: LÍNEA DE DIAGNÓSTICO AÑADIDA =====
-    console.log("DATOS RECIBIDOS EN EL SERVIDOR:", { body: req.body, files: req.files });
-    // ===== FIN: LÍNEA DE DIAGNÓSTICO AÑADIDA =====
-    const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
-    try {
-        const result = await pool.query(
-            'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud, imagenes_referencia) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud, req.files ? req.files.map(f => f.path) : []]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (err) { console.error(err); res.status(500).json({ error: 'Error interno del servidor' }); }
-});
 
+    console.log("DATOS RECIBIDOS EN EL SERVIDOR:", { body: req.body, files: req.files });
+
+    const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const projectResult = await client.query(
+            'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud) VALUES ($1, $2, $3, $4) RETURNING *',
+            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud]
+        );
+        const nuevoProyecto = projectResult.rows[0];
+
+        if (req.files && req.files.length > 0) {
+            for (const file of req.files) {
+
+                // ===== INICIO: LÍNEA DE DIAGNÓSTICO FINAL AÑADIDA =====
+                console.log(`INTENTANDO GUARDAR ARCHIVO PARA PROYECTO ID ${nuevoProyecto.id}:`, file.originalname);
+                // ===== FIN: LÍNEA DE DIAGNÓSTICO FINAL AÑADIDA =====
+
+                await client.query(
+                    `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
+                     VALUES ($1, $2, $3, $4, $5)`,
+                    [nuevoProyecto.id, 'referencia', file.path, file.originalname, req.session.user.username]
+                );
+            }
+        }
+
+        await client.query('COMMIT');
+        res.status(201).json(nuevoProyecto);
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error al crear la solicitud:', err);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    } finally {
+        client.release();
+    }
+});
 app.get('/api/designers', requireLogin, async (req, res) => {
     try {
         const result = await pool.query('SELECT id, name AS nombre FROM confeccion_designers ORDER BY name ASC');
