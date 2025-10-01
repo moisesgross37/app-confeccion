@@ -212,7 +212,24 @@ app.put('/api/proyectos/:id/solicitar-mejora', requireLogin, checkRole(['Adminis
         res.status(500).json({ message: 'Error en el servidor al solicitar la mejora.' });
     }
 });
+// ===== INICIO: Nueva Ruta Genérica para Subida de Archivos =====
+app.post('/api/archivos/temporal', requireLogin, upload.single('archivo'), (req, res) => {
+    // El middleware 'upload.single' ya se encargó de guardar el archivo.
+    // 'req.file' contiene la información del archivo que se acaba de subir.
 
+    if (!req.file) {
+        return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
+    }
+
+    // Si el archivo se subió con éxito, devolvemos la ruta donde se guardó.
+    // El frontend usará esta ruta para saber qué archivo se acaba de añadir.
+    res.json({
+        message: 'Archivo subido con éxito.',
+        filePath: req.file.path,
+        fileName: req.file.originalname
+    });
+});
+// ===== FIN: Nueva Ruta Genérica para Subida de Archivos =====
 
 // --- Rutas de Administración de Usuarios (AÑADIDAS Y ADAPTADAS A POSTGRESQL) ---
 app.get('/api/users', requireLogin, checkRole(['Administrador']), async (req, res) => {
