@@ -1,41 +1,31 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nueva Solicitud de Confección</title>
-    <link rel="stylesheet" href="confeccion_estilos.css">
-</head>
-<body>
-    <h1>Nueva Solicitud de Confección</h1>
-
-    <form>
-        <div>
-            <label for="nombre_centro">Nombre del Centro:</label><br>
-            <select id="nombre_centro" name="nombre_centro" required>
-                <option value="" disabled selected>Cargando centros calificados...</option>
-            </select>
-        </div>
-        <br>
-        <div>
-            <label for="nombre_asesor">Nombre del Asesor:</label><br>
-            <select id="nombre_asesor" name="nombre_asesor" required>
-                <option value="" disabled selected>Cargando asesores...</option>
-            </select>
-        </div>
-        <br>
-        <div>
-            <label for="detalles_solicitud">Detalles de lo que solicita el cliente:</label><br>
-            <textarea id="detalles_solicitud" name="detalles_solicitud" rows="4" cols="50" required></textarea>
-        </div>
-        <br>
-        <div>
-            <label for="imagenes_referencia">Imágenes de Referencia:</label><br>
-            <input type="file" id="imagenes_referencia" name="imagenes_referencia" multiple accept="image/*,application/pdf">
-        </div>
-        <br>
-        <button type="submit">Crear Solicitud de Diseño</button>
-    </form>
-    <script src="solicitud_confeccion.js"></script>
-</body>
-</html>
+<form id="solicitud-form">
+    <div>
+        <label for="nombre_centro">Nombre del Centro:</label><br>
+        <select id="nombre_centro" name="nombre_centro" required>
+            <option value="" disabled selected>Cargando centros calificados...</option>
+        </select>
+    </div>
+    <br>
+    <div>
+        <label for="nombre_asesor">Nombre del Asesor:</label><br>
+        <select id="nombre_asesor" name="nombre_asesor" required>
+            <option value="" disabled selected>Cargando asesores...</option>
+        </select>
+    </div>
+    <br>
+    <div>
+        <label for="detalles_solicitud">Detalles de lo que solicita el cliente:</label><br>
+        <textarea id="detalles_solicitud" name="detalles_solicitud" rows="4" cols="50" required></textarea>
+    </div>
+    <br>
+    
+    <div>
+        <label>Imágenes de Referencia:</label><br>
+        <button type="button" id="btn-anadir-archivo" class="button">Añadir Archivo(s)</button>
+        <input type="file" id="input-archivo-oculto" multiple accept="image/*,application/pdf" style="display: none;">
+        
+        <div id="lista-archivos-subidos" style="margin-top: 15px;"></div>
+    </div>
+    <br>
+    <button type="submit">Crear Solicitud de Diseño</button>
+</form>
