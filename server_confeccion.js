@@ -384,6 +384,9 @@ app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
     }
 });
 app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']), upload.array('imagenes_referencia'), async (req, res) => {
+// ===== INICIO: LÍNEA DE DIAGNÓSTICO AÑADIDA =====
+    console.log("DATOS RECIBIDOS EN EL SERVIDOR:", { body: req.body, files: req.files });
+    // ===== FIN: LÍNEA DE DIAGNÓSTICO AÑADIDA =====
     const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
     try {
         const result = await pool.query(
