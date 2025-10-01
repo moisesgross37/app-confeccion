@@ -190,87 +190,104 @@ async function mostrarPanelAsignacion(container, projectId) {
     });
 }
 async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
-    let revisionHtml = '';
-    
-    // ===== INICIO: CÓDIGO AÑADIDO PARA MOSTRAR COMENTARIOS DE REVISIÓN =====
-    if (proyecto && proyecto.historial_revisiones && proyecto.historial_revisiones.length > 0) {
-        // Obtenemos la última revisión del historial
-        const ultimaRevision = proyecto.historial_revisiones[proyecto.historial_revisiones.length - 1];
-        
-        // Creamos un bloque de HTML para mostrar el comentario de forma destacada
-        revisionHtml = `
-            <div style="background-color: #fcf8e3; border: 1px solid #faebcc; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-                <h4 style="margin-top: 0; color: #8a6d3b;">Devuelto con Cambios Solicitados</h4>
-                <p style="margin-bottom: 5px;"><strong>Fecha:</strong> ${new Date(ultimaRevision.fecha).toLocaleString()}</p>
-                <p style="margin-bottom: 0;"><strong>Comentario de ${ultimaRevision.rol}:</strong> "${ultimaRevision.comentario}"</p>
-            </div>
-        `;
-    }
-    // ===== FIN: CÓDIGO AÑADIDO =====
+    let revisionHtml = '';
+    let archivosParaEnviar = []; // Array para guardar los archivos subidos
 
-    const panelId = `panel-propuesta-${Math.random()}`;
-    const div = document.createElement('div');
+    if (proyecto && proyecto.historial_revisiones && proyecto.historial_revisiones.length > 0) {
+        const ultimaRevision = proyecto.historial_revisiones[proyecto.historial_revisiones.length - 1];
+        revisionHtml = `
+            <div style="background-color: #fcf8e3; border: 1px solid #faebcc; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                <h4 style="margin-top: 0; color: #8a6d3b;">Devuelto con Cambios Solicitados</h4>
+                <p style="margin-bottom: 5px;"><strong>Fecha:</strong> ${new Date(ultimaRevision.fecha).toLocaleString()}</p>
+                <p style="margin-bottom: 0;"><strong>Comentario de ${ultimaRevision.rol}:</strong> "${ultimaRevision.comentario}"</p>
+            </div>
+        `;
+    }
 
-    // Se añade la variable 'revisionHtml' al principio del panel para que se muestre arriba
-    div.innerHTML = `
-        <h3>Subir Propuesta</h3>
-        ${revisionHtml}
+    const panelId = `panel-propuesta-${Math.random()}`;
+    const div = document.createElement('div');
+    div.innerHTML = `
+        <h3>Subir Propuesta(s) de Diseño</h3>
+        ${revisionHtml}
         <div class="form-group">
-            <label for="propuesta-file-${panelId}">Archivo:</label>
-            <input type="file" id="propuesta-file-${panelId}" name="propuesta_diseno" required>
+            <label>Archivos de Propuesta:</label>
+            <button type="button" id="btn-anadir-propuesta-${panelId}" class="button">Añadir Archivo(s)</button>
+            <input type="file" id="input-propuesta-oculto-${panelId}" multiple accept="image/*,application/pdf" style="display: none;">
+            <div id="lista-propuestas-subidas-${panelId}" style="margin-top: 15px;"></div>
         </div>
-        <button id="upload-propuesta-btn-${panelId}">Subir</button>
-        <p id="upload-error-${panelId}" style="color: red; display: none;"></p>
-    `;
-    
-    container.appendChild(div);
+                <button id="upload-propuesta-btn-${panelId}">Enviar Propuesta(s)</button>
+        <p id="upload-error-${panelId}" style="color: red; display: none;"></p>
+    `;
+    
+    container.appendChild(div);
 
-    document.getElementById(`upload-propuesta-btn-${panelId}`).addEventListener('click', async () => {
-        const fileInput = document.getElementById(`propuesta-file-${panelId}`);
-        if (!fileInput.files[0]) {
-            alert('Seleccione un archivo.');
-            return;
-        }
-        
-        const formData = new FormData();
-        formData.append('propuesta_diseno', fileInput.files[0]);
-        
-        try {
-            const res = await fetch(`/api/proyectos/${projectId}/subir-propuesta`, { method: 'PUT', body: formData });
-            if (!res.ok) {
-                // Intentamos leer el mensaje de error del servidor
-                const errorData = await res.json();
-                throw new Error(errorData.message || 'Error desconocido del servidor.');
+    // --- Lógica del nuevo cargador de archivos ---
+    const btnAnadir = document.getElementById(`btn-anadir-propuesta-${panelId}`);
+    const inputOculto = document.getElementById(`input-propuesta-oculto-${panelId}`);
+    const listaArchivos = document.getElementById(`lista-propuestas-subidas-${panelId}`);
+
+    btnAnadir.addEventListener('click', () => inputOculto.click());
+
+    inputOculto.addEventListener('change', async (event) => {
+        const files = event.target.files;
+        if (!files.length) return;
+        btnAnadir.textContent = 'Subiendo...';
+        btnAnadir.disabled = true;
+
+        for (const file of files) {
+            const formData = new FormData();
+            formData.append('archivo', file);
+            try {
+                const response = await fetch('/api/archivos/temporal', { method: 'POST', body: formData });
+                if (!response.ok) throw new Error(`Error al subir ${file.name}`);
+                const result = await response.json();
+                
+                const fileElement = document.createElement('div');
+                fileElement.dataset.filePath = result.filePath;
+                fileElement.innerHTML = `<span>✅ ${result.fileName}</span> <button type="button" class="btn-remove-file" style="cursor: pointer; margin-left: 10px;">❌</button>`;
+                listaArchivos.appendChild(fileElement);
+                archivosParaEnviar.push(result);
+
+                fileElement.querySelector('.btn-remove-file').addEventListener('click', () => {
+                    archivosParaEnviar = archivosParaEnviar.filter(f => f.filePath !== result.filePath);
+                    listaArchivos.removeChild(fileElement);
+                });
+            } catch (error) {
+                alert(`Hubo un error al subir: ${file.name}`);
             }
-            alert('Propuesta subida con éxito.');
-            window.location.reload();
-        } catch (e) {
-            const errorElement = document.getElementById(`upload-error-${panelId}`);
-            errorElement.textContent = `Error: ${e.message}`;
-            errorElement.style.display = 'block';
         }
+        btnAnadir.textContent = 'Añadir Archivo(s)';
+        btnAnadir.disabled = false;
+        inputOculto.value = '';
     });
-}
-async function mostrarPanelRevisarPropuesta(container, projectId, proyecto) {
-    const ultimaPropuesta = proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno');
-const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'N/A';
-const fileUrl = ultimaPropuesta ? `/${ultimaPropuesta.url_archivo}` : '#';
-    const panelId = `panel-revisar-${Math.random()}`;
-    const div = document.createElement('div');
-    div.innerHTML = `<h3>Revisión Interna</h3><div class="card"><p><strong>Archivo:</strong> <a href="${fileUrl}" target="_blank">${fileName}</a></p><div class="button-group"><button id="aprobar-interno-btn-${panelId}">Aprobar</button><button id="solicitar-mejora-btn-${panelId}">Solicitar Cambios</button></div></div>`;
-    container.appendChild(div);
+    // --- Fin de la lógica del cargador ---
 
-    document.getElementById(`aprobar-interno-btn-${panelId}`).addEventListener('click', async () => { if (!confirm('¿Aprobar esta propuesta?')) return; try { const res = await fetch(`/api/proyectos/${projectId}/aprobar-interno`, { method: 'PUT' }); if (!res.ok) throw new Error('Error en servidor.'); alert('Propuesta aprobada.'); window.location.reload(); } catch (e) { alert(`Error: ${e.message}`); } });
-    document.getElementById(`solicitar-mejora-btn-${panelId}`).addEventListener('click', async () => {
-        const comentarios = prompt('Escribe los cambios para el diseñador:');
-        if (!comentarios || comentarios.trim() === '') return;
-        try {
-            const res = await fetch(`/api/proyectos/${projectId}/solicitar-mejora`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comentarios }) });
-            if (!res.ok) throw new Error('Error al enviar.'); alert('Comentarios enviados.'); window.location.reload();
-        } catch (e) { alert(`Error: ${e.message}`); }
-    });
-}
+    document.getElementById(`upload-propuesta-btn-${panelId}`).addEventListener('click', async () => {
+        if (archivosParaEnviar.length === 0) {
+            alert('Debes subir al menos un archivo de propuesta.');
+            return;
+        }
+        
+        try {
+            const res = await fetch(`/api/proyectos/${projectId}/subir-propuesta`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ archivos: archivosParaEnviar }) // Enviamos la lista de archivos
+            });
 
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Error desconocido del servidor.');
+            }
+            alert('Propuesta(s) subida(s) con éxito.');
+            window.location.reload();
+        } catch (e) {
+            const errorElement = document.getElementById(`upload-error-${panelId}`);
+            errorElement.textContent = `Error: ${e.message}`;
+            errorElement.style.display = 'block';
+        }
+    });
+}
 async function mostrarPanelAprobarCliente(container, projectId, proyecto) {
     const ultimaPropuesta = proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno');
 const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'N/A';
