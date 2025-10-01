@@ -5,8 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
-    Promise.all([
-        fetch(`/api/proyectos/${projectId}`).then(res => {
+   Promise.all([
+        fetch(`/api/proyectos/${projectId}`, { cache: 'no-store' }).then(res => { //...
             if (!res.ok) throw new Error(`Error del servidor al cargar proyecto: ${res.status}`);
             return res.json();
         }),
