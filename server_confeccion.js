@@ -1,4 +1,4 @@
-// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.7 (PostgreSQL Completo y Corregido)
+// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.8 (Versión Final y Limpia) ==============
 
 console.log("--- Servidor de Confección v8.7 con PostgreSQL ---");
 
