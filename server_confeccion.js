@@ -42,7 +42,7 @@ const initializeDatabase = async () => {
             );
         `);
 
-        // ===== TABLA DE PROYECTOS (VERSIÓN LIMPIA) =====
+        // ===== TABLA DE PROYECTOS (VERSIÓN LIMPIA) =====
         await client.query(`
             CREATE TABLE IF NOT EXISTS confeccion_projects (
                 id SERIAL PRIMARY KEY,
@@ -102,34 +102,7 @@ const initializeDatabase = async () => {
     } finally {
         client.release();
     }
-};
-        const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
-        if (adminUser.rows.length === 0) {
-            console.log("Usuario 'admin' no encontrado. Creando usuario por defecto...");
-            const defaultPassword = 'admin123';
-            const saltRounds = 10;
-            const hashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
-            await client.query(
-                "INSERT INTO confeccion_users (username, password, rol) VALUES ($1, $2, $3)",
-                ['admin', hashedPassword, 'Administrador']
-            );
-            console.log("Usuario 'admin' creado con éxito.");
-        }
-    } catch (err) {
-        console.error('Error al inicializar la base de datos de confección:', err);
-    } finally {
-        client.release();
-    }
-};
-// REEMPLÁZALO CON ESTE BLOQUE
-await client.query(`
-    CREATE TABLE IF NOT EXISTS "confeccion_session" (
-        "sid" varchar NOT NULL PRIMARY KEY,
-        "sess" json NOT NULL,
-        "expire" timestamp(6) NOT NULL
-    );
-`);
-        const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
+};        const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
         if (adminUser.rows.length === 0) {
             console.log("Usuario 'admin' no encontrado. Creando usuario por defecto...");
             const defaultPassword = 'admin123';
