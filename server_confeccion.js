@@ -15,12 +15,18 @@ const { checkRole } = require('./permissions.js');
 const app = express();
 const port = process.env.PORT || 3001;
 
+// ===== INICIO: LÍNEAS AÑADIDAS PARA LEER DATOS JSON Y FORMULARIOS =====
+// Estas líneas deben ir ANTES de que definas cualquier ruta (app.get, app.post, etc.)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+// ===== FIN: LÍNEAS AÑADIDAS =====
+
 // --- Conexión a la Base de Datos PostgreSQL ---
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 const initializeDatabase = async () => {
