@@ -191,7 +191,7 @@ async function mostrarPanelAsignacion(container, projectId) {
 }
 async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
     let revisionHtml = '';
-    let archivosParaEnviar = []; // Array para guardar los archivos subidos
+    let archivosParaEnviar = []; // Array para guardar los archivos subidos
 
     if (proyecto && proyecto.historial_revisiones && proyecto.historial_revisiones.length > 0) {
         const ultimaRevision = proyecto.historial_revisiones[proyecto.historial_revisiones.length - 1];
@@ -281,13 +281,15 @@ async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
             }
             alert('Propuesta(s) subida(s) con éxito.');
             window.location.reload();
-        } catch (e) {
-            const errorElement = document.getElementById(`upload-error-${panelId}`);
-            errorElement.textContent = `Error: ${e.message}`;
-            errorElement.style.display = 'block';
-        }
-    });
-}
+      .catch(error => {
+            console.error('Error:', error);
+            alert('Error al enviar la solicitud: ' + error.message);
+        });
+
+    // Cargar datos iniciales al abrir la página
+    loadAdvisors();
+    loadFormalizedCenters();
+});
 async function mostrarPanelAprobarCliente(container, projectId, proyecto) {
     const ultimaPropuesta = proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno');
 const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'N/A';
