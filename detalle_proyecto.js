@@ -215,13 +215,12 @@ async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
             <input type="file" id="input-propuesta-oculto-${panelId}" multiple accept="image/*,application/pdf" style="display: none;">
             <div id="lista-propuestas-subidas-${panelId}" style="margin-top: 15px;"></div>
         </div>
-                <button id="upload-propuesta-btn-${panelId}">Enviar Propuesta(s)</button>
+        <button id="upload-propuesta-btn-${panelId}">Enviar Propuesta(s)</button>
         <p id="upload-error-${panelId}" style="color: red; display: none;"></p>
     `;
     
     container.appendChild(div);
 
-    // --- Lógica del nuevo cargador de archivos ---
     const btnAnadir = document.getElementById(`btn-anadir-propuesta-${panelId}`);
     const inputOculto = document.getElementById(`input-propuesta-oculto-${panelId}`);
     const listaArchivos = document.getElementById(`lista-propuestas-subidas-${panelId}`);
@@ -260,7 +259,6 @@ async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
         btnAnadir.disabled = false;
         inputOculto.value = '';
     });
-    // --- Fin de la lógica del cargador ---
 
     document.getElementById(`upload-propuesta-btn-${panelId}`).addEventListener('click', async () => {
         if (archivosParaEnviar.length === 0) {
@@ -272,7 +270,7 @@ async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
             const res = await fetch(`/api/proyectos/${projectId}/subir-propuesta`, { 
                 method: 'PUT', 
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ archivos: archivosParaEnviar }) // Enviamos la lista de archivos
+                body: JSON.stringify({ archivos: archivosParaEnviar })
             });
 
             if (!res.ok) {
@@ -281,15 +279,13 @@ async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
             }
             alert('Propuesta(s) subida(s) con éxito.');
             window.location.reload();
-      .catch(error => {
-            console.error('Error:', error);
-            alert('Error al enviar la solicitud: ' + error.message);
-        });
-
-    // Cargar datos iniciales al abrir la página
-    loadAdvisors();
-    loadFormalizedCenters();
-});
+        } catch (e) {
+            const errorElement = document.getElementById(`upload-error-${panelId}`);
+            errorElement.textContent = `Error: ${e.message}`;
+            errorElement.style.display = 'block';
+        }
+    });
+}
 async function mostrarPanelAprobarCliente(container, projectId, proyecto) {
     const ultimaPropuesta = proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno');
 const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'N/A';
