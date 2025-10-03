@@ -501,25 +501,31 @@ app.put('/api/proyectos/:id/asignar', requireLogin, checkRole(['Administrador', 
     } catch (err) { res.status(500).json({ message: 'Error al asignar proyecto' }); }
 });
 
-// LÍNEA CORREGIDA
-// REEMPLAZA TU RUTA '/subir-propuesta' ACTUAL CON ESTA
 app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñador', 'Administrador']), async (req, res) => {
-    if (!req.file) return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
-    
+    // Ahora leemos la lista de archivos desde 'req.body', no desde 'req.file'.
     const { id } = req.params;
-    const client = await pool.connect();
+    const { archivos } = req.body;
 
+    // La verificación ahora se hace sobre 'archivos'.
+    if (!archivos || archivos.length === 0) {
+        return res.status(400).json({ message: 'No se ha enviado ningún archivo de propuesta.' });
+    }
+    
+    const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        // 1. Guardamos el archivo en la nueva tabla
-        await client.query(
-            `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
-             VALUES ($1, $2, $3, $4, $5)`,
-            [id, 'propuesta_diseno', req.file.path, req.file.originalname, req.session.user.username]
-        );
+        // Recorremos la lista de archivos que llegó en 'req.body.archivos'.
+        for (const file of archivos) {
+            await client.query(
+                `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
+                 VALUES ($1, $2, $3, $4, $5)`,
+                // Usamos file.filePath y file.fileName, que es lo que envía el frontend.
+                [id, 'propuesta_diseno', file.filePath, file.fileName, req.session.user.username]
+            );
+        }
 
-        // 2. Actualizamos el estado del proyecto y la fecha
+        // Actualizamos el estado del proyecto.
         const projectResult = await client.query(
             'UPDATE confeccion_projects SET status = $1, fecha_propuesta = NOW() WHERE id = $2 RETURNING *', 
             ['Pendiente Aprobación Interna', id]
@@ -530,8 +536,8 @@ app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñad
 
     } catch (err) {
         await client.query('ROLLBACK');
-        console.error('Error al subir propuesta:', err);
-        res.status(500).json({ message: 'Error al subir propuesta' });
+        console.error('Error al subir propuesta(s):', err);
+        res.status(500).json({ message: 'Error en el servidor al subir la(s) propuesta(s).' });
     } finally {
         client.release();
     }
