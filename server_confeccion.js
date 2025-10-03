@@ -503,7 +503,7 @@ app.put('/api/proyectos/:id/asignar', requireLogin, checkRole(['Administrador', 
 
 // LÍNEA CORREGIDA
 // REEMPLAZA TU RUTA '/subir-propuesta' ACTUAL CON ESTA
-app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñador', 'Administrador']), upload.single('propuesta_diseno'), async (req, res) => {
+app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñador', 'Administrador']), async (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
     
     const { id } = req.params;
