@@ -128,7 +128,7 @@ function renderizarPagina(proyecto, user) {
         mostrarPanelAprobarCliente(contenedorAcciones, projectId, proyecto);
         actionPanelRendered = true;
     } 
-    else if (proyecto.status === 'Pendiente de Proforma' && ['Administrador', 'Asesor'].includes(userRol)) { // ROL CORREGIDO
+    else if (proyecto.status === 'Pendiente de Proforma' && ['Administrador', 'Diseñador'].includes(userRol)) { // ROL CORREGIDO
         mostrarPanelSubirProforma(contenedorAcciones, projectId);
         actionPanelRendered = true;
     } 
@@ -317,75 +317,85 @@ async function mostrarPanelAprobarCliente(container, projectId, proyecto) {
 }
 
 async function mostrarPanelSubirProforma(container, projectId) {
-    const panelId = `panel-subir-proforma-${Math.random()}`;
-    const div = document.createElement('div');
-    div.innerHTML = `<h3>Cargar Proforma</h3><div class="card"><p>El diseño fue aprobado. Sube la proforma.</p><div class="form-group"><label for="proforma-file-${panelId}">Archivo:</label><input type="file" id="proforma-file-${panelId}" name="proforma" required></div><button id="upload-proforma-btn-${panelId}">Subir Proforma</button></div>`;
-    container.appendChild(div);
+    let archivosParaEnviar = [];
+    const panelId = `panel-proforma-${Math.random()}`;
+    const div = document.createElement('div');
+    div.innerHTML = `
+        <h3>Subir Proforma(s)</h3>
+        <div class="form-group">
+            <label>Archivos de Proforma:</label>
+            <button type="button" id="btn-anadir-proforma-${panelId}" class="button">Añadir Archivo(s)</button>
+            <input type="file" id="input-proforma-oculto-${panelId}" multiple accept="image/*,application/pdf" style="display: none;">
+            <div id="lista-proformas-subidas-${panelId}" style="margin-top: 15px;"></div>
+        </div>
+        <button id="upload-proforma-btn-${panelId}">Enviar Proforma(s)</button>
+        <p id="upload-error-${panelId}" style="color: red; display: none;"></p>
+    `;
+    container.appendChild(div);
 
-    document.getElementById(`upload-proforma-btn-${panelId}`).addEventListener('click', async () => {
-        const fileInput = document.getElementById(`proforma-file-${panelId}`);
-        if (!fileInput.files[0]) { alert('Seleccione un archivo.'); return; }
-        const formData = new FormData();
-        formData.append('proforma', fileInput.files[0]);
-        try {
-            const res = await fetch(`/api/proyectos/${projectId}/subir-proforma`, { method: 'PUT', body: formData });
-            if (!res.ok) throw new Error('Error al subir.'); alert('Proforma subida.'); window.location.reload();
-        } catch (e) { alert(`Error: ${e.message}`); }
-    });
-}
+    const btnAnadir = document.getElementById(`btn-anadir-proforma-${panelId}`);
+    const inputOculto = document.getElementById(`input-proforma-oculto-${panelId}`);
+    const listaArchivos = document.getElementById(`lista-proformas-subidas-${panelId}`);
 
-async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
-    const ultimaProforma = proyecto.archivos.find(a => a.tipo_archivo === 'proforma');
-    const proformaFileName = ultimaProforma ? ultimaProforma.nombre_archivo : 'No disponible';
-    const proformaFileUrl = ultimaProforma ? `/${ultimaProforma.url_archivo}` : '#';
-    
-    const panelId = `panel-revision-proforma-${Math.random()}`;
-    const div = document.createElement('div');
-    div.innerHTML = `
-        <h2>Revisión de Proforma</h2>
-        <div class="card">
-            <div class="card-body">
-                <p>El diseñador ha subido la proforma. Por favor, revísala y procede con la autorización final.</p>
-                <p><strong>Proforma:</strong> <a href="${proformaFileUrl}" target="_blank">${proformaFileName}</a></p>
-                <hr>
-                <h4>Autorización Final de Producción</h4>
-                <div class="mb-3">
-                    <label for="listado-final-input-${panelId}" class="form-label"><strong>Paso 1:</strong> Cargar listado final de clientes (Obligatorio)</label>
-                    <input class="form-control" type="file" id="listado-final-input-${panelId}" required>
-                </div>
-                <button id="autorizar-produccion-btn-${panelId}" class="btn btn-success w-100"><strong>Paso 2:</strong> Autorizar e Iniciar Producción</button>
-                <hr>
-                <button id="solicitar-mejora-proforma-btn-${panelId}" class="btn btn-warning w-100 mt-2">Solicitar Modificación en Proforma</button>
-            </div>
-        </div>
-    `;
-    container.appendChild(div);
+    btnAnadir.addEventListener('click', () => inputOculto.click());
 
-    document.getElementById(`autorizar-produccion-btn-${panelId}`).addEventListener('click', async () => {
-        const listadoInput = document.getElementById(`listado-final-input-${panelId}`);
-        const listadoFile = listadoInput.files[0];
-        if (!listadoFile) { alert('Debes cargar el archivo con el listado final para poder autorizar.'); return; }
-        if (!confirm('¿Estás seguro de que quieres autorizar el inicio de la producción?')) return;
-        const formData = new FormData();
-        formData.append('listado_final', listadoFile);
-        try {
-            const response = await fetch(`/api/proyectos/${projectId}/autorizar-produccion`, { method: 'PUT', body: formData });
-            if (!response.ok) { const err = await response.json(); throw new Error(err.message || 'Error del servidor'); }
-            alert('¡Producción autorizada con éxito!');
-            window.location.reload();
-        } catch (error) { alert(`Error: ${error.message}`); }
-    });
-    
-    document.getElementById(`solicitar-mejora-proforma-btn-${panelId}`).addEventListener('click', async () => {
-        const comentarios = prompt('Escriba los cambios necesarios para la proforma:');
-        if (comentarios === null || comentarios.trim() === "") return;
-        try {
-            const response = await fetch(`/api/proyectos/${projectId}/solicitar-mejora-proforma`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comentarios: `PROFORMA: ${comentarios}` }) });
-            if (!response.ok) throw new Error('Error al solicitar la modificación.');
-            alert('Solicitud de modificación enviada.');
-            window.location.reload();
-        } catch(error) { alert(`Error: ${error.message}`); }
-    });
+    inputOculto.addEventListener('change', async (event) => {
+        const files = event.target.files;
+        if (!files.length) return;
+        btnAnadir.textContent = 'Subiendo...';
+        btnAnadir.disabled = true;
+
+        for (const file of files) {
+            const formData = new FormData();
+            formData.append('archivo', file);
+            try {
+                const response = await fetch('/api/archivos/temporal', { method: 'POST', body: formData });
+                if (!response.ok) throw new Error(`Error al subir ${file.name}`);
+                const result = await response.json();
+
+                const fileElement = document.createElement('div');
+                fileElement.dataset.filePath = result.filePath;
+                fileElement.innerHTML = `<span>✅ ${result.fileName}</span> <button type="button" class="btn-remove-file" style="cursor: pointer; margin-left: 10px;">❌</button>`;
+                listaArchivos.appendChild(fileElement);
+                archivosParaEnviar.push(result);
+
+                fileElement.querySelector('.btn-remove-file').addEventListener('click', () => {
+                    archivosParaEnviar = archivosParaEnviar.filter(f => f.filePath !== result.filePath);
+                    listaArchivos.removeChild(fileElement);
+                });
+            } catch (error) {
+                alert(`Hubo un error al subir: ${file.name}`);
+            }
+        }
+        btnAnadir.textContent = 'Añadir Archivo(s)';
+        btnAnadir.disabled = false;
+        inputOculto.value = '';
+    });
+
+    document.getElementById(`upload-proforma-btn-${panelId}`).addEventListener('click', async () => {
+        if (archivosParaEnviar.length === 0) {
+            alert('Debes subir al menos un archivo de proforma.');
+            return;
+        }
+        try {
+            const res = await fetch(`/api/proyectos/${projectId}/subir-proforma`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ archivos: archivosParaEnviar })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Error desconocido del servidor.');
+            }
+            alert('Proforma(s) subida(s) con éxito.');
+            window.location.reload();
+        } catch (e) {
+            const errorElement = document.getElementById(`upload-error-${panelId}`);
+            errorElement.textContent = `Error: ${e.message}`;
+            errorElement.style.display = 'block';
+        }
+    });
 }
 
 async function mostrarPanelProduccion(container, proyecto) {
