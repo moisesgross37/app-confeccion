@@ -17,11 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- FIN: CONFIGURACIÓN ---
 
     // --- INICIO: FUNCIÓN COMPLETA DE loadAdvisors ---
-    const loadAdvisors = () => {
-fetch(`${ADVISORS_API_URL}?t=${Date.now()}`, {
-    headers: { 'X-API-Key': API_KEY }
-})
-// ...
+   const loadAdvisors = () => {
+        fetch(`${ADVISORS_API_URL}?t=${Date.now()}`, {
+            headers: { 'X-API-Key': API_KEY }
+        })
         .then(response => {
             if (!response.ok) throw new Error('Error al cargar asesores desde el servidor principal.');
             return response.json();
@@ -37,6 +36,8 @@ fetch(`${ADVISORS_API_URL}?t=${Date.now()}`, {
         })
         .catch(error => {
             console.error('Error al cargar asesores:', error);
+            // ===== LÍNEA AÑADIDA =====
+            alert('Error en loadAdvisors: ' + error.message); 
             asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar asesores</option>';
         });
     };
@@ -45,9 +46,8 @@ fetch(`${ADVISORS_API_URL}?t=${Date.now()}`, {
     // --- INICIO: FUNCIÓN COMPLETA DE loadFormalizedCenters ---
     const loadFormalizedCenters = () => {
         fetch(`${GESTION_API_URL}?t=${Date.now()}`, {
-    headers: { 'X-API-Key': API_KEY }
-})
-// ...
+            headers: { 'X-API-Key': API_KEY }
+        })
         .then(response => {
             if (!response.ok) {
                 console.error('Respuesta de la API de gestión:', response);
@@ -70,6 +70,8 @@ fetch(`${ADVISORS_API_URL}?t=${Date.now()}`, {
         })
         .catch(error => {
             console.error('Error al cargar los centros desde la API de gestión:', error);
+            // ===== LÍNEA AÑADIDA =====
+            alert('Error en loadFormalizedCenters: ' + error.message);
             centroSelect.innerHTML = `<option value="" disabled selected>Error al cargar centros</option>`;
             alert('Hubo un error al cargar la lista de centros. Revise la consola para más detalles.');
         });
