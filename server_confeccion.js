@@ -11,6 +11,7 @@ const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
 const pgSession = require('connect-pg-simple')(session);
 const { checkRole } = require('./permissions.js');
+const axios = require('axios');
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -182,6 +183,52 @@ app.get('/detalle_proyecto.html', requireLogin, checkRole(confeccionRoles), (req
 app.get('/admin_diseñadores.html', requireLogin, checkRole(['Administrador']), (req, res) => res.sendFile(path.join(__dirname, 'admin_diseñadores.html')));
 
 // --- RUTAS DE API ---
+
+// ===== INICIO: NUEVAS RUTAS PROXY PARA CONECTAR CON GESTIÓN =====
+const GESTION_API_KEY = 'MI_LLAVE_SECRETA_12345'; // Asegúrate que esta llave sea la correcta
+
+// Puente para los Centros Formalizados
+app.get('/api/proxy/formalized-centers', requireLogin, async (req, res) => {
+    try {
+        const gestionApiUrl = `https://be-gestion.onrender.com/api/formalized-centers?t=${Date.now()}`;
+
+        const response = await axios.get(gestionApiUrl, {
+            headers: { 'X-API-Key': GESTION_API_KEY }
+        });
+
+        if (response.status === 204) {
+            return res.status(204).send();
+        }
+
+        res.json(response.data);
+
+    } catch (error) {
+        console.error("Error en el proxy de centros:", error.message);
+        res.status(500).send("Error al obtener la lista de centros desde el servidor principal.");
+    }
+});
+
+// Puente para la Lista de Asesores
+app.get('/api/proxy/advisors-list', requireLogin, async (req, res) => {
+    try {
+        const gestionApiUrl = `https://be-gestion.onrender.com/api/advisors-list?t=${Date.now()}`;
+
+        const response = await axios.get(gestionApiUrl, {
+            headers: { 'X-API-Key': GESTION_API_KEY }
+        });
+
+        if (response.status === 204) {
+            return res.status(204).send();
+        }
+
+        res.json(response.data);
+
+    } catch (error) {
+        console.error("Error en el proxy de asesores:", error.message);
+        res.status(500).send("Error al obtener la lista de asesores desde el servidor principal.");
+    }
+});
+// ===== FIN: NUEVAS RUTAS PROXY =====
 
 app.put('/api/proyectos/:id/solicitar-mejora', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     const { id } = req.params;
