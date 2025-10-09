@@ -18,10 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIO: FUNCIÓN COMPLETA DE loadAdvisors ---
     const loadAdvisors = () => {
-        fetch(ADVISORS_API_URL, {
-            headers: { 'X-API-Key': API_KEY },
-            cache: 'no-store' // <-- AÑADE ESTA LÍNEA TAMBIÉN
-        })
+fetch(`${ADVISORS_API_URL}?t=${Date.now()}`, {
+    headers: { 'X-API-Key': API_KEY }
+})
 // ...
         .then(response => {
             if (!response.ok) throw new Error('Error al cargar asesores desde el servidor principal.');
@@ -45,10 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIO: FUNCIÓN COMPLETA DE loadFormalizedCenters ---
     const loadFormalizedCenters = () => {
-        fetch(GESTION_API_URL, {
-            headers: { 'X-API-Key': API_KEY },
-            cache: 'no-store' // <-- AÑADE ESTA LÍNEA
-        })
+        fetch(`${GESTION_API_URL}?t=${Date.now()}`, {
+    headers: { 'X-API-Key': API_KEY }
+})
 // ...
         .then(response => {
             if (!response.ok) {
