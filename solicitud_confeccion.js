@@ -19,10 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIO: FUNCIÓN COMPLETA DE loadAdvisors ---
     const loadAdvisors = () => {
         fetch(ADVISORS_API_URL, {
-            headers: {
-                'X-API-Key': API_KEY
-            }
+            headers: { 'X-API-Key': API_KEY },
+            cache: 'no-store' // <-- AÑADE ESTA LÍNEA TAMBIÉN
         })
+// ...
         .then(response => {
             if (!response.ok) throw new Error('Error al cargar asesores desde el servidor principal.');
             return response.json();
@@ -46,10 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIO: FUNCIÓN COMPLETA DE loadFormalizedCenters ---
     const loadFormalizedCenters = () => {
         fetch(GESTION_API_URL, {
-            headers: {
-                'X-API-Key': API_KEY
-            }
+            headers: { 'X-API-Key': API_KEY },
+            cache: 'no-store' // <-- AÑADE ESTA LÍNEA
         })
+// ...
         .then(response => {
             if (!response.ok) {
                 console.error('Respuesta de la API de gestión:', response);
