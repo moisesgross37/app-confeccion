@@ -18,64 +18,72 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIO: FUNCIÓN COMPLETA DE loadAdvisors ---
    const loadAdvisors = () => {
-        fetch(`${ADVISORS_API_URL}?t=${Date.now()}`, {
-            headers: { 'X-API-Key': API_KEY }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Error al cargar asesores desde el servidor principal.');
-            return response.json();
-        })
-        .then(asesores => {
-            asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
-            asesores.forEach(asesor => {
-                const option = document.createElement('option');
-                option.value = asesor.name;
-                option.textContent = asesor.name;
-                asesorSelect.appendChild(option);
-            });
-        })
-        .catch(error => {
-            console.error('Error al cargar asesores:', error);
-            // ===== LÍNEA AÑADIDA =====
-            alert('Error en loadAdvisors: ' + error.message); 
-            asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar asesores</option>';
+    fetch(`${ADVISORS_API_URL}?t=${Date.now()}`, {
+        headers: { 'X-API-Key': API_KEY }
+    })
+    .then(response => {
+        if (!response.ok && response.status !== 204) {
+            throw new Error('Error al cargar asesores desde el servidor principal.');
+        }
+        if (response.status === 204) {
+            return [];
+        }
+        return response.json();
+    })
+    .then(asesores => {
+        asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
+        if (!asesores || asesores.length === 0) {
+            asesorSelect.innerHTML += '<option value="" disabled>No hay asesores disponibles.</option>';
+            return;
+        }
+        asesores.forEach(asesor => {
+            const option = document.createElement('option');
+            option.value = asesor.name;
+            option.textContent = asesor.name;
+            asesorSelect.appendChild(option);
         });
-    };
+    })
+    .catch(error => {
+        console.error('Error al cargar asesores:', error);
+        asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar asesores</option>';
+    });
+};
     // --- FIN: FUNCIÓN COMPLETA DE loadAdvisors ---
 
     // --- INICIO: FUNCIÓN COMPLETA DE loadFormalizedCenters ---
     const loadFormalizedCenters = () => {
-        fetch(`${GESTION_API_URL}?t=${Date.now()}`, {
-            headers: { 'X-API-Key': API_KEY }
-        })
-        .then(response => {
-            if (!response.ok) {
-                console.error('Respuesta de la API de gestión:', response);
-                throw new Error(`Error ${response.status}: No se pudo conectar con el servidor de gestión.`);
-            }
-            return response.json();
-        })
-        .then(centros => {
-            centroSelect.innerHTML = '<option value="" disabled selected>Seleccione un centro calificado...</option>';
-            if (centros.length === 0) {
-                centroSelect.innerHTML = '<option value="" disabled selected>No hay centros para formalizar acuerdo.</option>';
-                return;
-            }
-            centros.forEach(centro => {
-                const option = document.createElement('option');
-                option.value = centro.name;
-                option.textContent = centro.name;
-                centroSelect.appendChild(option);
-            });
-        })
-        .catch(error => {
-            console.error('Error al cargar los centros desde la API de gestión:', error);
-            // ===== LÍNEA AÑADIDA =====
-            alert('Error en loadFormalizedCenters: ' + error.message);
-            centroSelect.innerHTML = `<option value="" disabled selected>Error al cargar centros</option>`;
-            alert('Hubo un error al cargar la lista de centros. Revise la consola para más detalles.');
+    fetch(`${GESTION_API_URL}?t=${Date.now()}`, {
+        headers: { 'X-API-Key': API_KEY }
+    })
+    .then(response => {
+        if (!response.ok && response.status !== 204) { // Aceptamos 204 como respuesta válida
+            throw new Error(`Error ${response.status}: No se pudo conectar con el servidor de gestión.`);
+        }
+        // ===== CAMBIO IMPORTANTE AQUÍ =====
+        // Si el estado es 204 (No Content), devolvemos una lista vacía para no romper el .json()
+        if (response.status === 204) {
+            return []; 
+        }
+        return response.json();
+    })
+    .then(centros => {
+        centroSelect.innerHTML = '<option value="" disabled selected>Seleccione un centro calificado...</option>';
+        if (!centros || centros.length === 0) { // La lógica aquí ahora funciona para ambos casos
+            centroSelect.innerHTML += '<option value="" disabled>No hay centros para formalizar acuerdo.</option>';
+            return;
+        }
+        centros.forEach(centro => {
+            const option = document.createElement('option');
+            option.value = centro.name;
+            option.textContent = centro.name;
+            centroSelect.appendChild(option);
         });
-    };
+    })
+    .catch(error => {
+        console.error('Error al cargar los centros:', error);
+        centroSelect.innerHTML = `<option value="" disabled selected>Error al cargar centros</option>`;
+    });
+};
     // --- FIN: FUNCIÓN COMPLETA DE loadFormalizedCenters ---
     
     // ===== INICIO: NUEVA LÓGICA PARA SUBIR ARCHIVOS ASÍNCRONAMENTE =====
