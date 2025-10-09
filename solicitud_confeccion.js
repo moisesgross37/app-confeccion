@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== FIN: NUEVOS ELEMENTOS =====
 
     // --- CONFIGURACIÓN PARA CONECTARSE A LA API DE GESTIÓN ---
-    const GESTION_API_URL = 'https://be-gestion.onrender.com/api/formalized-centers';
+    const GESTION_API_URL = 'https://be-gestion.onrender.com/api/centers';
     const ADVISORS_API_URL = 'https://be-gestion.onrender.com/api/advisors-list';
     const API_KEY = 'MI_LLAVE_SECRETA_12345';
     // --- FIN: CONFIGURACIÓN ---
