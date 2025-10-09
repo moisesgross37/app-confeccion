@@ -18,71 +18,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIO: FUNCIÓN COMPLETA DE loadAdvisors ---
    const loadAdvisors = () => {
-    fetch(`${ADVISORS_API_URL}?t=${Date.now()}`, {
-        headers: { 'X-API-Key': API_KEY }
-    })
-    .then(response => {
-        if (!response.ok && response.status !== 204) {
-            throw new Error('Error al cargar asesores desde el servidor principal.');
+    console.log("PASO 1: Iniciando la función loadAdvisors...");
+    
+    fetch(`${ADVISORS_API_URL}?t=${Date.now()}`, {
+        headers: { 'X-API-Key': API_KEY }
+    })
+    .then(response => {
+        console.log("PASO 2: Respuesta del servidor recibida. Estado:", response.status);
+        if (!response.ok && response.status !== 204) {
+            throw new Error('La respuesta del servidor no fue OK.');
         }
         if (response.status === 204) {
+            console.log("PASO 3a: El servidor respondió 204 (Sin Contenido). Devolviendo lista vacía.");
             return [];
         }
-        return response.json();
-    })
-    .then(asesores => {
-        asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
-        if (!asesores || asesores.length === 0) {
-            asesorSelect.innerHTML += '<option value="" disabled>No hay asesores disponibles.</option>';
+        console.log("PASO 3b: El servidor respondió con datos. Intentando leer como JSON...");
+        return response.json();
+    })
+    .then(asesores => {
+        console.log("PASO 4: Los datos JSON han sido procesados. Contenido:", asesores);
+        
+        if (!asesorSelect) {
+            console.error("¡ERROR CRÍTICO! No se encontró el elemento 'asesorSelect' con id='nombre_asesor' en el HTML.");
             return;
         }
-        asesores.forEach(asesor => {
-            const option = document.createElement('option');
-            option.value = asesor.name;
-            option.textContent = asesor.name;
-            asesorSelect.appendChild(option);
-        });
-    })
-    .catch(error => {
-        console.error('Error al cargar asesores:', error);
-        asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar asesores</option>';
-    });
-};
-    // --- FIN: FUNCIÓN COMPLETA DE loadAdvisors ---
-
-    // --- INICIO: FUNCIÓN COMPLETA DE loadFormalizedCenters ---
-    const loadFormalizedCenters = () => {
-    fetch(`${GESTION_API_URL}?t=${Date.now()}`, {
-        headers: { 'X-API-Key': API_KEY }
-    })
-    .then(response => {
-        if (!response.ok && response.status !== 204) { // Aceptamos 204 como respuesta válida
-            throw new Error(`Error ${response.status}: No se pudo conectar con el servidor de gestión.`);
-        }
-        // ===== CAMBIO IMPORTANTE AQUÍ =====
-        // Si el estado es 204 (No Content), devolvemos una lista vacía para no romper el .json()
-        if (response.status === 204) {
-            return []; 
+        
+        asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
+        
+        if (!asesores || !Array.isArray(asesores)) {
+            console.error("¡ERROR CRÍTICO! Los datos recibidos no son una lista (array). No se puede continuar.");
+            return;
         }
-        return response.json();
-    })
-    .then(centros => {
-        centroSelect.innerHTML = '<option value="" disabled selected>Seleccione un centro calificado...</option>';
-        if (!centros || centros.length === 0) { // La lógica aquí ahora funciona para ambos casos
-            centroSelect.innerHTML += '<option value="" disabled>No hay centros para formalizar acuerdo.</option>';
-            return;
-        }
-        centros.forEach(centro => {
-            const option = document.createElement('option');
-            option.value = centro.name;
-            option.textContent = centro.name;
-            centroSelect.appendChild(option);
-        });
-    })
-    .catch(error => {
-        console.error('Error al cargar los centros:', error);
-        centroSelect.innerHTML = `<option value="" disabled selected>Error al cargar centros</option>`;
-    });
+
+        console.log(`PASO 5: Rellenando el menú con ${asesores.length} asesores.`);
+        asesores.forEach(asesor => {
+            const option = document.createElement('option');
+            option.value = asesor.name;
+            option.textContent = asesor.name;
+            asesorSelect.appendChild(option);
+        });
+        console.log("PASO 6: ¡Menú de asesores rellenado con éxito!");
+    })
+    .catch(error => {
+        console.error("!!! OCURRIÓ UN ERROR EN EL PROCESO: ", error);
+        alert("Ocurrió un error. Por favor, revisa la consola para ver el detalle. Mensaje: " + error.message);
+    });
 };
     // --- FIN: FUNCIÓN COMPLETA DE loadFormalizedCenters ---
     
