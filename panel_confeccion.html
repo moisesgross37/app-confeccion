@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="confeccion_estilos.css">
 
     <style>
-        /* Regla para forzar la alineación de los filtros */
         .filtros-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -19,14 +18,14 @@
             margin-bottom: 20px;
         }
 
-        /* Regla para forzar la alineación de la tabla */
+        /* Reglas más fuertes para forzar la alineación de la tabla */
         .table {
-            width: 100%;
-            table-layout: fixed;
-            border-collapse: collapse; 
+            width: 100% !important;
+            table-layout: fixed !important;
+            border-collapse: collapse !important; 
         }
     </style>
-    </head>
+</head>
 <body>
     <div class="container">
         <header>
