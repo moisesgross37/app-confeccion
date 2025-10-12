@@ -449,25 +449,20 @@ app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
     }
 });
 app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador', 'Coordinador']), async (req, res) => {
-    // Con el nuevo sistema, ya no se usa "multer" aquí.
-    // Los datos, incluyendo la lista de archivos, vienen en el cuerpo de la petición (req.body).
-    const { nombre_centro, nombre_asesor, detalles_solicitud, archivos } = req.body;
+    const { nombre_centro, nombre_asesor, detalles_solicitud, archivos, quote_id, quote_number } = req.body;
     const client = await pool.connect();
 
     try {
-        await client.query('BEGIN'); // Iniciar transacción para seguridad
+        await client.query('BEGIN');
 
-        // 1. Creamos el proyecto en la base de datos con los datos de texto.
         const projectResult = await client.query(
-            'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud) VALUES ($1, $2, $3, $4) RETURNING *',
-            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud]
+            'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud, quote_id, quote_number) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud, quote_id, quote_number]
         );
         const nuevoProyecto = projectResult.rows[0];
 
-        // 2. Si el frontend nos envió una lista de archivos previamente subidos, los asociamos al proyecto.
         if (archivos && archivos.length > 0) {
             for (const file of archivos) {
-                // Insertamos cada archivo en nuestra nueva tabla 'confeccion_archivos'.
                 await client.query(
                     `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
                      VALUES ($1, $2, $3, $4, $5)`,
@@ -476,15 +471,15 @@ app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador',
             }
         }
 
-        await client.query('COMMIT'); // Confirmamos todos los cambios en la base de datos.
+        await client.query('COMMIT');
         res.status(201).json(nuevoProyecto);
 
     } catch (err) {
-        await client.query('ROLLBACK'); // Si algo falla, revertimos todo.
+        await client.query('ROLLBACK');
         console.error('Error al crear la solicitud:', err);
         res.status(500).json({ error: 'Error interno del servidor' });
     } finally {
-        client.release(); // Liberamos la conexión.
+        client.release();
     }
 });
 app.get('/api/designers', requireLogin, async (req, res) => {
