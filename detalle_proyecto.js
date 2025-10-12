@@ -124,15 +124,15 @@ function renderizarPagina(proyecto, user) {
         mostrarPanelRevisarPropuesta(contenedorAcciones, projectId, proyecto);
         actionPanelRendered = true;
     } 
-    else if (proyecto.status === 'Pendiente Aprobación Cliente' && ['Administrador', 'Asesor'].includes(userRol)) {
+    else if (proyecto.status === 'Pendiente Aprobación Cliente' && ['Administrador', 'Asesor', 'Coordinador'].includes(userRol)) {
         mostrarPanelAprobarCliente(contenedorAcciones, projectId, proyecto);
         actionPanelRendered = true;
     } 
-    else if (proyecto.status === 'Pendiente de Proforma' && ['Administrador', 'Diseñador'].includes(userRol)) { // ROL CORREGIDO
+    else if (proyecto.status === 'Pendiente de Proforma' && ['Administrador', 'Diseñador'].includes(userRol)) { 
         mostrarPanelSubirProforma(contenedorAcciones, projectId);
         actionPanelRendered = true;
     } 
-    else if (proyecto.status === 'Pendiente Aprobación Proforma' && ['Administrador', 'Asesor'].includes(userRol)) {
+    else if (proyecto.status === 'Pendiente Aprobación Proforma' && ['Administrador', 'Asesor', 'Coordinador'].includes(userRol)) {
         mostrarPanelRevisionProforma(contenedorAcciones, projectId, proyecto);
         actionPanelRendered = true;
     } 
@@ -352,7 +352,7 @@ async function mostrarPanelSubirProforma(container, projectId) {
                 const response = await fetch('/api/archivos/temporal', { method: 'POST', body: formData });
                 if (!response.ok) throw new Error(`Error al subir ${file.name}`);
                 const result = await response.json();
-
+                
                 const fileElement = document.createElement('div');
                 fileElement.dataset.filePath = result.filePath;
                 fileElement.innerHTML = `<span>✅ ${result.fileName}</span> <button type="button" class="btn-remove-file" style="cursor: pointer; margin-left: 10px;">❌</button>`;
@@ -396,6 +396,60 @@ async function mostrarPanelSubirProforma(container, projectId) {
             errorElement.style.display = 'block';
         }
     });
+}
+
+async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
+    const ultimaProforma = proyecto.archivos.find(a => a.tipo_archivo === 'proforma');
+    const proformaFileName = ultimaProforma ? ultimaProforma.nombre_archivo : 'No disponible';
+    const proformaFileUrl = ultimaProforma ? `/${ultimaProforma.url_archivo}` : '#';
+    
+    const panelId = `panel-revision-proforma-${Math.random()}`;
+    const div = document.createElement('div');
+    div.innerHTML = `
+        <h2>Revisión de Proforma</h2>
+        <div class="card">
+            <div class="card-body">
+                <p>El diseñador ha subido la proforma. Por favor, revísala y procede con la autorización final.</p>
+                <p><strong>Proforma:</strong> <a href="${proformaFileUrl}" target="_blank">${proformaFileName}</a></p>
+                <hr>
+                <h4>Autorización Final de Producción</h4>
+                <div class="mb-3">
+                    <label for="listado-final-input-${panelId}" class="form-label"><strong>Paso 1:</strong> Cargar listado final de clientes (Obligatorio)</label>
+                    <input class="form-control" type="file" id="listado-final-input-${panelId}" required>
+                </div>
+                <button id="autorizar-produccion-btn-${panelId}" class="btn btn-success w-100"><strong>Paso 2:</strong> Autorizar e Iniciar Producción</button>
+                <hr>
+                <button id="solicitar-mejora-proforma-btn-${panelId}" class="btn btn-warning w-100 mt-2">Solicitar Modificación en Proforma</button>
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+
+    document.getElementById(`autorizar-produccion-btn-${panelId}`).addEventListener('click', async () => {
+        const listadoInput = document.getElementById(`listado-final-input-${panelId}`);
+        const listadoFile = listadoInput.files[0];
+        if (!listadoFile) { alert('Debes cargar el archivo con el listado final para poder autorizar.'); return; }
+        if (!confirm('¿Estás seguro de que quieres autorizar el inicio de la producción?')) return;
+        const formData = new FormData();
+        formData.append('listado_final', listadoFile);
+        try {
+            const response = await fetch(`/api/proyectos/${projectId}/autorizar-produccion`, { method: 'PUT', body: formData });
+            if (!response.ok) { const err = await response.json(); throw new Error(err.message || 'Error del servidor'); }
+            alert('¡Producción autorizada con éxito!');
+            window.location.reload();
+        } catch (error) { alert(`Error: ${error.message}`); }
+    });
+    
+    document.getElementById(`solicitar-mejora-proforma-btn-${panelId}`).addEventListener('click', async () => {
+        const comentarios = prompt('Escriba los cambios necesarios para la proforma:');
+        if (comentarios === null || comentarios.trim() === "") return;
+        try {
+            const response = await fetch(`/api/proyectos/${projectId}/solicitar-mejora-proforma`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comentarios: `PROFORMA: ${comentarios}` }) });
+            if (!response.ok) throw new Error('Error al solicitar la modificación.');
+            alert('Solicitud de modificación enviada.');
+            window.location.reload();
+        } catch(error) { alert(`Error: ${error.message}`); }
+    });
 }
 
 async function mostrarPanelProduccion(container, proyecto) {
