@@ -589,42 +589,43 @@ app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñad
         client.release();
     }
 });
-app.put('/api/proyectos/:id/subir-proforma', requireLogin, checkRole(['Administrador', 'Diseñador']), upload.single('proforma'), async (req, res) => {
-    // 1. Verificación inicial: nos aseguramos de que se haya subido un archivo.
-    if (!req.file) {
+app.put('/api/proyectos/:id/subir-proforma', requireLogin, checkRole(['Administrador', 'Diseñador']), async (req, res) => {
+    // 1. Ya no usamos 'multer', por lo que leemos los datos desde 'req.body'.
+    const { id } = req.params;
+    const { archivos } = req.body;
+
+    // 2. Verificamos que el frontend nos haya enviado la lista de archivos.
+    if (!archivos || archivos.length === 0) {
         return res.status(400).json({ message: 'No se ha subido ningún archivo de proforma.' });
     }
-
-    const { id } = req.params; // Obtenemos el ID del proyecto desde la URL.
-    const client = await pool.connect(); // Establecemos una conexión con la base de datos para la transacción.
     
+    const client = await pool.connect();
     try {
-        // 2. Iniciamos una transacción para asegurar la integridad de los datos.
+        // 3. Iniciamos una transacción para asegurar que todo se guarde correctamente.
         await client.query('BEGIN');
 
-        // 3. Insertamos un nuevo registro en la tabla 'confeccion_archivos'.
-        // Aquí guardamos toda la información relevante del archivo.
-        await client.query(
-            `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
-             VALUES ($1, $2, $3, $4, $5)`,
-            [id, 'proforma', req.file.path, req.file.originalname, req.session.user.username]
-        );
+        // 4. Recorremos la lista de archivos que nos envió el frontend.
+        for (const file of archivos) {
+            // Por cada archivo en la lista, creamos un registro en nuestra tabla 'confeccion_archivos'.
+            await client.query(
+                `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [id, 'proforma', file.filePath, file.fileName, req.session.user.username]
+            );
+        }
 
-        // 4. Actualizamos únicamente el estado y la fecha en la tabla 'confeccion_projects'.
-        // Ya no guardamos la URL del archivo aquí.
+        // 5. Actualizamos el estado del proyecto a "Pendiente Aprobación Proforma".
         const projectResult = await client.query(
             'UPDATE confeccion_projects SET status = $1, fecha_proforma_subida = NOW() WHERE id = $2 RETURNING *',
             ['Pendiente Aprobación Proforma', id]
         );
 
-        // 5. Si todo ha ido bien, confirmamos los cambios en la base de datos.
+        // 6. Si todo salió bien, confirmamos los cambios.
         await client.query('COMMIT');
-
-        // 6. Enviamos el proyecto actualizado como respuesta.
         res.json(projectResult.rows[0]);
 
     } catch (err) {
-        // 7. Si ocurre cualquier error, revertimos todos los cambios.
+        // 7. Si algo falla, revertimos todos los cambios.
         await client.query('ROLLBACK');
         console.error('Error al subir la proforma:', err);
         res.status(500).json({ message: 'Error en el servidor al subir la proforma.' });
