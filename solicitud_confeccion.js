@@ -5,13 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const quoteIdInput = document.getElementById('quote_id');
     const quoteNumberInput = document.getElementById('quote_number');
 
-    // Elementos para la carga de archivos asíncrona
     const btnAnadirArchivo = document.getElementById('btn-anadir-archivo');
     const inputArchivoOculto = document.getElementById('input-archivo-oculto');
     const listaArchivosSubidos = document.getElementById('lista-archivos-subidos');
     let archivosParaEnviar = [];
 
-    // --- Carga la lista de Centros desde nuestro "puente" ---
     const loadFormalizedCenters = () => {
         fetch('/api/proxy/formalized-centers')
         .then(response => {
@@ -25,11 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const option = document.createElement('option');
                 option.value = centro.name;
                 option.textContent = `${centro.name} (Cot. #${centro.quotenumber})`;
-                
-                // Guardamos los datos extra en el propio elemento de la opción
                 option.dataset.quoteId = centro.quote_id;
                 option.dataset.quoteNumber = centro.quotenumber;
-                
                 centroSelect.appendChild(option);
             });
         })
@@ -39,57 +34,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- Carga la lista de Asesores desde nuestro "puente" ---
     const loadAdvisors = () => {
-        fetch('/api/proxy/advisors-list')
-        .then(response => {
+        fetch('/api/proxy/advisors-list')
+        .then(response => {
             if (response.status === 204) return [];
-            if (!response.ok) throw new Error('Error al cargar la lista de asesores.');
-            return response.json();
-        })
-        .then(asesores => {
-            asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
-            asesores.forEach(asesor => {
-                const option = document.createElement('option');
-                option.value = asesor.name;
-                option.textContent = asesor.name;
-                asesorSelect.appendChild(option);
-            });
-        })
-        .catch(error => {
-            console.error('Error al cargar asesores:', error);
-            asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar asesores</option>';
-        });
+            if (!response.ok) throw new Error('Error al cargar la lista de asesores.');
+            return response.json();
+        })
+        .then(asesores => {
+            asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
+            asesores.forEach(asesor => {
+                const option = document.createElement('option');
+                option.value = asesor.name;
+                option.textContent = asesor.name;
+                asesorSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar asesores:', error);
+            asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar asesores</option>';
+        });
     };
 
-    // --- Evento que se activa cuando el usuario elige un centro del menú ---
     centroSelect.addEventListener('change', (event) => {
         const selectedOption = event.target.selectedOptions[0];
-        // Rellenamos los campos ocultos con los datos de la cotización
         quoteIdInput.value = selectedOption.dataset.quoteId || '';
         quoteNumberInput.value = selectedOption.dataset.quoteNumber || '';
     });
 
-    // --- Lógica para la carga de archivos por etapas ---
-    btnAnadirArchivo.addEventListener('click', () => {
-        inputArchivoOculto.click();
-    });
+    btnAnadirArchivo.addEventListener('click', () => { inputArchivoOculto.click(); });
 
     inputArchivoOculto.addEventListener('change', async (event) => {
         const files = event.target.files;
         if (!files.length) return;
-
         btnAnadirArchivo.textContent = 'Subiendo...';
         btnAnadirArchivo.disabled = true;
-
         for (const file of files) {
             const formData = new FormData();
             formData.append('archivo', file);
             try {
-                const response = await fetch('/api/archivos/temporal', {
-                    method: 'POST',
-                    body: formData
-                });
+                const response = await fetch('/api/archivos/temporal', { method: 'POST', body: formData });
                 if (!response.ok) throw new Error(`Error al subir ${file.name}`);
                 const result = await response.json();
                 addFileToUI(result.fileName, result.filePath);
@@ -108,12 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const fileElement = document.createElement('div');
         fileElement.className = 'file-item';
         fileElement.dataset.filePath = filePath;
-        fileElement.innerHTML = `
-            <span>✅ ${fileName}</span>
-            <button type="button" class="btn-remove-file" style="cursor: pointer; margin-left: 10px;">❌</button>
-        `;
+        fileElement.innerHTML = `<span>✅ ${fileName}</span><button type="button" class="btn-remove-file" style="cursor: pointer; margin-left: 10px;">❌</button>`;
         listaArchivosSubidos.appendChild(fileElement);
-
         fileElement.querySelector('.btn-remove-file').addEventListener('click', () => {
             const pathToRemove = fileElement.dataset.filePath;
             archivosParaEnviar = archivosParaEnviar.filter(f => f.filePath !== pathToRemove);
@@ -121,42 +101,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
-    // --- Lógica para enviar el formulario final ---
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
-
         if (!data.nombre_centro || !data.nombre_asesor || !data.detalles_solicitud) {
             alert('Por favor, complete todos los campos requeridos.');
             return;
         }
-        
         data.archivos = archivosParaEnviar;
-
         try {
             const response = await fetch('/api/solicitudes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-
             const result = await response.json();
             if (!response.ok) {
                 throw new Error(result.error || 'Error desconocido del servidor');
             }
-            
             alert('¡Solicitud enviada con éxito! Código de proyecto: ' + result.codigo_proyecto);
             window.location.href = '/panel_confeccion.html';
-
         } catch (error) {
             console.error('Error:', error);
             alert('Error al enviar la solicitud: ' + error.message);
         }
     });
 
-    // --- Cargar datos iniciales al abrir la página ---
     loadAdvisors();
     loadFormalizedCenters();
 });
