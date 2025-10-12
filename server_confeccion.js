@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS confeccion_designers (
         await client.query(`
 CREATE TABLE IF NOT EXISTS confeccion_projects (
     id SERIAL PRIMARY KEY,
+    quote_id INTEGER,
+    quote_number VARCHAR(50),
     codigo_proyecto VARCHAR(255) UNIQUE NOT NULL,
     fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
     cliente VARCHAR(255),
