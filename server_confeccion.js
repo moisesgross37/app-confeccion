@@ -717,48 +717,45 @@ app.put('/api/proyectos/:id/autorizar-produccion', requireLogin, checkRole(['Ase
 });// Pega este bloque en tu server_confeccion.js
 
 app.put('/api/proyectos/:id/reportar-incidencia', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
-    const { id } = req.params;
-    const { comentarios } = req.body;
+    const { id } = req.params;
+    const { comentarios } = req.body;
 
-    if (!comentarios) {
-        return res.status(400).json({ message: 'El comentario es obligatorio para reportar una incidencia.' });
-    }
+    if (!comentarios) {
+        return res.status(400).json({ message: 'El comentario es obligatorio para reportar una incidencia.' });
+    }
 
-    try {
-        const nuevaIncidencia = {
-            fecha: new Date(),
-            usuario: req.session.user.username,
-            comentario: comentarios
-        };
+    try {
+        const nuevaIncidencia = {
+            fecha: new Date(),
+            usuario: req.session.user.username,
+            comentario: comentarios
+        };
 
-        // ===== INICIO: CÓDIGO AÑADIDO PARA EL HISTORIAL =====
         const nuevoRegistroHistorial = {
             etapa: 'En Confección (Devuelto por Calidad)',
             fecha: new Date()
         };
-        // ===== FIN: CÓDIGO AÑADIDO =====
 
-        const result = await pool.query(
-            `UPDATE confeccion_projects 
-             SET 
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET 
                 status = 'En Confección', 
-                historial_incidencias = COALESCE(historial_incidencias, '[]'::jsonb) || $1::jsonb,
+                historial_incidencias = COALESCE(historial_incidencias, '[]'::jsonb) || $1::jsonb,
                 historial_produccion = COALESCE(historial_produccion, '[]'::jsonb) || $2::jsonb
-             WHERE id = $3 RETURNING *`,
-            // Se añaden los nuevos parámetros a la consulta
-            [JSON.stringify(nuevaIncidencia), JSON.stringify(nuevoRegistroHistorial), id]
-        );
-        
-        if (result.rowCount === 0) {
-            return res.status(404).json({ message: 'Proyecto no encontrado.' });
-        }
+             WHERE id = $3 RETURNING *`,
+            [JSON.stringify(nuevaIncidencia), JSON.stringify(nuevoRegistroHistorial), id]
+        );
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Proyecto no encontrado.' });
+        }
 
-        res.json(result.rows[0]);
+        res.json(result.rows[0]);
 
-    } catch (err) {
-        console.error('Error al reportar incidencia:', err);
-        res.status(500).json({ message: 'Error en el servidor al reportar la incidencia.' });
-    }
+    } catch (err) {
+        console.error('Error al reportar incidencia:', err);
+        res.status(500).json({ message: 'Error en el servidor al reportar la incidencia.' });
+    }
 });
 app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     const { nuevaEtapa } = req.body;
