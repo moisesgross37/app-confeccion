@@ -17,7 +17,7 @@
         
         <h2 style="margin-top: 30px;">Vista de Proyectos</h2>
 
-        <div class="filtros-container" style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
+                <div class="filtros-container" style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; background-color: #f8f9fa; padding: 15px; border-radius: 5px; align-items: flex-end;">
             <div class="form-group">
                 <label for="filtro-asesor">Filtrar por Asesor:</label>
                 <select id="filtro-asesor">
@@ -30,16 +30,15 @@
                     <option value="todos">-- Todos los Diseñadores --</option>
                 </select>
             </div>
-            
             <div class="form-group">
                 <label for="filtro-estatus">Filtrar por Estatus:</label>
                 <select id="filtro-estatus">
                     <option value="todos">-- Todos los Estatus --</option>
                 </select>
             </div>
-            </div>
+        </div>
 
-        <table class="table">
+        <table class="table" style="width: 100%;">
             <thead>
                 <tr>
                     <th>Código</th>
