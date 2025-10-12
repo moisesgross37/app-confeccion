@@ -2,75 +2,79 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('solicitud-form');
     const asesorSelect = document.getElementById('nombre_asesor');
     const centroSelect = document.getElementById('nombre_centro');
+    const quoteIdInput = document.getElementById('quote_id');
+    const quoteNumberInput = document.getElementById('quote_number');
 
-    // ===== INICIO: NUEVOS ELEMENTOS PARA CARGA DE ARCHIVOS =====
+    // Elementos para la carga de archivos asíncrona
     const btnAnadirArchivo = document.getElementById('btn-anadir-archivo');
     const inputArchivoOculto = document.getElementById('input-archivo-oculto');
     const listaArchivosSubidos = document.getElementById('lista-archivos-subidos');
     let archivosParaEnviar = [];
-    // ===== FIN: NUEVOS ELEMENTOS =====
 
-    // --- CONFIGURACIÓN PARA CONECTARSE A LA API DE GESTIÓN ---
-    const GESTION_API_URL = 'https://be-gestion.onrender.com/api/centers';
-    const ADVISORS_API_URL = 'https://be-gestion.onrender.com/api/advisors-list';
-    const API_KEY = 'MI_LLAVE_SECRETA_12345';
-    // --- FIN: CONFIGURACIÓN ---
-
-    const loadAdvisors = () => {
-    fetch('/api/proxy/advisors-list') // Llama a nuestro propio servidor
-    .then(response => {
-        if (response.status === 204) return [];
-        if (!response.ok) throw new Error('Error al cargar la lista de asesores.');
-        return response.json();
-    })
-    .then(asesores => {
-        asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
-        asesores.forEach(asesor => {
-            const option = document.createElement('option');
-            option.value = asesor.name;
-            option.textContent = asesor.name;
-            asesorSelect.appendChild(option);
-        });
-    })
-    .catch(error => {
-        console.error('Error al cargar asesores:', error);
-        asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar asesores</option>';
-    });
-};
-
-    // ===== INICIO: FUNCIÓN 'loadFormalizedCenters' RESTAURADA =====
+    // --- Carga la lista de Centros desde nuestro "puente" ---
     const loadFormalizedCenters = () => {
-    fetch('/api/proxy/formalized-centers') // Llama a nuestro propio servidor
-    .then(response => {
-        if (response.status === 204) return [];
-        if (!response.ok) throw new Error('Error al cargar la lista de centros.');
-        return response.json();
-    })
-    .then(centros => {
-        centroSelect.innerHTML = '<option value="" disabled selected>Seleccione un centro calificado...</option>';
-        centros.forEach(centro => {
-            const option = document.createElement('option');
-            option.value = centro.name;
-            option.textContent = centro.name;
-            centroSelect.appendChild(option);
-        });
-    })
-    .catch(error => {
-        console.error('Error al cargar centros:', error);
-        centroSelect.innerHTML = `<option value="" disabled selected>Error al cargar centros</option>`;
-    });
-};
+        fetch('/api/proxy/formalized-centers')
+        .then(response => {
+            if (response.status === 204) return [];
+            if (!response.ok) throw new Error('Error al cargar la lista de centros.');
+            return response.json();
+        })
+        .then(centros => {
+            centroSelect.innerHTML = '<option value="" disabled selected>Seleccione un centro calificado...</option>';
+            centros.forEach(centro => {
+                const option = document.createElement('option');
+                option.value = centro.name;
+                option.textContent = `${centro.name} (Cot. #${centro.quotenumber})`;
+                
+                // Guardamos los datos extra en el propio elemento de la opción
+                option.dataset.quoteId = centro.quote_id;
+                option.dataset.quoteNumber = centro.quotenumber;
+                
+                centroSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar centros:', error);
+            centroSelect.innerHTML = `<option value="" disabled selected>Error al cargar centros</option>`;
+        });
+    };
 
-    // ===== FIN: FUNCIÓN 'loadFormalizedCenters' RESTAURADA =====
-    
-    // ===== INICIO: NUEVA LÓGICA PARA SUBIR ARCHIVOS ASÍNCRONAMENTE =====
-    
-    // 1. Cuando el usuario hace clic en nuestro botón, activamos el input oculto
+    // --- Carga la lista de Asesores desde nuestro "puente" ---
+    const loadAdvisors = () => {
+        fetch('/api/proxy/advisors-list')
+        .then(response => {
+            if (response.status === 204) return [];
+            if (!response.ok) throw new Error('Error al cargar la lista de asesores.');
+            return response.json();
+        })
+        .then(asesores => {
+            asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
+            asesores.forEach(asesor => {
+                const option = document.createElement('option');
+                option.value = asesor.name;
+                option.textContent = asesor.name;
+                asesorSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar asesores:', error);
+            asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar asesores</option>';
+        });
+    };
+
+    // --- Evento que se activa cuando el usuario elige un centro del menú ---
+    centroSelect.addEventListener('change', (event) => {
+        const selectedOption = event.target.selectedOptions[0];
+        // Rellenamos los campos ocultos con los datos de la cotización
+        quoteIdInput.value = selectedOption.dataset.quoteId || '';
+        quoteNumberInput.value = selectedOption.dataset.quoteNumber || '';
+    });
+
+    // --- Lógica para la carga de archivos por etapas ---
     btnAnadirArchivo.addEventListener('click', () => {
         inputArchivoOculto.click();
     });
 
-    // 2. Cuando el usuario selecciona archivos en el input oculto
     inputArchivoOculto.addEventListener('change', async (event) => {
         const files = event.target.files;
         if (!files.length) return;
@@ -81,34 +85,25 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const file of files) {
             const formData = new FormData();
             formData.append('archivo', file);
-
             try {
                 const response = await fetch('/api/archivos/temporal', {
                     method: 'POST',
                     body: formData
                 });
-
-                if (!response.ok) {
-                    throw new Error(`Error al subir ${file.name}`);
-                }
-                
+                if (!response.ok) throw new Error(`Error al subir ${file.name}`);
                 const result = await response.json();
-                
                 addFileToUI(result.fileName, result.filePath);
                 archivosParaEnviar.push(result);
-
             } catch (error) {
                 console.error('Error en la subida:', error);
                 alert(`Hubo un error al subir el archivo: ${file.name}`);
             }
         }
-        
         btnAnadirArchivo.textContent = 'Añadir Archivo(s)';
         btnAnadirArchivo.disabled = false;
         inputArchivoOculto.value = '';
     });
 
-    // 3. Función para añadir el archivo a la lista visual en el HTML
     const addFileToUI = (fileName, filePath) => {
         const fileElement = document.createElement('div');
         fileElement.className = 'file-item';
@@ -125,9 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
             listaArchivosSubidos.removeChild(fileElement);
         });
     };
-    // ===== FIN: NUEVA LÓGICA =====
     
-    // 4. Lógica de envío del formulario principal (MODIFICADA)
+    // --- Lógica para enviar el formulario final ---
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         
@@ -162,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Cargar datos iniciales
+    // --- Cargar datos iniciales al abrir la página ---
     loadAdvisors();
     loadFormalizedCenters();
 });
