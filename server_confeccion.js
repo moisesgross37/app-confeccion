@@ -457,16 +457,16 @@ app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al obtener el proyecto' });
     }
 });
-app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador', 'Coordinador']), async (req, res) => {
+app.post('/api/solicitudes', requireLogin, async (req, res) => {
     const { nombre_centro, nombre_asesor, detalles_solicitud, archivos, quote_id, quote_number } = req.body;
-    const client = await pool.connect();
+    const finalQuoteId = (quote_id && !isNaN(parseInt(quote_id))) ? parseInt(quote_id) : null;
 
+    const client = await pool.connect();
     try {
         await client.query('BEGIN');
-
         const projectResult = await client.query(
             'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud, quote_id, quote_number) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud, quote_id, quote_number]
+            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud, finalQuoteId, quote_number]
         );
         const nuevoProyecto = projectResult.rows[0];
 
@@ -482,7 +482,6 @@ app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador',
 
         await client.query('COMMIT');
         res.status(201).json(nuevoProyecto);
-
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Error al crear la solicitud:', err);
