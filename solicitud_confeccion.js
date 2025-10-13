@@ -10,51 +10,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const listaArchivosSubidos = document.getElementById('lista-archivos-subidos');
     let archivosParaEnviar = [];
 
-   const loadFormalizedCenters = () => {
-    fetch('/api/proxy/formalized-centers')
-    .then(response => {
-        if (response.status === 204) return [];
-        if (!response.ok) throw new Error('Error al cargar la lista de centros.');
-        return response.json();
-    })
-    .then(centros => {
-        centroSelect.innerHTML = '<option value="" disabled selected>Seleccione un centro calificado...</option>';
-        centros.forEach(centro => {
-            const option = document.createElement('option');
-            option.value = centro.name;
-            option.textContent = `${centro.name} (Cot. #${centro.quotenumber})`;
-            option.dataset.quoteId = centro.quote_id;
-            option.dataset.quoteNumber = centro.quotenumber;
-            centroSelect.appendChild(option);
-        });
-    })
-    .catch(error => {
-        console.error('Error al cargar centros:', error);
-        centroSelect.innerHTML = `<option value="" disabled selected>Error al cargar centros</option>`;
-    });
-};
+    const loadFormalizedCenters = () => {
+        fetch('/api/proxy/formalized-centers')
+        .then(response => {
+            if (response.status === 204) return [];
+            if (!response.ok) throw new Error('Error al cargar la lista de centros.');
+            return response.json();
+        })
+        .then(centros => {
+            centroSelect.innerHTML = '<option value="" disabled selected>Seleccione un centro calificado...</option>';
+            centros.forEach(centro => {
+                const option = document.createElement('option');
+                option.value = centro.name;
+                option.textContent = `${centro.name} (Cot. #${centro.quotenumber})`;
+                option.dataset.quoteId = centro.quote_id;
+                option.dataset.quoteNumber = centro.quotenumber;
+                centroSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar centros:', error);
+            centroSelect.innerHTML = `<option value="" disabled selected>Error al cargar centros</option>`;
+        });
+    };
 
-const loadAdvisors = () => {
-    fetch('/api/proxy/advisors-list')
-    .then(response => {
-        if (response.status === 204) return [];
-        if (!response.ok) throw new Error('Error al cargar la lista de asesores.');
-        return response.json();
-    })
-    .then(asesores => {
-        asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
-        asesores.forEach(asesor => {
-            const option = document.createElement('option');
-            option.value = asesor.name;
-            option.textContent = asesor.name;
-            asesorSelect.appendChild(option);
-        });
-    })
-    .catch(error => {
-        console.error('Error al cargar asesores:', error);
-        asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar asesores</option>';
-    });
-};
+    const loadAdvisors = () => {
+        fetch('/api/proxy/advisors-list')
+        .then(response => {
+            if (response.status === 204) return [];
+            if (!response.ok) throw new Error('Error al cargar la lista de asesores.');
+            return response.json();
+        })
+        .then(asesores => {
+            asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
+            asesores.forEach(asesor => {
+                const option = document.createElement('option');
+                option.value = asesor.name;
+                option.textContent = asesor.name;
+                asesorSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar asesores:', error);
+            asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar asesores</option>';
+        });
+    };
+
     centroSelect.addEventListener('change', (event) => {
         const selectedOption = event.target.selectedOptions[0];
         quoteIdInput.value = selectedOption.dataset.quoteId || '';
@@ -118,15 +119,4 @@ const loadAdvisors = () => {
             const result = await response.json();
             if (!response.ok) {
                 throw new Error(result.error || 'Error desconocido del servidor');
-            }
-            alert('¡Solicitud enviada con éxito! Código de proyecto: ' + result.codigo_proyecto);
-            window.location.href = '/panel_confeccion.html';
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al enviar la solicitud: ' + error.message);
-        }
-    });
-
-    loadAdvisors();
-    loadFormalizedCenters();
-});
+          _B_I_N_G_O_
