@@ -118,7 +118,7 @@ const initializeDatabase = async () => {
 // --- Middleware y Configs ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads_confeccion', express.static(path.join(__dirname, 'uploads_confeccion')));
+app.use(express.static(path.join(__dirname)));
 
 app.use(session({
     store: new pgSession({
