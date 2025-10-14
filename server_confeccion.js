@@ -118,21 +118,23 @@ const initializeDatabase = async () => {
 // --- Middleware y Configs ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname)));
+
+// ===== ESTA ES LA LÍNEA CORREGIDA Y ESPECÍFICA PARA LOS ARCHIVOS =====
+app.use('/uploads_confeccion', express.static(path.join(__dirname, 'uploads_confeccion')));
 
 app.use(session({
-    store: new pgSession({
-        pool: pool,
-        tableName: 'confeccion_session'
-    }),
-    secret: 'nuevo_secreto_independiente_confeccion_mas_seguro',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        secure: 'auto',
-        httpOnly: true
-    }
+    store: new pgSession({
+        pool: pool,
+        tableName: 'confeccion_session'
+    }),
+    secret: 'nuevo_secreto_independiente_confeccion_mas_seguro',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        secure: 'auto',
+        httpOnly: true
+    }
 }));
 
 const requireLogin = (req, res, next) => {
@@ -497,43 +499,6 @@ app.get('/api/designers', requireLogin, async (req, res) => {
     } catch (err) { console.error(err); res.status(500).json({ message: 'Error al obtener diseñadores' }); }
 });
 
-// REEMPLAZA TU RUTA '/api/solicitudes' ACTUAL CON ESTA
-app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']), upload.array('imagenes_referencia'), async (req, res) => {
-    const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
-    const client = await pool.connect(); // Usaremos una transacción
-
-    try {
-        await client.query('BEGIN'); // Iniciar transacción
-
-        // 1. Insertamos el nuevo proyecto en la tabla principal
-        const projectResult = await client.query(
-            'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud) VALUES ($1, $2, $3, $4) RETURNING *',
-            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud]
-        );
-        const nuevoProyecto = projectResult.rows[0];
-
-        // 2. Si hay imágenes de referencia, las guardamos en la nueva tabla de archivos
-        if (req.files && req.files.length > 0) {
-            for (const file of req.files) {
-                await client.query(
-                    `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
-                     VALUES ($1, $2, $3, $4, $5)`,
-                    [nuevoProyecto.id, 'referencia', file.path, file.originalname, req.session.user.username]
-                );
-            }
-        }
-
-        await client.query('COMMIT'); // Confirmar transacción
-        res.status(201).json(nuevoProyecto);
-
-    } catch (err) {
-        await client.query('ROLLBACK'); // Revertir en caso de error
-        console.error('Error al crear la solicitud:', err);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    } finally {
-        client.release();
-    }
-});
 
 app.delete('/api/designers/:id', requireLogin, checkRole(['Administrador']), async (req, res) => {
     try {
@@ -778,8 +743,7 @@ app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administra
         console.error('Error al avanzar la etapa de producción:', err);
         res.status(500).json({ message: 'Error al avanzar etapa' });
     }
-});// Servidor de archivos estáticos (Debe ir al final de todas las rutas)
-app.use(express.static(path.join(__dirname)));
+});
 
 // Función para iniciar el servidor
 const startServer = async () => {
