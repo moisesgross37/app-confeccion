@@ -198,17 +198,7 @@ app.get('/api/proxy/advisors-list', requireLogin, async (req, res) => {
         res.status(500).json({ message: "Error al obtener la lista de asesores." });
     }
 });
-        if (response.status === 204) {
-            return res.status(204).send();
-        }
-
-        res.json(response.data);
-
-    } catch (error) {
-        console.error("Error en el proxy de asesores:", error.message);
-        res.status(500).send("Error al obtener la lista de asesores desde el servidor principal.");
-    }
-});
+        
 // ===== FIN: NUEVAS RUTAS PROXY =====
 
 app.put('/api/proyectos/:id/solicitar-mejora', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
