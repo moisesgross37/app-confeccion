@@ -1,4 +1,4 @@
-/ ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.8 (Versión Final y Limpia) ==============
+// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.8 (Versión Final y Limpia) ==============
 
 console.log("--- Servidor de Confección v8.7 con PostgreSQL ---");
 
@@ -195,30 +195,35 @@ app.get('/admin_diseñadores.html', requireLogin, checkRole(['Administrador']), 
 
 // --- RUTAS DE API ---
 
-// ===== INICIO: NUEVAS RUTAS PROXY PARA CONECTAR CON GESTIÓN =====
-const GESTION_API_KEY = 'MI_LLAVE_SECRETA_12345'; // Asegúrate que esta llave sea la correcta
+// --- Rutas Proxy para conectar con "proyecto-gestion" ---
+const GESTION_API_KEY = 'MI_LLAVE_SECRETA_12345';
 
-// Puente para los Centros Formalizados
-app.get('/api/proxy/formalized-centers', requireLogin, async (req, res) => {
-    try {
-        const gestionApiUrl = `https://be-gestion.onrender.com/api/formalized-centers?t=${Date.now()}`;
-
-        const response = await axios.get(gestionApiUrl, {
-            headers: { 'X-API-Key': GESTION_API_KEY }
-        });
-
-        if (response.status === 204) {
-            return res.status(204).send();
-        }
-
-        res.json(response.data);
-
-    } catch (error) {
-        console.error("Error en el proxy de centros:", error.message);
-        res.status(500).send("Error al obtener la lista de centros desde el servidor principal.");
-    }
+app.get('/api/proxy/all-centers', requireLogin, async (req, res) => {
+    try {
+        // Llama a una ruta que busca TODOS los centros
+        const gestionApiUrl = `https://be-gestion.onrender.com/api/centers/search?q=`;
+        const response = await axios.get(gestionApiUrl, {
+            headers: { 'X-API-Key': GESTION_API_KEY }
+        });
+        res.json(response.data);
+    } catch (error) {
+        console.error("Error en el proxy de todos los centros:", error.message);
+        res.status(500).send("Error al obtener la lista de todos los centros.");
+    }
 });
 
+app.get('/api/proxy/advisors-list', requireLogin, async (req, res) => {
+    try {
+        const gestionApiUrl = `https://be-gestion.onrender.com/api/advisors-list`;
+        const response = await axios.get(gestionApiUrl, {
+            headers: { 'X-API-Key': GESTION_API_KEY }
+        });
+        res.json(response.data);
+    } catch (error) {
+        console.error("Error en el proxy de asesores:", error.message);
+        res.status(500).send("Error al obtener la lista de asesores.");
+    }
+});
 // Puente para la Lista de Asesores
 app.get('/api/proxy/advisors-list', requireLogin, async (req, res) => {
     try {
@@ -368,58 +373,47 @@ app.get('/api/proyectos', requireLogin, async (req, res) => {
 });
 
 
-app.delete('/api/solicitudes/:id', requireLogin, checkRole(['Administrador']), async (req, res) => {
-    const { id } = req.params;
-    console.log(`Petición para eliminar proyecto con ID: ${id}`);
+// (LÓGICA CORREGIDA) Eliminar un proyecto
+app.delete('/api/proyectos/:id', requireLogin, checkRole(['Administrador']), async (req, res) => {
+    const { id } = req.params;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        // 1. Obtener las rutas de los archivos desde la tabla correcta
+        const filesResult = await client.query('SELECT url_archivo FROM confeccion_archivos WHERE proyecto_id = $1', [id]);
+        
+        // 2. Eliminar el proyecto (gracias a ON DELETE CASCADE, los registros en confeccion_archivos se borrarán solos)
+        const deleteResult = await client.query('DELETE FROM confeccion_projects WHERE id = $1', [id]);
+        
+        if (deleteResult.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ message: 'Proyecto no encontrado.' });
+        }
 
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN'); // Iniciar transacción
+        await client.query('COMMIT');
 
-        // 1. Obtener las rutas de los archivos antes de borrar el proyecto
-        const fileResult = await client.query(
-            'SELECT imagenes_referencia, propuesta_diseno_url, proforma_url, listado_final_url FROM confeccion_projects WHERE id = $1',
-            [id]
-        );
+        // 3. Eliminar los archivos físicos del servidor
+        if (filesResult.rows.length > 0) {
+            filesResult.rows.forEach(file => {
+                const fullPath = path.join(__dirname, file.url_archivo);
+                if (fs.existsSync(fullPath)) {
+                    fs.unlink(fullPath, err => {
+                        if (err) console.error(`Error al eliminar el archivo ${fullPath}:`, err);
+                    });
+                }
+            });
+        }
+        
+        res.status(200).json({ message: 'Proyecto y archivos asociados eliminados con éxito.' });
 
-        if (fileResult.rows.length === 0) {
-            return res.status(404).json({ message: 'Proyecto no encontrado.' });
-        }
-
-        const projectFiles = fileResult.rows[0];
-
-        // 2. Eliminar el proyecto de la base de datos
-        await client.query('DELETE FROM confeccion_projects WHERE id = $1', [id]);
-
-        await client.query('COMMIT'); // Confirmar transacción
-
-        // 3. Eliminar los archivos físicos del servidor
-        const filesToDelete = [
-            ...(projectFiles.imagenes_referencia || []),
-            projectFiles.propuesta_diseno_url,
-            projectFiles.proforma_url,
-            projectFiles.listado_final_url
-        ].filter(Boolean); // Filtrar para quitar valores nulos o vacíos
-
-        filesToDelete.forEach(filePath => {
-            const fullPath = path.join(__dirname, filePath);
-            if (fs.existsSync(fullPath)) {
-                fs.unlink(fullPath, err => {
-                    if (err) console.error(`Error al eliminar el archivo ${fullPath}:`, err);
-                    else console.log(`Archivo eliminado: ${fullPath}`);
-                });
-            }
-        });
-
-        res.status(200).json({ message: 'Solicitud de confección eliminada con éxito.' });
-
-    } catch (err) {
-        await client.query('ROLLBACK'); // Revertir en caso de error
-        console.error('Error al eliminar la solicitud de confección:', err);
-        res.status(500).json({ message: 'Error en el servidor al intentar eliminar la solicitud.' });
-    } finally {
-        client.release();
-    }
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error al eliminar el proyecto:', err);
+        res.status(500).json({ message: 'Error en el servidor al eliminar el proyecto.' });
+    } finally {
+        client.release();
+    }
 });
 
 app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
@@ -455,39 +449,6 @@ app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
     } catch (err) {
         console.error('Error al obtener los detalles del proyecto:', err);
         res.status(500).json({ message: 'Error en el servidor al obtener el proyecto' });
-    }
-});
-app.post('/api/solicitudes', requireLogin, async (req, res) => {
-    const { nombre_centro, nombre_asesor, detalles_solicitud, archivos, quote_id, quote_number } = req.body;
-    const finalQuoteId = (quote_id && !isNaN(parseInt(quote_id))) ? parseInt(quote_id) : null;
-
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-        const projectResult = await client.query(
-            'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud, quote_id, quote_number) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud, finalQuoteId, quote_number]
-        );
-        const nuevoProyecto = projectResult.rows[0];
-
-        if (archivos && archivos.length > 0) {
-            for (const file of archivos) {
-                await client.query(
-                    `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
-                     VALUES ($1, $2, $3, $4, $5)`,
-                    [nuevoProyecto.id, 'referencia', file.filePath, file.fileName, req.session.user.username]
-                );
-            }
-        }
-
-        await client.query('COMMIT');
-        res.status(201).json(nuevoProyecto);
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Error al crear la solicitud:', err);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    } finally {
-        client.release();
     }
 });
 app.get('/api/designers', requireLogin, async (req, res) => {
