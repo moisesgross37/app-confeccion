@@ -31,89 +31,64 @@ const pool = new Pool({
 });
 
 const initializeDatabase = async () => {
-    const client = await pool.connect();
-    try {
-        // ===== INICIO: Bloque para asegurar que las nuevas columnas existan =====
-        // Este comando ALTER TABLE agrega las columnas a la tabla existente si no están ya.
-        await client.query(`
-            ALTER TABLE confeccion_projects 
-            ADD COLUMN IF NOT EXISTS quote_id INTEGER,
-            ADD COLUMN IF NOT EXISTS quote_number VARCHAR(50);
-        `);
-        // ===== FIN: Bloque de seguridad =====
+    const client = await pool.connect();
+    try {
+        // Corrección de la estructura de la tabla de proyectos para que coincida con el resto del código
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS confeccion_projects (
+                id SERIAL PRIMARY KEY,
+                quote_id INTEGER,
+                quote_number VARCHAR(50),
+                codigo_proyecto VARCHAR(255) UNIQUE NOT NULL,
+                fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
+                cliente VARCHAR(255),
+                nombre_asesor VARCHAR(255),
+                detalles_solicitud TEXT,
+                status VARCHAR(100) DEFAULT 'Diseño Pendiente de Asignación',
+                diseñador_id INTEGER,
+                fecha_de_asignacion TIMESTAMPTZ,
+                fecha_propuesta TIMESTAMPTZ,
+                fecha_aprobacion_interna TIMESTAMPTZ,
+                fecha_aprobacion_cliente TIMESTAMPTZ,
+                fecha_proforma_subida TIMESTAMPTZ,
+                fecha_autorizacion_produccion TIMESTAMPTZ,
+                historial_revisiones JSONB,
+                historial_produccion JSONB,
+                historial_incidencias JSONB
+            );
+        `);
+        
+        await client.query(`CREATE TABLE IF NOT EXISTS confeccion_users (id SERIAL PRIMARY KEY, username VARCHAR(255) UNIQUE NOT NULL, password VARCHAR(255) NOT NULL, rol VARCHAR(50) NOT NULL);`);
+        await client.query(`CREATE TABLE IF NOT EXISTS confeccion_designers (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL);`);
+        
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS confeccion_archivos (
+                id SERIAL PRIMARY KEY,
+                proyecto_id INTEGER NOT NULL REFERENCES confeccion_projects(id) ON DELETE CASCADE,
+                tipo_archivo VARCHAR(100) NOT NULL,
+                url_archivo VARCHAR(255) NOT NULL,
+                nombre_archivo VARCHAR(255),
+                fecha_subida TIMESTAMPTZ DEFAULT NOW(),
+                subido_por VARCHAR(255)
+            );
+        `);
 
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS confeccion_users (
-                id SERIAL PRIMARY KEY,
-                username VARCHAR(255) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                rol VARCHAR(50) NOT NULL
-            );
-        `);
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS confeccion_designers (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL
-            );
-        `);
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS confeccion_projects (
-                id SERIAL PRIMARY KEY,
-                quote_id INTEGER,
-                quote_number VARCHAR(50),
-                codigo_proyecto VARCHAR(255) UNIQUE NOT NULL,
-                fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
-                cliente VARCHAR(255),
-                nombre_asesor VARCHAR(255),
-                detalles_solicitud TEXT,
-                status VARCHAR(100) DEFAULT 'Diseño Pendiente de Asignación',
-                diseñador_id INTEGER,
-                fecha_de_asignacion TIMESTAMPTZ,
-                fecha_propuesta TIMESTAMPTZ,
-                fecha_aprobacion_interna TIMESTAMPTZ,
-                fecha_aprobacion_cliente TIMESTAMPTZ,
-                fecha_proforma_subida TIMESTAMPTZ,
-                fecha_autorizacion_produccion TIMESTAMPTZ,
-                historial_revisiones JSONB,
-                historial_produccion JSONB,
-                historial_incidencias JSONB
-            );
-        `);
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS confeccion_archivos (
-                id SERIAL PRIMARY KEY,
-                proyecto_id INTEGER NOT NULL REFERENCES confeccion_projects(id) ON DELETE CASCADE,
-                tipo_archivo VARCHAR(100) NOT NULL,
-                url_archivo VARCHAR(255) NOT NULL,
-                nombre_archivo VARCHAR(255),
-                fecha_subida TIMESTAMPTZ DEFAULT NOW(),
-                subido_por VARCHAR(255)
-            );
-        `);
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS "confeccion_session" (
-                "sid" varchar NOT NULL PRIMARY KEY,
-                "sess" json NOT NULL,
-                "expire" timestamp(6) NOT NULL
-            );
-        `);
-        const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
-        if (adminUser.rows.length === 0) {
-            console.log("Usuario 'admin' no encontrado. Creando usuario por defecto...");
-            const defaultPassword = 'admin123';
-            const saltRounds = 10;
-            const hashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
-            await client.query(
-                "INSERT INTO confeccion_users (username, password, rol) VALUES ($1, $2, $3)",
-                ['admin', hashedPassword, 'Administrador']
-            );
-            console.log("Usuario 'admin' creado con éxito.");
-        }
-    } catch (err) {
-        console.error('Error al inicializar la base de datos de confección:', err);
-    } finally {
-        client.release();
-    }
+        await client.query(`CREATE TABLE IF NOT EXISTS "confeccion_session" ("sid" varchar NOT NULL PRIMARY KEY, "sess" json NOT NULL, "expire" timestamp(6) NOT NULL);`);
+        
+        const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
+        if (adminUser.rows.length === 0) {
+            console.log("Creando usuario 'admin' por defecto...");
+            const hashedPassword = await bcrypt.hash('admin123', 10);
+            await client.query("INSERT INTO confeccion_users (username, password, rol) VALUES ($1, $2, $3)", ['admin', hashedPassword, 'Administrador']);
+            console.log("Usuario 'admin' creado.");
+        }
+    } catch (err) {
+        console.error('Error al inicializar la base de datos de confección:', err);
+        // Lanzamos el error para que el proceso se detenga si la BD falla
+        throw err; 
+    } finally {
+        client.release();
+    }
 };
 // --- Middleware y Configs ---
 app.use(express.json());
