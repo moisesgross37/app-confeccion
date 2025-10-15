@@ -20,7 +20,7 @@ const port = process.env.PORT || 3001;
 // --- 3. MIDDLEWARE (Plugins de Express) ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads_confeccion', express.static(path.join(__dirname, 'uploads_confeccion')));
+app.use('/uploads_confeccion', express.static('/var/data/uploads_confeccion'));
 
 // --- 4. CONEXIONES A BASES DE DATOS ---
 // Conexión principal de este programa ("confección")
@@ -129,7 +129,7 @@ const requireLogin = (req, res, next) => {
 // REEMPLÁZALO CON ESTE BLOQUE
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = './uploads_confeccion';
+        const dir = '/var/data/uploads_confeccion';
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir);
         }
