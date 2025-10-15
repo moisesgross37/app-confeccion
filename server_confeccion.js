@@ -377,41 +377,31 @@ app.delete('/api/proyectos/:id', requireLogin, checkRole(['Administrador']), asy
     }
 });
 
+// Obtener un proyecto específico con sus archivos
 app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
-    try {
-        const { id } = req.params;
+    try {
+        const { id } = req.params;
+        const projectQuery = `
+            SELECT p.*, d.name AS nombre_disenador FROM confeccion_projects p
+            LEFT JOIN confeccion_designers d ON p.diseñador_id = d.id WHERE p.id = $1`;
+        const projectResult = await pool.query(projectQuery, [id]);
 
-        // 1. Obtenemos los detalles principales del proyecto y el nombre del diseñador
-        const projectQuery = `
-            SELECT p.*, d.name AS nombre_disenador
-            FROM confeccion_projects p
-            LEFT JOIN confeccion_designers d ON p.diseñador_id = d.id
-            WHERE p.id = $1
-        `;
-        const projectResult = await pool.query(projectQuery, [id]);
+        if (projectResult.rows.length === 0) {
+            // ----- LÍNEA CORREGIDA -----
+            return res.status(404).json({ message: 'Proyecto no encontrado' }); 
+        }
+        const proyecto = projectResult.rows[0];
 
-        if (projectResult.rows.length === 0) {
-            return res.status(404).json({ message: 'Proyecto no encontrado' });
-        }
-        const proyecto = projectResult.rows[0];
+        const filesResult = await pool.query('SELECT * FROM confeccion_archivos WHERE proyecto_id = $1 ORDER BY fecha_subida DESC', [id]);
+        proyecto.archivos = filesResult.rows;
 
-        // 2. Obtenemos TODOS los archivos asociados a ese proyecto desde la nueva tabla
-        const filesResult = await pool.query(
-            'SELECT * FROM confeccion_archivos WHERE proyecto_id = $1 ORDER BY fecha_subida DESC',
-            [id]
-        );
-
-        // 3. Añadimos la lista de archivos al objeto del proyecto
-        proyecto.archivos = filesResult.rows;
-
-        // 4. Enviamos todo junto
-        res.json(proyecto);
-
-    } catch (err) {
-        console.error('Error al obtener los detalles del proyecto:', err);
-        res.status(500).json({ message: 'Error en el servidor al obtener el proyecto' });
-    }
+        res.json(proyecto);
+    } catch (err) {
+        console.error('Error al obtener los detalles del proyecto:', err);
+        res.status(500).json({ message: 'Error en el servidor al obtener el proyecto' });
+    }
 });
+
 app.get('/api/designers', requireLogin, async (req, res) => {
     try {
         const result = await pool.query('SELECT id, name AS nombre FROM confeccion_designers ORDER BY name ASC');
