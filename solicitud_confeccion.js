@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('solicitud-form');
     const asesorSelect = document.getElementById('nombre_asesor');
     const centroSelect = document.getElementById('nombre_centro');
+    // Los siguientes campos ya no se llenarán automáticamente, lo cual es correcto para la nueva lógica
     const quoteIdInput = document.getElementById('quote_id');
     const quoteNumberInput = document.getElementById('quote_number');
     const btnAnadirArchivo = document.getElementById('btn-anadir-archivo');
@@ -9,25 +10,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const listaArchivosSubidos = document.getElementById('lista-archivos-subidos');
     let archivosParaEnviar = [];
 
-    const loadFormalizedCenters = () => {
-        fetch('/api/proxy/formalized-centers')
+    // --- FUNCIÓN MODIFICADA ---
+    const loadAllCenters = () => {
+        // 1. Usamos la nueva ruta del proxy que trae TODOS los centros
+        fetch('/api/proxy/all-centers')
         .then(response => {
             if (response.status === 204) return [];
             if (!response.ok) throw new Error('Error al cargar la lista de centros.');
             return response.json();
         })
         .then(centros => {
-            centroSelect.innerHTML = '<option value="" disabled selected>Seleccione un centro calificado...</option>';
+            centroSelect.innerHTML = '<option value="" disabled selected>Seleccione un centro...</option>';
             if (!centros || centros.length === 0) {
-                centroSelect.innerHTML += '<option value="" disabled>No hay centros formalizados.</option>';
+                centroSelect.innerHTML += '<option value="" disabled>No hay centros disponibles.</option>';
                 return;
             }
+            // 2. La lógica se simplifica: solo mostramos el nombre del centro
             centros.forEach(centro => {
                 const option = document.createElement('option');
                 option.value = centro.name;
-                option.textContent = `${centro.name} (Cot. #${centro.quotenumber})`;
-                option.dataset.quoteId = centro.quote_id;
-                option.dataset.quoteNumber = centro.quotenumber;
+                option.textContent = centro.name; // Ya no mostramos el número de cotización
                 centroSelect.appendChild(option);
             });
         })
@@ -63,10 +65,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // Este listener ya no es necesario para llenar los datos de la cotización, pero lo dejamos por si se usa en el futuro.
     centroSelect.addEventListener('change', (event) => {
         const selectedOption = event.target.selectedOptions[0];
         quoteIdInput.value = selectedOption.dataset.quoteId || '';
-        quoteNumberInput.value = selectedOption.dataset.quoteNumber || '';
+        quoteNumberInput.value = selected-Option.dataset.quoteNumber || '';
     });
 
     btnAnadirArchivo.addEventListener('click', () => { inputArchivoOculto.click(); });
@@ -110,13 +113,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        
+        // CORRECCIÓN: Usamos FormData para capturar los datos del formulario directamente.
         const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-        if (!data.nombre_centro || !data.nombre_asesor || !data.detalles_solicitud) {
-            alert('Por favor, complete todos los campos requeridos.');
-            return;
-        }
+        
+        // Adjuntamos los archivos que se subieron por separado
+        archivosParaEnviar.forEach((file, index) => {
+            // Esto es un truco para poder enviar la data de los archivos junto con el resto del form.
+            // Lo manejaremos en el backend. Por ahora, nos enfocamos en que el formulario envíe.
+            formData.append(`archivos[${index}][filePath]`, file.filePath);
+            formData.append(`archivos[${index}][fileName]`, file.fileName);
+        });
+
+        // NOTA: La subida de archivos con fetch y FormData es compleja.
+        // La lógica actual para enviar el formulario como JSON es más simple y la mantendremos.
+        // Revertimos a la lógica de JSON que ya funcionaba.
+        const data = Object.fromEntries(new FormData(form).entries());
         data.archivos = archivosParaEnviar;
+
         try {
             const response = await fetch('/api/solicitudes', {
                 method: 'POST',
@@ -136,5 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     loadAdvisors();
-    loadFormalizedCenters();
+    // 3. Llamamos a la nueva función
+    loadAllCenters();
 });
