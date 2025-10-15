@@ -175,7 +175,6 @@ const GESTION_API_KEY = process.env.GESTION_API_KEY;
 
 app.get('/api/proxy/all-centers', requireLogin, async (req, res) => {
     try {
-        // Llama a una ruta que busca TODOS los centros
         const gestionApiUrl = `https://be-gestion.onrender.com/api/centers/search?q=`;
         const response = await axios.get(gestionApiUrl, {
             headers: { 'X-API-Key': GESTION_API_KEY }
@@ -183,7 +182,7 @@ app.get('/api/proxy/all-centers', requireLogin, async (req, res) => {
         res.json(response.data);
     } catch (error) {
         console.error("Error en el proxy de todos los centros:", error.message);
-        res.status(500).send("Error al obtener la lista de todos los centros.");
+        res.status(500).json({ message: "Error al obtener la lista de todos los centros." });
     }
 });
 
@@ -196,18 +195,9 @@ app.get('/api/proxy/advisors-list', requireLogin, async (req, res) => {
         res.json(response.data);
     } catch (error) {
         console.error("Error en el proxy de asesores:", error.message);
-        res.status(500).send("Error al obtener la lista de asesores.");
+        res.status(500).json({ message: "Error al obtener la lista de asesores." });
     }
 });
-// Puente para la Lista de Asesores
-app.get('/api/proxy/advisors-list', requireLogin, async (req, res) => {
-    try {
-        const gestionApiUrl = `https://be-gestion.onrender.com/api/advisors-list?t=${Date.now()}`;
-
-        const response = await axios.get(gestionApiUrl, {
-            headers: { 'X-API-Key': GESTION_API_KEY }
-        });
-
         if (response.status === 204) {
             return res.status(204).send();
         }
