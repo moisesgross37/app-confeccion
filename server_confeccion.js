@@ -38,10 +38,6 @@ const gestionPool = new Pool({
     }
 });
 
-
-
-const initializeDatabase = async () => {
-    
 const initializeDatabase = async () => {
     const client = await pool.connect();
     try {
