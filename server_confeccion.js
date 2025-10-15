@@ -171,7 +171,7 @@ app.get('/admin_diseñadores.html', requireLogin, checkRole(['Administrador']), 
 // --- RUTAS DE API ---
 
 // --- Rutas Proxy para conectar con "proyecto-gestion" ---
-const GESTION_API_KEY = 'MI_LLAVE_SECRETA_12345';
+const GESTION_API_KEY = process.env.GESTION_API_KEY;
 
 app.get('/api/proxy/all-centers', requireLogin, async (req, res) => {
     try {
@@ -714,7 +714,8 @@ app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administra
         console.error('Error al avanzar la etapa de producción:', err);
         res.status(500).json({ message: 'Error al avanzar etapa' });
     }
-});// Servidor de archivos estáticos (Debe ir al final de todas las rutas)
+});
+// Servidor de archivos estáticos (Debe ir al final de todas las rutas)
 app.use(express.static(path.join(__dirname)));
 
 // Función para iniciar el servidor
