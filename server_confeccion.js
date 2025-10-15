@@ -20,6 +20,7 @@ const port = process.env.PORT || 3001;
 // --- 3. MIDDLEWARE (Plugins de Express) ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads_confeccion', express.static(path.join(__dirname, 'uploads_confeccion')));
 
 // --- 4. CONEXIONES A BASES DE DATOS ---
 // Conexión principal de este programa ("confección")
