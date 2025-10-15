@@ -1,7 +1,7 @@
-// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.8 (Versión Final y Limpia) ==============
+// ============== SERVIDOR DE DISEÑO Y CONFECCIÓN v8.9 (Corregido) ==============
+console.log("--- Servidor de Confección v8.9 con PostgreSQL ---");
 
-console.log("--- Servidor de Confección v8.7 con PostgreSQL ---");
-
+// --- 1. IMPORTACIONES DE LIBRERÍAS ---
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
@@ -13,23 +13,35 @@ const pgSession = require('connect-pg-simple')(session);
 const { checkRole } = require('./permissions.js');
 const axios = require('axios');
 
+// --- 2. CREACIÓN DE LA APLICACIÓN Y PUERTO ---
 const app = express();
 const port = process.env.PORT || 3001;
 
-// ===== INICIO: LÍNEAS AÑADIDAS PARA LEER DATOS JSON Y FORMULARIOS =====
-// Estas líneas deben ir ANTES de que definas cualquier ruta (app.get, app.post, etc.)
+// --- 3. MIDDLEWARE (Plugins de Express) ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// ===== FIN: LÍNEAS AÑADIDAS =====
 
-// --- Conexión a la Base de Datos PostgreSQL ---
+// --- 4. CONEXIONES A BASES DE DATOS ---
+// Conexión principal de este programa ("confección")
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
+// Conexión secundaria a la BD de "gestión" (solo para leer centros)
+const gestionPool = new Pool({
+    connectionString: process.env.GESTION_DB_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
+
+
+
+const initializeDatabase = async () => {
+    
 const initializeDatabase = async () => {
     const client = await pool.connect();
     try {
@@ -173,19 +185,18 @@ app.get('/admin_diseñadores.html', requireLogin, checkRole(['Administrador']), 
 // --- Rutas Proxy para conectar con "proyecto-gestion" ---
 const GESTION_API_KEY = process.env.GESTION_API_KEY;
 
+// --- Ruta para obtener TODOS los centros (usando conexión directa a la BD) ---
 app.get('/api/proxy/all-centers', requireLogin, async (req, res) => {
     try {
-        const gestionApiUrl = `https://be-gestion.onrender.com/api/centers/search?q=`;
-        const response = await axios.get(gestionApiUrl, {
-            headers: { 'X-API-Key': GESTION_API_KEY }
-        });
-        res.json(response.data);
+        // Hacemos una consulta SQL directa a la base de datos de "gestion"
+        const result = await gestionPool.query('SELECT id, name FROM centers ORDER BY name ASC');
+        res.json(result.rows);
     } catch (error) {
-        console.error("Error en el proxy de todos los centros:", error.message);
+        console.error("Error al consultar la base de datos de gestión directamente:", error.message);
         res.status(500).json({ message: "Error al obtener la lista de todos los centros." });
     }
 });
-
+    
 app.get('/api/proxy/advisors-list', requireLogin, async (req, res) => {
     try {
         const gestionApiUrl = `https://be-gestion.onrender.com/api/advisors-list`;
