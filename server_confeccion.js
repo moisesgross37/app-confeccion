@@ -318,22 +318,21 @@ app.get('/api/asesores', requireLogin, (req, res) => {
     res.json(asesores);
 });
 
+// Obtener todos los proyectos
 app.get('/api/proyectos', requireLogin, async (req, res) => {
-    try {
-        const query = `
-            SELECT p.*, d.name AS nombre_disenador
-            FROM confeccion_projects p
-            LEFT JOIN confeccion_designers d ON p.diseñador_id = d.id
-            ORDER BY p.fecha_creacion DESC
-        `;
-        const result = await pool.query(query);
-        res.json(result.rows);
-    } catch (err) {
-        console.error("Error en /api/proyectos:", err);
-        res.status(500).json({ message: 'Error al obtener proyectos' });
-    }
+    try {
+        const query = `
+            SELECT p.*, d.name AS nombre_disenador
+            FROM confeccion_projects p
+            LEFT JOIN confeccion_designers d ON p.diseñador_id = d.id
+            ORDER BY p.fecha_creacion DESC`;
+        const result = await pool.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Error en /api/proyectos:", err);
+        res.status(500).json({ message: 'Error al obtener proyectos' });
+    }
 });
-
 
 // (LÓGICA CORREGIDA) Eliminar un proyecto
 app.delete('/api/proyectos/:id', requireLogin, checkRole(['Administrador']), async (req, res) => {
