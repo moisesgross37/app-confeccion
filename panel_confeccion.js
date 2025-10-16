@@ -36,8 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTable(proyectosFiltrados);
     };
 
-    // REEMPLAZA TU FUNCIÓN renderTable COMPLETA CON ESTA
-const renderTable = (proyectos) => {
+   // REEMPLAZA TU FUNCIÓN renderTable COMPLETA CON ESTA
+const renderTable = (proyectos, user) => {
     tableBody.innerHTML = '';
 
     if (!proyectos || proyectos.length === 0) {
@@ -47,21 +47,19 @@ const renderTable = (proyectos) => {
 
     proyectos.forEach(proyecto => {
         const row = document.createElement('tr');
-        
-        // Prepara el botón de eliminar solo si el usuario es Administrador
+
         let eliminarButtonHtml = '';
-        if (currentUser && currentUser.rol === 'Administrador') {
+        // La comprobación ahora es más directa porque el 'user' llega como parámetro.
+        if (user && user.rol === 'Administrador') {
             eliminarButtonHtml = `
                 <button class="button-danger" 
                         data-project-id="${proyecto.id}" 
-                        data-project-code="${proyecto.codigo_proyecto || proyecto.id}"
-                        style="margin-left: 10px;">
+                        data-project-code="${proyecto.codigo_proyecto || proyecto.id}">
                     Eliminar
                 </button>
             `;
         }
 
-        // Dibuja la fila completa con TODAS sus columnas
         row.innerHTML = `
             <td>${proyecto.id}</td>
             <td>${proyecto.cliente}</td>
@@ -73,27 +71,26 @@ const renderTable = (proyectos) => {
                 ${eliminarButtonHtml}
             </td>
         `;
-        
+
         tableBody.appendChild(row);
     });
 };
+   // REEMPLAZA TU BLOQUE Promise.all COMPLETO CON ESTE
+Promise.all([
+    fetch('/api/proyectos', { cache: 'no-store' }).then(res => res.json()),
+    fetch('/api/me').then(res => res.json())
+])
+.then(([proyectos, user]) => {
+    todosLosProyectos = proyectos; // Guardamos los proyectos globalmente
 
-    // --- Carga inicial de datos ---
-    Promise.all([
-        fetch('/api/proyectos', { cache: 'no-store' }).then(res => res.json()),
-        fetch('/api/me').then(res => res.json())
-    ])
-    .then(([proyectos, user]) => {
-        currentUser = user;
-        todosLosProyectos = proyectos;
-
-        populateFilters(todosLosProyectos);
-        renderTable(todosLosProyectos);
-    })
-    .catch(error => {
-        console.error('Error al cargar los proyectos o el usuario:', error);
-        tableBody.innerHTML = `<tr><td colspan="6">Error al cargar los proyectos. Verifique la consola.</td></tr>`;
-    });
+    populateFilters(todosLosProyectos);
+    // Llamamos a la función de renderizado pasándole los proyectos y el usuario
+    renderTable(todosLosProyectos, user); 
+})
+.catch(error => {
+    console.error('Error al cargar los proyectos o el usuario:', error);
+    tableBody.innerHTML = `<tr><td colspan="6">Error al cargar los proyectos. Verifique la consola.</td></tr>`;
+});
     
     // --- Lógica para el botón Eliminar (usando delegación de eventos) ---
     
