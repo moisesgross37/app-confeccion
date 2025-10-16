@@ -569,37 +569,38 @@ app.put('/api/proyectos/:id/subir-proforma', requireLogin, checkRole(['Administr
         client.release();
     }
 });
+// REEMPLAZA ESTE BLOQUE COMPLETO
 app.put('/api/proyectos/:id/aprobar-interno', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
-    try {
-        const result = await pool.query(
-            `UPDATE confeccion_projects 
-             SET status = 'Pendiente Aprobación Cliente', 
-                 fecha_aprobacion_interna = NOW() 
-             WHERE id = $1 RETURNING *`,
-            [req.params.id]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        console.error('Error al aprobar internamente:', err);
-        res.status(500).json({ message: 'Error en el servidor' });
-    }
+    try {
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET status = 'Pendiente Aprobación Cliente', 
+                 fecha_aprobacion_interna = NOW() 
+             WHERE id = $1 RETURNING *`,
+            [req.params.id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error al aprobar internamente:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
 });
+// REEMPLAZA ESTE BLOQUE COMPLETO
 app.put('/api/proyectos/:id/aprobar-cliente', requireLogin, checkRole(['Asesor', 'Administrador']), async (req, res) => {
-    try {
-        const result = await pool.query(
-            `UPDATE confeccion_projects 
-             SET status = 'Pendiente de Proforma', 
-                 fecha_aprobacion_cliente = NOW() 
-             WHERE id = $1 RETURNING *`,
-            [req.params.id]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        console.error('Error al registrar la aprobación del cliente:', err);
-        res.status(500).json({ message: 'Error en el servidor' });
-    }
+    try {
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET status = 'Pendiente de Proforma', 
+                 fecha_aprobacion_cliente = NOW() 
+             WHERE id = $1 RETURNING *`,
+            [req.params.id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error al registrar la aprobación del cliente:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
 });
-
 app.put('/api/proyectos/:id/aprobar-calidad', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     try {
         // Nota: No existe un campo 'fecha_aprobacion_calidad', por lo que solo actualizamos el estado.
