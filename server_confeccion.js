@@ -118,14 +118,19 @@ app.use(session({
         httpOnly: true
     }
 }));
-
+// REEMPLAZA TU FUNCIÓN requireLogin CON ESTA
 const requireLogin = (req, res, next) => {
-    if (!req.session.user) {
-        return res.redirect('/login.html');
-    }
-    next();
+    if (!req.session.user) {
+        // Si es una petición de API (hecha por JavaScript), envía un error JSON.
+        if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+            return res.status(401).json({ message: 'Su sesión ha expirado. Por favor, inicie sesión de nuevo.' });
+        } else {
+            // Si es una navegación normal, redirige al login.
+            return res.redirect('/login.html');
+        }
+    }
+    next();
 };
-
 // REEMPLÁZALO CON ESTE BLOQUE
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
