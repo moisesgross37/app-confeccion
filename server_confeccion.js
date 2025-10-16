@@ -407,42 +407,66 @@ app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
         res.status(500).json({ message: 'Error en el servidor al obtener el proyecto' });
     }
 });
-// (VERSIÓN ÚNICA Y CORRECTA) Crear una nueva solicitud de confección
+// ===== REEMPLAZA TU RUTA '/api/solicitudes' CON ESTA VERSIÓN PARA DEPURAR =====
 app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']), upload.array('imagenes_referencia'), async (req, res) => {
+    console.log("=====================================================");
+    console.log("===== INICIANDO CREACIÓN DE NUEVA SOLICITUD... =====");
+    console.log("=====================================================");
+    
     const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
+    console.log(`Datos recibidos del formulario: Centro=${nombre_centro}, Asesor=${nombre_asesor}`);
+
     const client = await pool.connect();
+    
     try {
         await client.query('BEGIN');
+        console.log("Transacción de base de datos iniciada.");
+
         const projectResult = await client.query(
             'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud) VALUES ($1, $2, $3, $4) RETURNING *',
             [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud]
         );
         const nuevoProyecto = projectResult.rows[0];
+        console.log(`✅ Proyecto base creado con ID: ${nuevoProyecto.id}`);
 
         if (req.files && req.files.length > 0) {
+            console.log(`Se encontraron ${req.files.length} archivos para procesar.`);
             for (const file of req.files) {
-                // ----- INICIO DE LA LÍNEA CORREGIDA -----
-                // En lugar de guardar 'file.path', construimos la URL web correcta.
                 const webUrl = `/uploads_confeccion/${file.filename}`;
+                console.log(`  -> Preparando para insertar archivo en la BD:`);
+                console.log(`     - proyecto_id: ${nuevoProyecto.id}`);
+                console.log(`     - tipo_archivo: 'referencia'`);
+                console.log(`     - url_archivo: ${webUrl}`);
+                console.log(`     - nombre_archivo: ${file.originalname}`);
+                
                 await client.query(
                     `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) VALUES ($1, $2, $3, $4, $5)`,
                     [nuevoProyecto.id, 'referencia', webUrl, file.originalname, req.session.user.username]
                 );
-                // ----- FIN DE LA LÍNEA CORREGIDA -----
+                console.log(`  -> ✅ Registro de archivo guardado en la BD para: ${file.originalname}`);
             }
+        } else {
+            console.log("No se adjuntaron archivos en esta solicitud.");
         }
+
         await client.query('COMMIT');
+        console.log("Transacción completada (COMMIT). Enviando respuesta al cliente.");
+        console.log("=====================================================");
         res.status(201).json(nuevoProyecto);
+
     } catch (err) {
         await client.query('ROLLBACK');
-        console.error('Error al crear la solicitud:', err);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        console.error("!!!!! ERROR DURANTE LA CREACIÓN DE LA SOLICITUD !!!!!");
+        console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        console.error("Error completo:", err); // Logueamos el error completo
+        res.status(500).json({ error: 'Error interno del servidor al crear la solicitud.' });
+    
     } finally {
         client.release();
+        console.log("Conexión a la base de datos liberada.");
     }
 });
-// Pega este nuevo bloque en tu servidor
-
 // --- Ruta para OBTENER todos los diseñadores ---
 app.get('/api/designers', requireLogin, async (req, res) => {
     try {
