@@ -466,7 +466,7 @@ document.getElementById(`solicitar-mejora-proforma-btn-${panelId}`).addEventList
         alert(`Error: ${error.message}`); 
     }
 });
-
+}
 async function mostrarPanelProduccion(container, proyecto) {
     const projectId = proyecto.id;
     const estadoActual = proyecto.status;
