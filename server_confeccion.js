@@ -215,40 +215,41 @@ app.get('/api/proxy/advisors-list', requireLogin, async (req, res) => {
         
 // ===== FIN: NUEVAS RUTAS PROXY =====
 
+// REEMPLAZA ESTE BLOQUE COMPLETO
 app.put('/api/proyectos/:id/solicitar-mejora', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
-    const { id } = req.params;
-    const { comentarios } = req.body;
+    const { id } = req.params;
+    const { comentarios } = req.body;
 
-    if (!comentarios) {
-        return res.status(400).json({ message: 'Los comentarios son obligatorios para solicitar una mejora.' });
-    }
+    if (!comentarios) {
+        return res.status(400).json({ message: 'Los comentarios son obligatorios para solicitar una mejora.' });
+    }
 
-    try {
-        const nuevaRevision = {
-            fecha: new Date(),
-            usuario: req.session.user.username,
-            rol: req.session.user.rol,
-            comentario: comentarios
-        };
+    try {
+        const nuevaRevision = {
+            fecha: new Date(),
+            usuario: req.session.user.username,
+            rol: req.session.user.rol,
+            comentario: comentarios
+        };
 
-        const result = await pool.query(
-            `UPDATE confeccion_projects 
-             SET status = 'Diseño en Proceso', 
-                 historial_revisiones = COALESCE(historial_revisiones, '[]'::jsonb) || $1::jsonb 
-             WHERE id = $2 RETURNING *`,
-            [JSON.stringify(nuevaRevision), id]
-        );
-        
-        if (result.rowCount === 0) {
-            return res.status(404).json({ message: 'Proyecto no encontrado.' });
-        }
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET status = 'Diseño en Proceso', 
+                 historial_revisiones = COALESCE(historial_revisiones, '[]'::jsonb) || $1::jsonb 
+             WHERE id = $2 RETURNING *`,
+            [JSON.stringify(nuevaRevision), id]
+        );
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Proyecto no encontrado.' });
+        }
 
-        res.json(result.rows[0]);
+        res.json(result.rows[0]);
 
-    } catch (err) {
-        console.error('Error al solicitar mejora:', err);
-        res.status(500).json({ message: 'Error en el servidor al solicitar la mejora.' });
-    }
+    } catch (err) {
+        console.error('Error al solicitar mejora:', err);
+        res.status(500).json({ message: 'Error en el servidor al solicitar la mejora.' });
+    }
 });
 // ===== INICIO: Nueva Ruta Genérica para Subida de Archivos =====
 app.post('/api/archivos/temporal', requireLogin, upload.single('archivo'), (req, res) => {
