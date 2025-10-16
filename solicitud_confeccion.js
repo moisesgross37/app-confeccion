@@ -5,87 +5,79 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnAnadirArchivo = document.getElementById('btn-anadir-archivo');
     const inputArchivoOculto = document.getElementById('input-archivo-oculto');
     const listaArchivosSubidos = document.getElementById('lista-archivos-subidos');
+    let selectedFiles = []; // Aquí se guardarán los archivos seleccionados
 
-    // Carga los centros desde el servidor
+    // --- Carga inicial de datos (sin cambios) ---
     const loadAllCenters = () => {
         fetch('/api/proxy/all-centers')
-            .then(response => {
-                if (!response.ok) throw new Error('Error al cargar centros.');
-                return response.json();
-            })
+            .then(res => res.ok ? res.json() : Promise.reject('Error al cargar los centros'))
             .then(centros => {
                 centroSelect.innerHTML = '<option value="" disabled selected>Seleccione un centro...</option>';
-                centros.forEach(centro => {
-                    const option = document.createElement('option');
-                    option.value = centro.name;
-                    option.textContent = centro.name;
-                    centroSelect.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Error al cargar centros:', error);
-                centroSelect.innerHTML = `<option value="" disabled selected>Error al cargar</option>`;
-            });
+                centros.forEach(centro => centroSelect.add(new Option(centro.name, centro.name)));
+            }).catch(err => console.error(err));
     };
 
-    // Carga los asesores desde el servidor
     const loadAdvisors = () => {
         fetch('/api/proxy/advisors-list')
-            .then(response => {
-                if (!response.ok) throw new Error('Error al cargar asesores.');
-                return response.json();
-            })
+            .then(res => res.ok ? res.json() : Promise.reject('Error al cargar asesores'))
             .then(asesores => {
                 asesorSelect.innerHTML = '<option value="" disabled selected>Seleccione un asesor...</option>';
-                asesores.forEach(asesor => {
-                    const option = document.createElement('option');
-                    option.value = asesor.name;
-                    option.textContent = asesor.name;
-                    asesorSelect.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error('Error al cargar asesores:', error);
-                asesorSelect.innerHTML = '<option value="" disabled selected>Error al cargar</option>';
-            });
+                asesores.forEach(asesor => asesorSelect.add(new Option(asesor.name, asesor.name)));
+            }).catch(err => console.error(err));
     };
 
-    // --- LÓGICA DE ARCHIVOS SIMPLIFICADA ---
-    // Simula un clic en el input de archivo oculto
+    // --- LÓGICA DE ARCHIVOS MEJORADA ---
     btnAnadirArchivo.addEventListener('click', () => {
-        inputArchivoOculto.click();
+        inputArchivoOculto.click(); // Simula un clic en el input oculto
     });
 
-    // Cuando el usuario selecciona archivos, solo actualizamos la interfaz para que vea lo que eligió.
-    // Ya NO lo subimos a ninguna ruta temporal.
     inputArchivoOculto.addEventListener('change', () => {
-        listaArchivosSubidos.innerHTML = ''; // Limpiamos la lista anterior
-        if (inputArchivoOculto.files.length > 0) {
-            for (const file of inputArchivoOculto.files) {
-                const fileElement = document.createElement('div');
-                fileElement.className = 'file-item';
-                fileElement.innerHTML = `<span>✅ ${file.name}</span>`;
-                listaArchivosSubidos.appendChild(fileElement);
-            }
+        // Añade los nuevos archivos seleccionados a nuestra lista
+        for (const file of inputArchivoOculto.files) {
+            selectedFiles.push(file);
+        }
+        renderFileList(); // Actualiza la lista en la pantalla
+        // Limpia el input para que el usuario pueda añadir más archivos si quiere
+        inputArchivoOculto.value = '';
+    });
+
+    // Dibuja la lista de archivos en la pantalla
+    const renderFileList = () => {
+        listaArchivosSubidos.innerHTML = '';
+        if (selectedFiles.length === 0) return;
+
+        selectedFiles.forEach((file, index) => {
+            const fileElement = document.createElement('div');
+            fileElement.className = 'file-item';
+            fileElement.innerHTML = `<span>✅ ${file.name}</span><button type="button" class="btn-remove-file" data-index="${index}">❌</button>`;
+            listaArchivosSubidos.appendChild(fileElement);
+        });
+    };
+
+    // Permite eliminar archivos de la lista antes de enviar
+    listaArchivosSubidos.addEventListener('click', (event) => {
+        if (event.target.classList.contains('btn-remove-file')) {
+            const indexToRemove = parseInt(event.target.dataset.index, 10);
+            selectedFiles.splice(indexToRemove, 1); // Elimina el archivo de nuestra lista
+            renderFileList(); // Vuelve a dibujar la lista actualizada
         }
     });
 
-    // --- LÓGICA DE ENVÍO FINAL Y CORRECTA ---
+    // --- LÓGICA DE ENVÍO FINAL (sin cambios) ---
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-
-        // 1. Creamos el FormData directamente del formulario.
-        //    Esto capturará los campos de texto Y los archivos del input (porque tiene el 'name' correcto).
         const formData = new FormData(form);
-
-        // 2. Verificación simple
-        if (!formData.get('nombre_centro') || !formData.get('nombre_asesor')) {
-            alert('Por favor, seleccione el centro y el asesor.');
-            return;
+        
+        // Añade todos los archivos de nuestra lista al FormData
+        for (const file of selectedFiles) {
+            formData.append('imagenes_referencia', file);
         }
-        if (inputArchivoOculto.files.length === 0) {
-            alert('Por favor, añada al menos un archivo de referencia.');
-            return;
+
+        if (!formData.get('nombre_centro') || !formData.get('nombre_asesor')) {
+            return alert('Por favor, seleccione el centro y el asesor.');
+        }
+        if (selectedFiles.length === 0) {
+            return alert('Por favor, añada al menos un archivo de referencia.');
         }
 
         try {
@@ -93,30 +85,20 @@ document.addEventListener('DOMContentLoaded', () => {
             botonSubmit.textContent = 'Enviando...';
             botonSubmit.disabled = true;
 
-            // 3. Enviamos el FormData. El navegador se encargará de los headers.
-            const response = await fetch('/api/solicitudes', {
-                method: 'POST',
-                body: formData
-            });
-
+            const response = await fetch('/api/solicitudes', { method: 'POST', body: formData });
             const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.error || 'Error desconocido del servidor');
-            }
+            if (!response.ok) throw new Error(result.error || 'Error del servidor');
 
-            alert('¡Solicitud enviada con éxito! Código de proyecto: ' + result.codigo_proyecto);
+            alert('¡Solicitud enviada con éxito!');
             window.location.href = '/panel_confeccion.html';
-
         } catch (error) {
-            console.error('Error al enviar el formulario:', error);
-            alert('Error al enviar la solicitud: ' + error.message);
+            alert(`Error al enviar la solicitud: ${error.message}`);
             const botonSubmit = form.querySelector('button[type="submit"]');
             botonSubmit.textContent = 'Crear Solicitud de Diseño';
             botonSubmit.disabled = false;
         }
     });
 
-    // Carga inicial de datos
     loadAdvisors();
     loadAllCenters();
 });
