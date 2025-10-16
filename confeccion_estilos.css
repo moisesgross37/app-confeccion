@@ -242,3 +242,46 @@ button[type="submit"]:hover {
     min-height: 80px;
     box-sizing: border-box;
 }
+/* ===== MEJORAS VISUALES PARA EL PANEL DE CONFECCIÓN ===== */
+
+/* 1. Arregla los filtros para que siempre estén en 3 columnas */
+.filtros-container {
+    display: grid;
+    /* Forzamos 3 columnas de tamaño igual */
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px; /* Aumentamos un poco el espacio entre ellos */
+}
+
+/* 2. Arregla la tabla para alinear encabezados y optimizar columnas */
+.table {
+    /* Esto es clave para que los anchos de columna se respeten */
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse; /* Evita bordes dobles */
+}
+
+.table th, .table td {
+    /* Evita que el texto largo se desborde y lo corta si es necesario */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 12px 10px; /* Un poco más de espacio interno */
+    vertical-align: middle; /* Centra el contenido verticalmente */
+}
+
+/* 3. Definimos el ancho de cada columna para un control total */
+.table th:nth-child(1), .table td:nth-child(1) { width: 8%; }  /* Código */
+.table th:nth-child(2), .table td:nth-child(2) { width: 25%; } /* Centro */
+.table th:nth-child(3), .table td:nth-child(3) { width: 15%; } /* Asesor */
+.table th:nth-child(4), .table td:nth-child(4) { width: 15%; } /* Diseñador */
+.table th:nth-child(5), .table td:nth-child(5) { width: 20%; } /* Estatus */
+.table th:nth-child(6), .table td:nth-child(6) { width: 17%; } /* Acciones */
+
+
+/* --- Responsividad para Móviles --- */
+/* Cuando la pantalla sea muy pequeña, los filtros se apilarán */
+@media (max-width: 768px) {
+    .filtros-container {
+        grid-template-columns: 1fr; /* Una sola columna en móviles */
+    }
+}
