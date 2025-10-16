@@ -411,43 +411,40 @@ app.get('/api/designers', requireLogin, async (req, res) => {
 });
 
 // REEMPLAZA TU RUTA '/api/solicitudes' ACTUAL CON ESTA
+// (VERSIÓN ÚNICA Y CORRECTA) Crear una nueva solicitud de confección
 app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']), upload.array('imagenes_referencia'), async (req, res) => {
-    const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
-    const client = await pool.connect(); // Usaremos una transacción
+    const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const projectResult = await client.query(
+            'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud) VALUES ($1, $2, $3, $4) RETURNING *',
+            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud]
+        );
+        const nuevoProyecto = projectResult.rows[0];
 
-    try {
-        await client.query('BEGIN'); // Iniciar transacción
-
-        // 1. Insertamos el nuevo proyecto en la tabla principal
-        const projectResult = await client.query(
-            'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud) VALUES ($1, $2, $3, $4) RETURNING *',
-            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud]
-        );
-        const nuevoProyecto = projectResult.rows[0];
-
-        // 2. Si hay imágenes de referencia, las guardamos en la nueva tabla de archivos
-        if (req.files && req.files.length > 0) {
-            for (const file of req.files) {
-                await client.query(
-                    `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
-                     VALUES ($1, $2, $3, $4, $5)`,
-                    [nuevoProyecto.id, 'referencia', file.path, file.originalname, req.session.user.username]
-                );
-            }
-        }
-
-        await client.query('COMMIT'); // Confirmar transacción
-        res.status(201).json(nuevoProyecto);
-
-    } catch (err) {
-        await client.query('ROLLBACK'); // Revertir en caso de error
-        console.error('Error al crear la solicitud:', err);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    } finally {
-        client.release();
-    }
+        if (req.files && req.files.length > 0) {
+            for (const file of req.files) {
+                // ----- INICIO DE LA LÍNEA CORREGIDA -----
+                // En lugar de guardar 'file.path', construimos la URL web correcta.
+                const webUrl = `/uploads_confeccion/${file.filename}`;
+                await client.query(
+                    `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) VALUES ($1, $2, $3, $4, $5)`,
+                    [nuevoProyecto.id, 'referencia', webUrl, file.originalname, req.session.user.username]
+                );
+                // ----- FIN DE LA LÍNEA CORREGIDA -----
+            }
+        }
+        await client.query('COMMIT');
+        res.status(201).json(nuevoProyecto);
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error al crear la solicitud:', err);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    } finally {
+        client.release();
+    }
 });
-
 app.delete('/api/designers/:id', requireLogin, checkRole(['Administrador']), async (req, res) => {
     try {
         await pool.query('DELETE FROM confeccion_designers WHERE id = $1', [req.params.id]);
