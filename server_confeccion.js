@@ -495,46 +495,42 @@ app.put('/api/proyectos/:id/asignar', requireLogin, checkRole(['Administrador', 
     } catch (err) { res.status(500).json({ message: 'Error al asignar proyecto' }); }
 });
 
-app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñador', 'Administrador']), async (req, res) => {
-    // Ahora leemos la lista de archivos desde 'req.body', no desde 'req.file'.
-    const { id } = req.params;
-    const { archivos } = req.body;
+// REEMPLAZA LA RUTA COMPLETA EN server_confeccion.js
+app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñador', 'Administrador']), upload.array('propuestas_diseno'), async (req, res) => {
+    const { id } = req.params;
 
-    // La verificación ahora se hace sobre 'archivos'.
-    if (!archivos || archivos.length === 0) {
-        return res.status(400).json({ message: 'No se ha enviado ningún archivo de propuesta.' });
-    }
-    
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ message: 'No se ha enviado ningún archivo de propuesta.' });
+    }
+    
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
 
-        // Recorremos la lista de archivos que llegó en 'req.body.archivos'.
-        for (const file of archivos) {
-            await client.query(
-                `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
-                 VALUES ($1, $2, $3, $4, $5)`,
-                // Usamos file.filePath y file.fileName, que es lo que envía el frontend.
-                [id, 'propuesta_diseno', file.filePath, file.fileName, req.session.user.username]
-            );
-        }
+        for (const file of req.files) {
+            const webUrl = `/uploads_confeccion/${file.filename}`;
+            await client.query(
+                `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [id, 'propuesta_diseno', webUrl, file.originalname, req.session.user.username]
+            );
+        }
 
-        // Actualizamos el estado del proyecto.
-        const projectResult = await client.query(
-            'UPDATE confeccion_projects SET status = $1, fecha_propuesta = NOW() WHERE id = $2 RETURNING *', 
-            ['Pendiente Aprobación Interna', id]
-        );
+        const projectResult = await client.query(
+            'UPDATE confeccion_projects SET status = $1, fecha_propuesta = NOW() WHERE id = $2 RETURNING *', 
+            ['Pendiente Aprobación Interna', id]
+        );
 
-        await client.query('COMMIT');
-        res.json(projectResult.rows[0]);
+        await client.query('COMMIT');
+        res.json(projectResult.rows[0]);
 
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Error al subir propuesta(s):', err);
-        res.status(500).json({ message: 'Error en el servidor al subir la(s) propuesta(s).' });
-    } finally {
-        client.release();
-    }
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error al subir propuesta(s):', err);
+        res.status(500).json({ message: 'Error en el servidor al subir la(s) propuesta(s).' });
+    } finally {
+        client.release();
+    }
 });
 app.put('/api/proyectos/:id/subir-proforma', requireLogin, checkRole(['Administrador', 'Diseñador']), async (req, res) => {
     // 1. Ya no usamos 'multer', por lo que leemos los datos desde 'req.body'.
