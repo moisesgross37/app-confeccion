@@ -89,18 +89,15 @@
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
         try {
-            // Tu servidor ya tiene la ruta /api/me para obtener el usuario actual
             const response = await fetch('/api/me');
             if (!response.ok) {
-                // Si no se puede obtener el usuario, se ocultan los botones por seguridad
                 throw new Error('Usuario no autenticado');
             }
 
             const user = await response.json();
             const userRole = user.rol;
 
-            // Según tu server.js, solo el 'Administrador' puede ver estas páginas.
-            // Ocultamos los botones para CUALQUIER rol que NO sea 'Administrador'.
+            // Lógica para ocultar botones a roles que NO son 'Administrador'.
             if (userRole !== 'Administrador') {
                 const adminDesignersButton = document.querySelector('a[href="/admin_diseñadores.html"]');
                 if (adminDesignersButton) {
@@ -111,15 +108,23 @@
                 if (adminUsersButton) {
                     adminUsersButton.style.display = 'none';
                 }
+
+                // --- LÍNEA AÑADIDA ---
+                // Ocultamos "Crear Nueva Solicitud" si el rol no es Administrador.
+                const newRequestButton = document.querySelector('a[href="/solicitud_confeccion.html"]');
+                if (newRequestButton) {
+                    newRequestButton.style.display = 'none';
+                }
             }
         } catch (error) {
             console.error('Error al verificar permisos:', error);
-            // Si hay cualquier error, ocultamos los botones como medida de seguridad.
+            // Ocultamos todos los botones sensibles como medida de seguridad en caso de error.
             document.querySelector('a[href="/admin_diseñadores.html"]').style.display = 'none';
             document.querySelector('a[href="/admin_usuarios.html"]').style.display = 'none';
+            document.querySelector('a[href="/solicitud_confeccion.html"]').style.display = 'none';
         }
     });
 </script>
-
+    
 </body>
 </html>
