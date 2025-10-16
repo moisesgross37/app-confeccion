@@ -331,49 +331,76 @@ async function mostrarPanelAprobarCliente(container, projectId, proyecto) {
 
 // REEMPLAZA LA FUNCIÓN COMPLETA EN detalle_proyecto.js
 async function mostrarPanelSubirProforma(container, projectId) {
-    const panelId = `panel-proforma-${Math.random()}`;
+    const panelId = `panel-proforma-${projectId}`;
     const div = document.createElement('div');
     div.innerHTML = `
         <h3>Subir Proforma(s)</h3>
         <form id="form-proforma-${panelId}">
             <div class="form-group">
                 <label>Archivos de Proforma:</label>
-                <input type="file" name="proformas" multiple required accept="image/*,application/pdf">
+                <button type="button" class="button btn-add-file">Añadir Archivo(s)</button>
+                <input type="file" name="proformas" multiple style="display: none;">
+                <div class="file-list" style="margin-top: 15px;"></div>
             </div>
             <button type="submit">Enviar Proforma(s)</button>
-            <p id="upload-error-${panelId}" style="color: red; display: none;"></p>
-        </form>
-    `;
+        </form>`;
     container.appendChild(div);
 
     const formProforma = document.getElementById(`form-proforma-${panelId}`);
-    formProforma.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(formProforma);
+    const fileInput = formProforma.querySelector('input[type="file"]');
+    const fileListContainer = formProforma.querySelector('.file-list');
+    let selectedFiles = [];
+
+    formProforma.querySelector('.btn-add-file').addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+        for (const file of fileInput.files) selectedFiles.push(file);
+        renderFileList(selectedFiles, fileListContainer);
+        fileInput.value = '';
+    });
+
+    fileListContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-remove-file')) {
+            selectedFiles.splice(parseInt(e.target.dataset.index, 10), 1);
+            renderFileList(selectedFiles, fileListContainer);
+        }
+    });
+
+    formProforma.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (selectedFiles.length === 0) return alert('Debe añadir al menos un archivo.');
+
+        const formData = new FormData();
+        for (const file of selectedFiles) formData.append('proformas', file);
+
+        // Lógica de envío...
         const submitButton = formProforma.querySelector('button[type="submit"]');
-        
         try {
             submitButton.textContent = 'Enviando...';
             submitButton.disabled = true;
-
-            const res = await fetch(`/api/proyectos/${projectId}/subir-proforma`, {
-                method: 'PUT',
-                body: formData
-            });
-
+            const res = await fetch(`/api/proyectos/${projectId}/subir-proforma`, { method: 'PUT', body: formData });
             if (!res.ok) {
                 const errorData = await res.json();
-                throw new Error(errorData.message || 'Error desconocido del servidor.');
+                throw new Error(errorData.message || 'Error desconocido.');
             }
             alert('Proforma(s) subida(s) con éxito.');
             window.location.reload();
-        } catch (e) {
-            const errorElement = document.getElementById(`upload-error-${panelId}`);
-            errorElement.textContent = `Error: ${e.message}`;
-            errorElement.style.display = 'block';
+        } catch (error) {
+            alert(`Error: ${error.message}`);
             submitButton.textContent = 'Enviar Proforma(s)';
             submitButton.disabled = false;
         }
+    });
+}
+
+// Función de ayuda reutilizable para mostrar la lista de archivos
+function renderFileList(files, container) {
+    container.innerHTML = '';
+    files.forEach((file, index) => {
+        const fileElement = document.createElement('div');
+        fileElement.className = 'file-item';
+        fileElement.innerHTML = `<span>✅ ${file.name}</span><button type="button" class="btn-remove-file" data-index="${index}">❌</button>`;
+        container.appendChild(fileElement);
     });
 }
 async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
