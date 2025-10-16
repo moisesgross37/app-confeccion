@@ -601,20 +601,20 @@ app.put('/api/proyectos/:id/aprobar-cliente', requireLogin, checkRole(['Asesor',
         res.status(500).json({ message: 'Error en el servidor' });
     }
 });
+// REEMPLAZA ESTE BLOQUE COMPLETO EN server_confeccion.js
 app.put('/api/proyectos/:id/aprobar-calidad', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
-    try {
-        // Nota: No existe un campo 'fecha_aprobacion_calidad', por lo que solo actualizamos el estado.
-        const result = await pool.query(
-            `UPDATE confeccion_projects 
-             SET status = 'Listo para Entrega' 
-             WHERE id = $1 RETURNING *`,
-            [req.params.id]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        console.error('Error al aprobar calidad:', err);
-        res.status(500).json({ message: 'Error en el servidor' });
-    }
+    try {
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET status = 'Listo para Entrega' 
+             WHERE id = $1 RETURNING *`,
+            [req.params.id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error al aprobar calidad:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
 });
 app.put('/api/proyectos/:id/autorizar-produccion', requireLogin, checkRole(['Asesor', 'Administrador']), upload.single('listado_final'), async (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'El listado final es un archivo obligatorio.' });
