@@ -10,61 +10,88 @@
 <body>
     <div class="container">
         <header>
-            <nav>
-                <a href="panel_confeccion.html" class="button">&larr; Volver al Panel</a>
-            </nav>
-            <h1>Detalle de Proyecto</h1>
-        </header>
+            <a href="/panel_confeccion.html" class="back-button">&larr; Volver al Panel</a>
+            <h1>Detalle de Proyecto</h1>
+        </header>
 
-        <main class="project-detail-grid">
-            <section id="detalles-principales">
-                <h2>Detalles del Proyecto</h2>
-                <p><strong>Código:</strong> <span id="codigo-proyecto">Cargando...</span></p>
-                <p><strong>Centro:</strong> <span id="centro-proyecto">Cargando...</span></p>
-                <p><strong>Asesor:</strong> <span id="asesor-proyecto">Cargando...</span></p>
-                <p><strong>Diseñador:</strong> <span id="disenador-proyecto">Cargando...</span></p>
-                <p><strong>Estado:</strong> <mark id="estado-proyecto">Cargando...</mark></p>
-                <p><strong>Detalles Solicitud:</strong></p>
-                <blockquote id="detalles-proyecto">Cargando...</blockquote>
-            </section>
+        <div class="dashboard-grid">
 
-            <section id="archivos-del-proyecto" class="full-width-grid-item">
-                <h2>Archivos del Proyecto</h2>
-                
-                <h4>Imágenes de Referencia</h4>
-                <ul id="archivos-referencia" class="file-list"><li>Cargando...</li></ul>
+            <div class="main-content">
 
-                <h4>Propuestas de Diseño</h4>
-                <ul id="archivos-propuesta_diseno" class="file-list"><li>Cargando...</li></ul>
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Detalles del Proyecto</h2>
+                    </div>
+                    <div class="card-body details-list">
+                        <p><strong>Código:</strong> <span id="codigo-proyecto">Cargando...</span></p>
+                        <p><strong>Centro:</strong> <span id="centro-proyecto">Cargando...</span></p>
+                        <p><strong>Asesor:</strong> <span id="asesor-proyecto">Cargando...</span></p>
+                        <p><strong>Diseñador:</strong> <span id="disenador-proyecto">Cargando...</span></p>
+                        <p><strong>Estado:</strong> <mark id="estado-proyecto">Cargando...</mark></p>
+                        <div>
+                            <strong>Detalles Solicitud:</strong>
+                            <textarea id="detalles-proyecto" readonly>Cargando...</textarea>
+                        </div>
+                    </div>
+                </div>
 
-                <h4>Proformas</h4>
-                <ul id="archivos-proforma" class="file-list"><li>Cargando...</li></ul>
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Archivos del Proyecto</h2>
+                    </div>
+                    <div class="card-body">
+                        <h4>Imágenes de Referencia</h4>
+                        <ul id="archivos-referencia"><li>Cargando...</li></ul>
+                        <hr>
+                        <h4>Propuestas de Diseño</h4>
+                        <ul id="archivos-propuesta_diseno"><li>Cargando...</li></ul>
+                        <hr>
+                        <h4>Proformas</h4>
+                        <ul id="archivos-proforma"><li>Cargando...</li></ul>
+                        <hr>
+                        <h4>Listados Finales</h4>
+                        <ul id="archivos-listado_final"><li>Cargando...</li></ul>
+                    </div>
+                </div>
 
-                <h4>Listados Finales</h4>
-                <ul id="archivos-listado_final" class="file-list"><li>Cargando...</li></ul>
-            </section>
-                    <section id="tiempos">
-                <h2>Tiempos e Historial</h2>
-                <div class="card-container">
-                    <article class="card">
-                        <h3 id="dias-totales">--</h3>
-                        <p>Días Totales</p>
-                    </article>
-                    <article class="card">
-                        <h3 id="dias-en-produccion">--</h3>
-                        <p>Días en Producción</p>
-                    </article>
-                </div>
-                <h3>Historial de Fechas</h3>
-                <ul id="historial-fechas"></ul>
-            </section>
+            </div>
 
-            <section id="flujo-trabajo" class="full-width-grid-item">
-                <h2>Flujo de Trabajo</h2>
-                        </section>
-        </main>
-    </div>
+            <div class="sidebar-content">
 
-    <script src="detalle_proyecto.js"></script>
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Flujo de Trabajo</h2>
+                    </div>
+                    <div class="card-body" id="flujo-trabajo">
+                        </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Tiempos e Historial</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="time-counters">
+                            <div class="counter">
+                                <span id="dias-totales" class="count-number">--</span>
+                                <span class="count-label">Días Totales</span>
+                            </div>
+                            <div class="counter">
+                                <span id="dias-en-produccion" class="count-number">--</span>
+                                <span class="count-label">Días en Producción</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <h4>Historial de Fechas</h4>
+                        <ul id="historial-fechas" class="history-list">
+                            </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        </div>
+
+    <script src="detalle_proyecto.js"></script>
 </body>
 </html>
