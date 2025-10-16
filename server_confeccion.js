@@ -246,23 +246,20 @@ app.put('/api/proyectos/:id/solicitar-mejora', requireLogin, checkRole(['Adminis
 });
 // ===== INICIO: Nueva Ruta Genérica para Subida de Archivos =====
 app.post('/api/archivos/temporal', requireLogin, upload.single('archivo'), (req, res) => {
-    // El middleware 'upload.single' ya se encargó de guardar el archivo.
-    // 'req.file' contiene la información del archivo que se acaba de subir.
+    if (!req.file) {
+        return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
+    }
 
-    if (!req.file) {
-        return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
-    }
+    // --- CORRECCIÓN ---
+    // Construimos la URL web correcta en lugar de enviar la ruta del disco.
+    const webUrl = `/uploads_confeccion/${req.file.filename}`;
 
-    // Si el archivo se subió con éxito, devolvemos la ruta donde se guardó.
-    // El frontend usará esta ruta para saber qué archivo se acaba de añadir.
-    res.json({
-        message: 'Archivo subido con éxito.',
-        filePath: req.file.path,
-        fileName: req.file.originalname
-    });
+    res.json({
+        message: 'Archivo subido con éxito.',
+        filePath: webUrl, // Devolvemos la URL correcta
+        fileName: req.file.originalname
+    });
 });
-// ===== FIN: Nueva Ruta Genérica para Subida de Archivos =====
-
 // --- Rutas de Administración de Usuarios (AÑADIDAS Y ADAPTADAS A POSTGRESQL) ---
 app.get('/api/users', requireLogin, checkRole(['Administrador']), async (req, res) => {
     try {
@@ -594,42 +591,43 @@ app.put('/api/proyectos/:id/aprobar-calidad', requireLogin, checkRole(['Administ
         res.status(500).json({ message: 'Error en el servidor' });
     }
 });
-
-// REEMPLAZA TU RUTA '/autorizar-produccion' CON ESTA
 app.put('/api/proyectos/:id/autorizar-produccion', requireLogin, checkRole(['Asesor', 'Administrador']), upload.single('listado_final'), async (req, res) => {
-    if (!req.file) return res.status(400).json({ message: 'El listado final es un archivo obligatorio.' });
-    
-    const { id } = req.params;
-    const client = await pool.connect();
+    if (!req.file) return res.status(400).json({ message: 'El listado final es un archivo obligatorio.' });
+    
+    const { id } = req.params;
+    const client = await pool.connect();
 
-    try {
-        await client.query('BEGIN');
+    try {
+        await client.query('BEGIN');
 
-        // 1. Guardamos el listado final en la tabla de archivos
-        await client.query(
-            `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
-             VALUES ($1, $2, $3, $4, $5)`,
-            [id, 'listado_final', req.file.path, req.file.originalname, req.session.user.username]
-        );
+        // --- CORRECCIÓN ---
+        // Construimos la URL web correcta para el archivo.
+        const webUrl = `/uploads_confeccion/${req.file.filename}`;
+        
+        // 1. Guardamos el listado final en la tabla de archivos con la URL correcta
+        await client.query(
+            `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
+             VALUES ($1, $2, $3, $4, $5)`,
+            [id, 'listado_final', webUrl, req.file.originalname, req.session.user.username]
+        );
 
-        // 2. Actualizamos el estado del proyecto
-        const result = await client.query(
-            'UPDATE confeccion_projects SET fecha_autorizacion_produccion = NOW(), status = $1 WHERE id = $2 RETURNING *',
-            ['En Lista de Producción', id]
-        );
+        // 2. Actualizamos el estado del proyecto
+        const result = await client.query(
+            'UPDATE confeccion_projects SET fecha_autorizacion_produccion = NOW(), status = $1 WHERE id = $2 RETURNING *',
+            ['En Lista de Producción', id]
+        );
 
-        await client.query('COMMIT');
-        res.json(result.rows[0]);
+        await client.query('COMMIT');
+        res.json(result.rows[0]);
 
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Error al autorizar producción:', err);
-        res.status(500).json({ message: 'Error al autorizar producción' });
-    } finally {
-        client.release();
-    }
-});// Pega este bloque en tu server_confeccion.js
-
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error al autorizar producción:', err);
+        res.status(500).json({ message: 'Error al autorizar producción' });
+    } finally {
+        client.release();
+    }
+});
 app.put('/api/proyectos/:id/reportar-incidencia', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     const { id } = req.params;
     const { comentarios } = req.body;
