@@ -213,10 +213,23 @@ async function mostrarPanelAsignacion(container, projectId) {
         }
     });
 }
-// REEMPLAZA LA FUNCIÓN COMPLETA EN detalle_proyecto.js
+// REEMPLAZA ESTA FUNCIÓN COMPLETA EN detalle_proyecto.js
 async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
     let revisionHtml = '';
-    if (proyecto?.historial_revisiones?.length > 0) {
+    
+    // --- INICIO DE LA MEJORA ---
+    // Verificamos si hay una incidencia reportada desde calidad.
+    if (proyecto?.historial_incidencias?.length > 0) {
+        const ultimaIncidencia = proyecto.historial_incidencias[proyecto.historial_incidencias.length - 1];
+        revisionHtml = `
+            <div style="background-color: #f2dede; border: 1px solid #ebccd1; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                <h4 style="margin-top: 0; color: #a94442;">🚨 Incidencia Reportada de Calidad</h4>
+                <p><strong>Comentario:</strong> "${ultimaIncidencia.comentario}"</p>
+                <p><em>Por favor, sube los archivos corregidos.</em></p>
+            </div>`;
+    } 
+    // Si no, verificamos si hay una revisión normal.
+    else if (proyecto?.historial_revisiones?.length > 0) {
         const ultimaRevision = proyecto.historial_revisiones[proyecto.historial_revisiones.length - 1];
         revisionHtml = `
             <div style="background-color: #fcf8e3; border: 1px solid #faebcc; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
@@ -224,6 +237,7 @@ async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
                 <p><strong>Comentario de ${ultimaRevision.rol}:</strong> "${ultimaRevision.comentario}"</p>
             </div>`;
     }
+    // --- FIN DE LA MEJORA ---
 
     const panelId = `panel-propuesta-${projectId}`;
     const div = document.createElement('div');
@@ -237,10 +251,12 @@ async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
                 <input type="file" name="propuestas_diseno" multiple style="display: none;">
                 <div class="file-list" style="margin-top: 15px;"></div>
             </div>
-            <button type="submit">Enviar Propuesta(s)</button>
+            <button type="submit">Enviar Propuesta(s) Corregidas</button>
         </form>`;
     container.appendChild(div);
 
+    // El resto de la función (los listeners y la lógica de envío) no necesita cambios.
+    // Solo pegamos la lógica que ya tenías y que funciona bien.
     const formPropuesta = document.getElementById(`form-propuesta-${panelId}`);
     const fileInput = formPropuesta.querySelector('input[type="file"]');
     const fileListContainer = formPropuesta.querySelector('.file-list');
@@ -263,12 +279,11 @@ async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
 
     formPropuesta.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (selectedFiles.length === 0) return alert('Debe añadir al menos un archivo.');
+        if (selectedFiles.length === 0) return alert('Debe añadir al menos un archivo corregido.');
 
         const formData = new FormData();
         for (const file of selectedFiles) formData.append('propuestas_diseno', file);
 
-        // Lógica de envío...
         const submitButton = formPropuesta.querySelector('button[type="submit"]');
         try {
             submitButton.textContent = 'Enviando...';
@@ -278,11 +293,11 @@ async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
                 const errorData = await res.json();
                 throw new Error(errorData.message || 'Error desconocido.');
             }
-            alert('Propuesta(s) subida(s) con éxito.');
+            alert('Propuesta(s) corregida(s) enviada(s) con éxito.');
             window.location.reload();
         } catch (error) {
             alert(`Error: ${error.message}`);
-            submitButton.textContent = 'Enviar Propuesta(s)';
+            submitButton.textContent = 'Enviar Propuesta(s) Corregidas';
             submitButton.disabled = false;
         }
     });
