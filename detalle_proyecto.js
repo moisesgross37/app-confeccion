@@ -445,17 +445,27 @@ async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
         } catch (error) { alert(`Error: ${error.message}`); }
     });
     
-    document.getElementById(`solicitar-mejora-proforma-btn-${panelId}`).addEventListener('click', async () => {
-        const comentarios = prompt('Escriba los cambios necesarios para la proforma:');
-        if (comentarios === null || comentarios.trim() === "") return;
-        try {
-            const response = await fetch(`/api/proyectos/${projectId}/solicitar-mejora-proforma`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comentarios: `PROFORMA: ${comentarios}` }) });
-            if (!response.ok) throw new Error('Error al solicitar la modificación.');
-            alert('Solicitud de modificación enviada.');
-            window.location.reload();
-        } catch(error) { alert(`Error: ${error.message}`); }
-    });
-}
+    // Busca este bloque y reemplázalo completo
+document.getElementById(`solicitar-mejora-proforma-btn-${panelId}`).addEventListener('click', async () => {
+    const comentarios = prompt('Escriba los cambios necesarios para la proforma:');
+    if (comentarios === null || comentarios.trim() === "") return;
+    try {
+        // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+        // Usamos la ruta genérica que ya funciona.
+        const response = await fetch(`/api/proyectos/${projectId}/solicitar-mejora`, { 
+            method: 'PUT', 
+            headers: { 'Content-Type': 'application/json' }, 
+            // Añadimos un prefijo al comentario para saber que vino de la proforma.
+            body: JSON.stringify({ comentarios: `PROFORMA: ${comentarios}` }) 
+        });
+        if (!response.ok) throw new Error('Error al solicitar la modificación.');
+        
+        alert('Solicitud de modificación enviada.');
+        window.location.reload();
+    } catch(error) { 
+        alert(`Error: ${error.message}`); 
+    }
+});
 
 async function mostrarPanelProduccion(container, proyecto) {
     const projectId = proyecto.id;
