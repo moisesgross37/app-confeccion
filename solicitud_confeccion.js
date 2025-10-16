@@ -112,42 +112,46 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        
-        // CORRECCIÓN: Usamos FormData para capturar los datos del formulario directamente.
-        const formData = new FormData(form);
-        
-        // Adjuntamos los archivos que se subieron por separado
-        archivosParaEnviar.forEach((file, index) => {
-            // Esto es un truco para poder enviar la data de los archivos junto con el resto del form.
-            // Lo manejaremos en el backend. Por ahora, nos enfocamos en que el formulario envíe.
-            formData.append(`archivos[${index}][filePath]`, file.filePath);
-            formData.append(`archivos[${index}][fileName]`, file.fileName);
+    event.preventDefault();
+
+    // 1. Creamos una "caja" (FormData) a partir de los datos del formulario.
+    const formData = new FormData(form);
+
+    // 2. Buscamos el input de archivos y añadimos cada archivo a la "caja".
+    //    Le ponemos la etiqueta "imagenes_referencia" para que el servidor la reconozca.
+    const inputArchivos = document.getElementById('input-archivo-oculto');
+    for (const file of inputArchivos.files) {
+        formData.append('imagenes_referencia', file);
+    }
+    
+    // 3. Verificamos que al menos los campos requeridos estén llenos.
+    if (!formData.get('nombre_centro') || !formData.get('nombre_asesor')) {
+        alert('Por favor, seleccione el centro y el asesor.');
+        return;
+    }
+
+    try {
+        // 4. Enviamos la "caja" completa.
+        //    OJO: NO especificamos 'Content-Type'. El navegador lo hará por nosotros
+        //    de forma correcta cuando envía un FormData.
+        const response = await fetch('/api/solicitudes', {
+            method: 'POST',
+            body: formData 
         });
 
-        // NOTA: La subida de archivos con fetch y FormData es compleja.
-        // La lógica actual para enviar el formulario como JSON es más simple y la mantendremos.
-        // Revertimos a la lógica de JSON que ya funcionaba.
-        const data = Object.fromEntries(new FormData(form).entries());
-        data.archivos = archivosParaEnviar;
-
-        try {
-            const response = await fetch('/api/solicitudes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.error || 'Error desconocido del servidor');
-            }
-            alert('¡Solicitud enviada con éxito! Código de proyecto: ' + result.codigo_proyecto);
-            window.location.href = '/panel_confeccion.html';
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error al enviar la solicitud: ' + error.message);
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || 'Error desconocido del servidor');
         }
-    });
+
+        alert('¡Solicitud enviada con éxito! Código de proyecto: ' + result.codigo_proyecto);
+        window.location.href = '/panel_confeccion.html';
+
+    } catch (error) {
+        console.error('Error al enviar el formulario:', error);
+        alert('Error al enviar la solicitud: ' + error.message);
+    }
+});
 
     loadAdvisors();
     // 3. Llamamos a la nueva función
