@@ -48,7 +48,7 @@ function renderizarPagina(proyecto, user) {
         proyecto.archivos.forEach(archivo => {
             const li = document.createElement('li');
             const fecha = new Date(archivo.fecha_subida).toLocaleString('es-DO', { dateStyle: 'short', timeStyle: 'short' });
-            li.innerHTML = `<a href="/${archivo.url_archivo}" target="_blank">${archivo.nombre_archivo}</a> <span style="color: #666; font-size: 0.9em;">(Subido por ${archivo.subido_por} - ${fecha})</span>`;
+            li.innerHTML = `<a href="${archivo.url_archivo}" target="_blank">${archivo.nombre_archivo}</a> <span style="color: #666; font-size: 0.9em;">(Subido por ${archivo.subido_por} - ${fecha})</span>`;
             
             switch (archivo.tipo_archivo) {
                 case 'referencia':
