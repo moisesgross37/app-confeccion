@@ -441,6 +441,18 @@ app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']
         client.release();
     }
 });
+// Pega este nuevo bloque en tu servidor
+
+// --- Ruta para OBTENER todos los diseñadores ---
+app.get('/api/designers', requireLogin, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM confeccion_designers ORDER BY name ASC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error("Error al obtener diseñadores:", err);
+        res.status(500).json({ message: 'Error al cargar la lista de diseñadores.' });
+    }
+});
 app.delete('/api/designers/:id', requireLogin, checkRole(['Administrador']), async (req, res) => {
     try {
         await pool.query('DELETE FROM confeccion_designers WHERE id = $1', [req.params.id]);
