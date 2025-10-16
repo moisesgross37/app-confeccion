@@ -95,29 +95,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // --- Lógica para el botón Eliminar (usando delegación de eventos) ---
-    tableBody.addEventListener('click', async (event) => {
-        // Solo reacciona si se hace clic en un botón con la clase 'button-danger'
-        if (event.target.classList.contains('button-danger')) {
-            const button = event.target;
-            const projectId = button.dataset.projectId;
-            const projectCode = button.dataset.projectCode;
+    
+    // REEMPLAZA ESTE BLOQUE COMPLETO EN panel_confeccion.js
+tableBody.addEventListener('click', async (event) => {
+    // Solo reacciona si se hace clic en un botón con la clase 'button-danger'
+    if (event.target.classList.contains('button-danger')) {
+        const button = event.target;
+        const projectId = button.dataset.projectId;
+        const projectCode = button.dataset.projectCode;
 
-            if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente el proyecto "${projectCode}"? Esta acción no se puede deshacer.`)) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/solicitudes/${projectId}`, { method: 'DELETE' });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.message || 'Error en el servidor.');
-                alert(result.message);
-                window.location.reload(); // Recarga la página para mostrar la tabla actualizada
-            } catch (error) {
-                console.error('Error al eliminar:', error);
-                alert(`No se pudo eliminar el proyecto: ${error.message}`);
-            }
+        if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente el proyecto "${projectCode}"? Esta acción no se puede deshacer.`)) {
+            return;
         }
-    });
+
+        try {
+            // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+            // Cambiamos la URL a la ruta correcta del servidor.
+            const response = await fetch(`/api/proyectos/${projectId}`, { method: 'DELETE' });
+
+            // El resto del código ya estaba bien, pero lo mejoramos un poco.
+            if (!response.ok) {
+                // Si la respuesta no es OK, intentamos leer el mensaje de error.
+                const errorData = await response.json().catch(() => ({ message: 'Error desconocido del servidor.' }));
+                throw new Error(errorData.message);
+            }
+            
+            const result = await response.json();
+            alert(result.message);
+            window.location.reload(); // Recarga la página para mostrar la tabla actualizada
+
+        } catch (error) {
+            console.error('Error al eliminar:', error);
+            alert(`No se pudo eliminar el proyecto: ${error.message}`);
+        }
+    }
+});
 
     // --- Añadimos los listeners para que los filtros funcionen ---
     filtroAsesor.addEventListener('change', applyFilters);
