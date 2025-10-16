@@ -382,35 +382,34 @@ app.delete('/api/proyectos/:id', requireLogin, checkRole(['Administrador']), asy
 app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
     try {
         const { id } = req.params;
+
+        // 1. Obtenemos los detalles principales del proyecto
         const projectQuery = `
-            SELECT p.*, d.name AS nombre_disenador FROM confeccion_projects p
-            LEFT JOIN confeccion_designers d ON p.diseñador_id = d.id WHERE p.id = $1`;
+            SELECT p.*, d.name AS nombre_disenador 
+            FROM confeccion_projects p
+            LEFT JOIN confeccion_designers d ON p.diseñador_id = d.id 
+            WHERE p.id = $1`;
         const projectResult = await pool.query(projectQuery, [id]);
 
         if (projectResult.rows.length === 0) {
-            // ----- LÍNEA CORREGIDA -----
-            return res.status(404).json({ message: 'Proyecto no encontrado' }); 
+            return res.status(404).json({ message: 'Proyecto no encontrado' });
         }
         const proyecto = projectResult.rows[0];
 
+        // 2. Obtenemos TODOS los archivos asociados desde la tabla 'confeccion_archivos'
         const filesResult = await pool.query('SELECT * FROM confeccion_archivos WHERE proyecto_id = $1 ORDER BY fecha_subida DESC', [id]);
+
+        // 3. Añadimos la lista de archivos al objeto del proyecto antes de enviarlo
         proyecto.archivos = filesResult.rows;
 
+        // 4. Enviamos la respuesta completa
         res.json(proyecto);
+
     } catch (err) {
         console.error('Error al obtener los detalles del proyecto:', err);
         res.status(500).json({ message: 'Error en el servidor al obtener el proyecto' });
     }
 });
-
-app.get('/api/designers', requireLogin, async (req, res) => {
-    try {
-        const result = await pool.query('SELECT id, name AS nombre FROM confeccion_designers ORDER BY name ASC');
-        res.json(result.rows);
-    } catch (err) { console.error(err); res.status(500).json({ message: 'Error al obtener diseñadores' }); }
-});
-
-// REEMPLAZA TU RUTA '/api/solicitudes' ACTUAL CON ESTA
 // (VERSIÓN ÚNICA Y CORRECTA) Crear una nueva solicitud de confección
 app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']), upload.array('imagenes_referencia'), async (req, res) => {
     const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
