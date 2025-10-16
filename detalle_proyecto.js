@@ -216,59 +216,72 @@ async function mostrarPanelAsignacion(container, projectId) {
 // REEMPLAZA LA FUNCIÓN COMPLETA EN detalle_proyecto.js
 async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
     let revisionHtml = '';
-    if (proyecto && proyecto.historial_revisiones && proyecto.historial_revisiones.length > 0) {
+    if (proyecto?.historial_revisiones?.length > 0) {
         const ultimaRevision = proyecto.historial_revisiones[proyecto.historial_revisiones.length - 1];
         revisionHtml = `
             <div style="background-color: #fcf8e3; border: 1px solid #faebcc; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
                 <h4 style="margin-top: 0; color: #8a6d3b;">Devuelto con Cambios Solicitados</h4>
-                <p style="margin-bottom: 5px;"><strong>Fecha:</strong> ${new Date(ultimaRevision.fecha).toLocaleString()}</p>
-                <p style="margin-bottom: 0;"><strong>Comentario de ${ultimaRevision.rol}:</strong> "${ultimaRevision.comentario}"</p>
-            </div>
-        `;
+                <p><strong>Comentario de ${ultimaRevision.rol}:</strong> "${ultimaRevision.comentario}"</p>
+            </div>`;
     }
 
-    const panelId = `panel-propuesta-${Math.random()}`;
+    const panelId = `panel-propuesta-${projectId}`;
     const div = document.createElement('div');
-    // Simplificamos el HTML a un formulario
     div.innerHTML = `
         <h3>Subir Propuesta(s) de Diseño</h3>
         ${revisionHtml}
         <form id="form-propuesta-${panelId}">
             <div class="form-group">
                 <label>Archivos de Propuesta:</label>
-                <input type="file" name="propuestas_diseno" multiple required accept="image/*,application/pdf">
+                <button type="button" class="button btn-add-file">Añadir Archivo(s)</button>
+                <input type="file" name="propuestas_diseno" multiple style="display: none;">
+                <div class="file-list" style="margin-top: 15px;"></div>
             </div>
             <button type="submit">Enviar Propuesta(s)</button>
-            <p id="upload-error-${panelId}" style="color: red; display: none;"></p>
-        </form>
-    `;
+        </form>`;
     container.appendChild(div);
 
     const formPropuesta = document.getElementById(`form-propuesta-${panelId}`);
-    formPropuesta.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(formPropuesta);
-        const submitButton = formPropuesta.querySelector('button[type="submit"]');
+    const fileInput = formPropuesta.querySelector('input[type="file"]');
+    const fileListContainer = formPropuesta.querySelector('.file-list');
+    let selectedFiles = [];
 
+    formPropuesta.querySelector('.btn-add-file').addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+        for (const file of fileInput.files) selectedFiles.push(file);
+        renderFileList(selectedFiles, fileListContainer);
+        fileInput.value = '';
+    });
+
+    fileListContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-remove-file')) {
+            selectedFiles.splice(parseInt(e.target.dataset.index, 10), 1);
+            renderFileList(selectedFiles, fileListContainer);
+        }
+    });
+
+    formPropuesta.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (selectedFiles.length === 0) return alert('Debe añadir al menos un archivo.');
+
+        const formData = new FormData();
+        for (const file of selectedFiles) formData.append('propuestas_diseno', file);
+
+        // Lógica de envío...
+        const submitButton = formPropuesta.querySelector('button[type="submit"]');
         try {
             submitButton.textContent = 'Enviando...';
             submitButton.disabled = true;
-
-            const res = await fetch(`/api/proyectos/${projectId}/subir-propuesta`, {
-                method: 'PUT',
-                body: formData
-            });
-
+            const res = await fetch(`/api/proyectos/${projectId}/subir-propuesta`, { method: 'PUT', body: formData });
             if (!res.ok) {
                 const errorData = await res.json();
-                throw new Error(errorData.message || 'Error desconocido del servidor.');
+                throw new Error(errorData.message || 'Error desconocido.');
             }
             alert('Propuesta(s) subida(s) con éxito.');
             window.location.reload();
-        } catch (e) {
-            const errorElement = document.getElementById(`upload-error-${panelId}`);
-            errorElement.textContent = `Error: ${e.message}`;
-            errorElement.style.display = 'block';
+        } catch (error) {
+            alert(`Error: ${error.message}`);
             submitButton.textContent = 'Enviar Propuesta(s)';
             submitButton.disabled = false;
         }
