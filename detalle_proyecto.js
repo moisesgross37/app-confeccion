@@ -116,7 +116,7 @@ function renderizarPagina(proyecto, user) {
         mostrarPanelAsignacion(contenedorAcciones, projectId);
         actionPanelRendered = true;
     } 
-    else if (proyecto.status === 'Diseño en Proceso' && ['Administrador', 'Diseñador'].includes(userRol)) {
+    else if (['Diseño en Proceso', 'En Confección'].includes(proyecto.status) && ['Administrador', 'Diseñador'].includes(userRol)) {
         mostrarPanelSubirPropuesta(contenedorAcciones, projectId, proyecto);
         actionPanelRendered = true;
     } 
