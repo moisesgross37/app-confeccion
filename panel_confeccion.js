@@ -36,46 +36,47 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTable(proyectosFiltrados);
     };
 
-    const renderTable = (proyectos) => {
-        tableBody.innerHTML = '';
+    // REEMPLAZA TU FUNCIÓN renderTable COMPLETA CON ESTA
+const renderTable = (proyectos) => {
+    tableBody.innerHTML = '';
 
-        if (!proyectos || proyectos.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="6">No hay proyectos que coincidan con los filtros.</td></tr>';
-            return;
-        }
+    if (!proyectos || proyectos.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6">No hay proyectos que coincidan con los filtros.</td></tr>';
+        return;
+    }
 
-        proyectos.forEach(proyecto => {
-            const row = document.createElement('tr');
-            
-            // Preparamos el HTML para el botón de eliminar, solo si el usuario es Administrador
-            let eliminarButtonHtml = '';
-            if (currentUser && currentUser.rol === 'Administrador') {
-                eliminarButtonHtml = `
-                    <button class="button-danger" 
-                            data-project-id="${proyecto.id}" 
-                            data-project-code="${proyecto.codigo_proyecto || proyecto.id}"
-                            style="margin-left: 10px;">
-                        Eliminar
-                    </button>
-                `;
-            }
+    proyectos.forEach(proyecto => {
+        const row = document.createElement('tr');
+        
+        // Prepara el botón de eliminar solo si el usuario es Administrador
+        let eliminarButtonHtml = '';
+        if (currentUser && currentUser.rol === 'Administrador') {
+            eliminarButtonHtml = `
+                <button class="button-danger" 
+                        data-project-id="${proyecto.id}" 
+                        data-project-code="${proyecto.codigo_proyecto || proyecto.id}"
+                        style="margin-left: 10px;">
+                    Eliminar
+                </button>
+            `;
+        }
 
-            // Construimos toda la fila en un solo bloque para asegurar la alineación correcta
-            row.innerHTML = `
-                <td>${proyecto.id}</td>
-                <td>${proyecto.cliente}</td>
-                <td>${proyecto.nombre_asesor}</td>
-                <td>${proyecto.nombre_disenador || 'No asignado'}</td>
-                <td><mark>${proyecto.status}</mark></td>
-                <td>
-                    <a href="detalle_proyecto.html?id=${proyecto.id}" class="button">Ver / Gestionar</a>
-                    ${eliminarButtonHtml}
-                </td>
-            `;
-            
-            tableBody.appendChild(row);
-        });
-    };
+        // Dibuja la fila completa con TODAS sus columnas
+        row.innerHTML = `
+            <td>${proyecto.id}</td>
+            <td>${proyecto.cliente}</td>
+            <td>${proyecto.nombre_asesor}</td>
+            <td>${proyecto.nombre_disenador || 'No asignado'}</td>
+            <td><mark>${proyecto.status}</mark></td>
+            <td>
+                <a href="detalle_proyecto.html?id=${proyecto.id}" class="button">Ver / Gestionar</a>
+                ${eliminarButtonHtml}
+            </td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+};
 
     // --- Carga inicial de datos ---
     Promise.all([
