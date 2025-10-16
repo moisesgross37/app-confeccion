@@ -150,32 +150,69 @@ function renderizarPagina(proyecto, user) {
 // ===== INICIO: TODAS LAS FUNCIONES DE AYUDA DEBEN ESTAR AQUÍ =====
 // ==================================================================
 
+// Pega esta nueva función aquí
+const loadDesigners = async (selectElement) => {
+    try {
+        const response = await fetch('/api/designers');
+        if (!response.ok) {
+            throw new Error('Error al cargar diseñadores.');
+        }
+        const designers = await response.json();
+
+        selectElement.innerHTML = '<option value="" disabled selected>-- Seleccione --</option>';
+        if (designers.length === 0) {
+            selectElement.innerHTML += '<option value="" disabled>No hay diseñadores disponibles</option>';
+            return;
+        }
+
+        designers.forEach(designer => {
+            const option = document.createElement('option');
+            option.value = designer.id;
+            // ---- ESTA ES LA CORRECCIÓN CLAVE ----
+            option.textContent = designer.name; // Usamos 'name' en lugar de 'nombre'
+            selectElement.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error al cargar diseñadores:', error);
+        selectElement.innerHTML = '<option value="" disabled selected>Error al cargar</option>';
+    }
+};
+
+// Reemplaza tu función 'mostrarPanelAsignacion' existente con esta
 async function mostrarPanelAsignacion(container, projectId) {
-    const panelId = `panel-asignacion-${Math.random()}`;
-    const div = document.createElement('div');
-    div.innerHTML = `<h3>Asignar Tarea</h3><div class="form-group"><label for="designer-select-${panelId}">Diseñador:</label><select id="designer-select-${panelId}" required><option value="">Cargando...</option></select></div><button id="assign-designer-btn-${panelId}">Asignar</button><p id="assign-error-${panelId}" style="color: red; display: none;"></p>`;
-    container.appendChild(div);
+    const panelId = `panel-asignacion-${Math.random()}`;
+    const div = document.createElement('div');
+    div.innerHTML = `<h3>Asignar Tarea</h3><div class="form-group"><label for="designer-select-${panelId}">Diseñador:</label><select id="designer-select-${panelId}" required><option value="">Cargando...</option></select></div><button id="assign-designer-btn-${panelId}" class="button">Asignar</button><p id="assign-error-${panelId}" style="color: red; display: none;"></p>`;
+    container.appendChild(div);
 
-    const select = document.getElementById(`designer-select-${panelId}`);
-    try {
-        const res = await fetch('/api/designers');
-        if (!res.ok) throw new Error('No se pudieron cargar los diseñadores.');
-        const disenadores = await res.json();
-        select.innerHTML = '<option value="">-- Seleccione --</option>';
-        disenadores.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = d.nombre; select.appendChild(o); });
-    } catch (e) { document.getElementById(`assign-error-${panelId}`).textContent = 'Error al cargar la lista.'; document.getElementById(`assign-error-${panelId}`).style.display = 'block'; }
-    
-    document.getElementById(`assign-designer-btn-${panelId}`).addEventListener('click', async () => {
-        const diseñadorId = select.value;
-        if (!diseñadorId) { alert('Seleccione un diseñador.'); return; }
-        try {
-            const res = await fetch(`/api/proyectos/${projectId}/asignar`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ diseñadorId }) });
-            if (!res.ok) throw new Error((await res.json()).message);
-            alert('Diseñador asignado.'); window.location.reload();
-        } catch (e) { alert(`Error: ${e.message}`); }
-    });
+    const select = document.getElementById(`designer-select-${panelId}`);
+    
+    // Aquí llamamos a nuestra nueva función de ayuda para llenar el selector
+    loadDesigners(select); 
+    
+    document.getElementById(`assign-designer-btn-${panelId}`).addEventListener('click', async () => {
+        const diseñadorId = select.value;
+        if (!diseñadorId) {
+            alert('Seleccione un diseñador.');
+            return;
+        }
+        try {
+            const res = await fetch(`/api/proyectos/${projectId}/asignar`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ diseñadorId })
+            });
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Error del servidor');
+            }
+            alert('Diseñador asignado con éxito.');
+            window.location.reload();
+        } catch (e) {
+            alert(`Error: ${e.message}`);
+        }
+    });
 }
-
 // REEMPLAZA LA FUNCIÓN COMPLETA EN detalle_proyecto.js
 async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
     let revisionHtml = '';
