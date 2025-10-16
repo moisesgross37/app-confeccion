@@ -1,75 +1,100 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('add-designer-form');
-    const input = document.getElementById('new-designer-name');
-    const list = document.getElementById('designers-list');
-    // CORRECCIÓN FINAL: Actualizamos la URL para que no tenga la "ñ"
-    const API_URL = '/api/designers';
+    const formAddDesigner = document.getElementById('add-designer-form');
+    const designerNameInput = document.getElementById('designer_name');
+    const designersList = document.getElementById('designers-list');
+    const messageDiv = document.getElementById('message');
 
-    const fetchAndDisplayDesigners = async () => {
+    // Función para mostrar mensajes
+    const showMessage = (msg, type = 'success') => {
+        messageDiv.textContent = msg;
+        messageDiv.className = `message ${type}`;
+        messageDiv.style.display = 'block';
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 3000);
+    };
+
+    // Función para cargar los diseñadores existentes
+    const loadDesigners = async () => {
         try {
-            const response = await fetch(API_URL);
-            if (!response.ok) throw new Error('Error al obtener diseñadores.');
+            const response = await fetch('/api/designers');
+            if (!response.ok) {
+                throw new Error('Error al cargar los diseñadores');
+            }
             const designers = await response.json();
-            list.innerHTML = '';
+            
+            designersList.innerHTML = ''; // Limpiar lista actual
             if (designers.length === 0) {
-                list.innerHTML = '<tr><td colspan="3">No hay diseñadores registrados.</td></tr>';
+                designersList.innerHTML = '<tr><td colspan="3">No hay diseñadores registrados.</td></tr>';
                 return;
             }
+
             designers.forEach(designer => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${designer.id}</td>
-                    <td>${designer.nombre}</td>
-                    <td><button class="btn-delete" data-id="${designer.id}">Eliminar</button></td>
-                `;
-                list.appendChild(row);
+                const row = designersList.insertRow();
+                row.insertCell(0).textContent = designer.id;
+                row.insertCell(1).textContent = designer.name; // <--- AQUÍ SE CORRIGE: USAMOS 'name'
+                
+                const actionsCell = row.insertCell(2);
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Eliminar';
+                deleteButton.className = 'button button-danger';
+                deleteButton.onclick = async () => {
+                    if (confirm(`¿Estás seguro de que quieres eliminar a ${designer.name}?`)) {
+                        try {
+                            const deleteResponse = await fetch(`/api/designers/${designer.id}`, {
+                                method: 'DELETE'
+                            });
+                            if (!deleteResponse.ok) {
+                                throw new Error('Error al eliminar el diseñador');
+                            }
+                            showMessage('Diseñador eliminado con éxito.');
+                            loadDesigners(); // Recargar la lista
+                        } catch (error) {
+                            console.error('Error al eliminar diseñador:', error);
+                            showMessage(error.message, 'error');
+                        }
+                    }
+                };
+                actionsCell.appendChild(deleteButton);
             });
+
         } catch (error) {
-            console.error(error);
-            list.innerHTML = '<tr><td colspan="3">Error al cargar diseñadores.</td></tr>';
+            console.error('Error al cargar diseñadores:', error);
+            showMessage(error.message, 'error');
         }
     };
 
-    const addDesigner = async (name) => {
+    // Manejar el envío del formulario para añadir diseñadores
+    formAddDesigner.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const name = designerNameInput.value.trim();
+
+        if (!name) {
+            showMessage('El nombre del diseñador no puede estar vacío.', 'error');
+            return;
+        }
+
         try {
-            const response = await fetch(API_URL, {
+            const response = await fetch('/api/designers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nombre: name }),
+                body: JSON.stringify({ name }) // <--- ASEGURAMOS QUE SE ENVÍA 'name'
             });
-            if (!response.ok) throw new Error('Error al añadir diseñador.');
-            input.value = '';
-            await fetchAndDisplayDesigners();
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al añadir el diseñador');
+            }
+
+            showMessage('Diseñador añadido con éxito.');
+            designerNameInput.value = ''; // Limpiar el input
+            loadDesigners(); // Recargar la lista
         } catch (error) {
-            console.error(error);
-            alert('No se pudo añadir el diseñador.');
-        }
-    };
-
-    const deleteDesigner = async (id) => {
-        if (!confirm('¿Estás seguro de que quieres eliminar este diseñador?')) return;
-        try {
-            const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-            if (!response.ok) throw new Error('Error al eliminar diseñador.');
-            await fetchAndDisplayDesigners();
-        } catch (error) {
-            console.error(error);
-            alert('No se pudo eliminar el diseñador.');
-        }
-    };
-
-    form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const name = input.value.trim();
-        if (name) addDesigner(name);
-    });
-
-    list.addEventListener('click', (event) => {
-        if (event.target.classList.contains('btn-delete')) {
-            const id = event.target.dataset.id;
-            deleteDesigner(id);
+            console.error('Error al añadir diseñador:', error);
+            showMessage(error.message, 'error');
         }
     });
 
-    fetchAndDisplayDesigners();
+    // Cargar diseñadores al iniciar la página
+    loadDesigners();
 });
