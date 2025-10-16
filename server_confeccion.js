@@ -653,63 +653,64 @@ app.put('/api/proyectos/:id/autorizar-produccion', requireLogin, checkRole(['Ase
         client.release();
     }
 });
+// REEMPLAZA ESTE BLOQUE COMPLETO
 app.put('/api/proyectos/:id/reportar-incidencia', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
-    const { id } = req.params;
-    const { comentarios } = req.body;
+    const { id } = req.params;
+    const { comentarios } = req.body;
 
-    if (!comentarios) {
-        return res.status(400).json({ message: 'El comentario es obligatorio para reportar una incidencia.' });
-    }
+    if (!comentarios) {
+        return res.status(400).json({ message: 'El comentario es obligatorio para reportar una incidencia.' });
+    }
 
-    try {
-        const nuevaIncidencia = {
-            fecha: new Date(),
-            usuario: req.session.user.username,
-            comentario: comentarios
-        };
+    try {
+        const nuevaIncidencia = {
+            fecha: new Date(),
+            usuario: req.session.user.username,
+            comentario: comentarios
+        };
 
-        const nuevoRegistroHistorial = {
-            etapa: 'En Confección (Devuelto por Calidad)',
-            fecha: new Date()
-        };
+        const nuevoRegistroHistorial = {
+            etapa: 'En Confección (Devuelto por Calidad)',
+            fecha: new Date()
+        };
 
-        const result = await pool.query(
-            `UPDATE confeccion_projects 
-             SET 
-                status = 'En Confección', 
-                historial_incidencias = COALESCE(historial_incidencias, '[]'::jsonb) || $1::jsonb,
-                historial_produccion = COALESCE(historial_produccion, '[]'::jsonb) || $2::jsonb
-             WHERE id = $3 RETURNING *`,
-            [JSON.stringify(nuevaIncidencia), JSON.stringify(nuevoRegistroHistorial), id]
-        );
-        
-        if (result.rowCount === 0) {
-            return res.status(404).json({ message: 'Proyecto no encontrado.' });
-        }
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET 
+                 status = 'En Confección', 
+                 historial_incidencias = COALESCE(historial_incidencias, '[]'::jsonb) || $1::jsonb,
+                 historial_produccion = COALESCE(historial_produccion, '[]'::jsonb) || $2::jsonb
+             WHERE id = $3 RETURNING *`,
+            [JSON.stringify(nuevaIncidencia), JSON.stringify(nuevoRegistroHistorial), id]
+        );
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Proyecto no encontrado.' });
+        }
 
-        res.json(result.rows[0]);
+        res.json(result.rows[0]);
 
-    } catch (err) {
-        console.error('Error al reportar incidencia:', err);
-        res.status(500).json({ message: 'Error en el servidor al reportar la incidencia.' });
-    }
+    } catch (err) {
+        console.error('Error al reportar incidencia:', err);
+        res.status(500).json({ message: 'Error en el servidor al reportar la incidencia.' });
+    }
 });
+// REEMPLAZA ESTE BLOQUE COMPLETO
 app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
-    const { nuevaEtapa } = req.body;
-    try {
-        // ---- LA CORRECCIÓN ESTÁ EN LA SIGUIENTE CONSULTA ----
-        const result = await pool.query(
-            `UPDATE confeccion_projects 
-             SET status = $1, 
-                 historial_produccion = COALESCE(historial_produccion, '[]'::jsonb) || $2::jsonb 
-             WHERE id = $3 RETURNING *`,
-            [nuevaEtapa, JSON.stringify({ etapa: nuevaEtapa, fecha: new Date() }), req.params.id]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        console.error('Error al avanzar la etapa de producción:', err);
-        res.status(500).json({ message: 'Error al avanzar etapa' });
-    }
+    const { nuevaEtapa } = req.body;
+    try {
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET status = $1, 
+                 historial_produccion = COALESCE(historial_produccion, '[]'::jsonb) || $2::jsonb 
+             WHERE id = $3 RETURNING *`,
+            [nuevaEtapa, JSON.stringify({ etapa: nuevaEtapa, fecha: new Date() }), req.params.id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error al avanzar la etapa de producción:', err);
+        res.status(500).json({ message: 'Error al avanzar etapa' });
+    }
 });
 // Servidor de archivos estáticos (Debe ir al final de todas las rutas)
 app.use(express.static(path.join(__dirname)));
