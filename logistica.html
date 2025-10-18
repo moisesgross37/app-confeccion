@@ -62,7 +62,7 @@
             <p>Seleccione una opción para continuar.</p>
         </header>
 
-        <main class="menu-grid">
+        <main class="menu-grid" id="menu-grid-container">
             <a href="/panel_confeccion.html" class="menu-button">
                 <h2>Ver Panel de Proyectos</h2>
                 <p>Visualiza y gestiona todas las solicitudes de confección.</p>
@@ -91,37 +91,42 @@
         try {
             const response = await fetch('/api/me');
             if (!response.ok) {
-                throw new Error('Usuario no autenticado');
+                // Si no hay sesión, redirigir al login
+                window.location.href = '/login.html';
+                return;
             }
 
             const user = await response.json();
             const userRole = user.rol;
 
-            // Lógica para ocultar botones a roles que NO son 'Administrador'.
-            if (userRole !== 'Administrador') {
-                const adminDesignersButton = document.querySelector('a[href="/admin_diseñadores.html"]');
-                if (adminDesignersButton) {
-                    adminDesignersButton.style.display = 'none';
-                }
+            // Seleccionamos todos los botones una sola vez
+            const viewPanelButton = document.querySelector('a[href="/panel_confeccion.html"]');
+            const createRequestButton = document.querySelector('a[href="/solicitud_confeccion.html"]');
+            const adminDesignersButton = document.querySelector('a[href="/admin_diseñadores.html"]');
+            const adminUsersButton = document.querySelector('a[href="/admin_usuarios.html"]');
+            
+            // Lógica corregida: Ocultamos lo que cada rol NO debe ver
 
-                const adminUsersButton = document.querySelector('a[href="/admin_usuarios.html"]');
-                if (adminUsersButton) {
-                    adminUsersButton.style.display = 'none';
-                }
-
-                // --- LÍNEA AÑADIDA ---
-                // Ocultamos "Crear Nueva Solicitud" si el rol no es Administrador.
-                const newRequestButton = document.querySelector('a[href="/solicitud_confeccion.html"]');
-                if (newRequestButton) {
-                    newRequestButton.style.display = 'none';
-                }
+            if (userRole === 'Asesor') {
+                // El Asesor ve "Ver Panel" y "Crear Solicitud", así que ocultamos los de admin.
+                if (adminDesignersButton) adminDesignersButton.style.display = 'none';
+                if (adminUsersButton) adminUsersButton.style.display = 'none';
+            } else if (userRole === 'Diseñador' || userRole === 'Coordinador') {
+                // Otros roles (ej. Diseñador) solo ven el panel de proyectos.
+                if (createRequestButton) createRequestButton.style.display = 'none';
+                if (adminDesignersButton) adminDesignersButton.style.display = 'none';
+                if (adminUsersButton) adminUsersButton.style.display = 'none';
+            } else if (userRole !== 'Administrador') {
+                // Para cualquier otro rol no definido que NO sea admin, por seguridad, solo mostramos el panel.
+                if (createRequestButton) createRequestButton.style.display = 'none';
+                if (adminDesignersButton) adminDesignersButton.style.display = 'none';
+                if (adminUsersButton) adminUsersButton.style.display = 'none';
             }
+            // Si el rol es 'Administrador', no se oculta nada y todos los botones son visibles.
+
         } catch (error) {
-            console.error('Error al verificar permisos:', error);
-            // Ocultamos todos los botones sensibles como medida de seguridad en caso de error.
-            document.querySelector('a[href="/admin_diseñadores.html"]').style.display = 'none';
-            document.querySelector('a[href="/admin_usuarios.html"]').style.display = 'none';
-            document.querySelector('a[href="/solicitud_confeccion.html"]').style.display = 'none';
+            console.error('Error al verificar permisos, redirigiendo al login:', error);
+            window.location.href = '/login.html';
         }
     });
 </script>
