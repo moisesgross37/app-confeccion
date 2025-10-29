@@ -24,6 +24,24 @@
             width: 100%;
             border-collapse: collapse; 
         }
+
+        /* ========================================================== */
+        /* === INICIO DEL TEST: FORZAR VISIBILIDAD DE COLUMNA 7 === */
+        /* ========================================================== */
+        
+        /* Esto le dice al navegador: "Quiero que la séptima cabecera (th)
+           y la séptima celda (td) de la tabla se muestren SÍ O SÍ." */
+           
+        .table th:nth-child(7),
+        .table td:nth-child(7) {
+            display: table-cell !important;  /* ¡Fuerza a que se muestre como celda! */
+            visibility: visible !important;  /* ¡Fuerza a que sea visible! */
+            background-color: #FFB6C1 !important; /* Le ponemos un fondo rosa */
+            color: black !important;
+        }
+        
+        /* === FIN DEL TEST === */
+
     </style>
 </head>
 <body>
@@ -66,7 +84,7 @@
         <th>Diseñador</th>
         <th>Estatus</th>
         <th>Antigüedad</th>
-        <th>Acciones</th>  </tr>
+        <th>Acciones</th>   </tr>
 </thead>
             <tbody id="proyectos-table-body">
                 </tbody>
