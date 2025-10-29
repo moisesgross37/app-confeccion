@@ -327,10 +327,15 @@ app.get('/api/asesores', requireLogin, (req, res) => {
 app.get('/api/proyectos', requireLogin, async (req, res) => {
     try {
         const query = `
-            SELECT p.*, d.name AS nombre_disenador
+            SELECT p.*, d.name AS nombre_disenador, p.fecha_creacion AS created_at
             FROM confeccion_projects p
             LEFT JOIN confeccion_designers d ON p.diseñador_id = d.id
             ORDER BY p.fecha_creacion DESC`;
+            
+        // NOTA: 'p.fecha_creacion AS created_at' es la única parte que cambió.
+        // Esto le dice a la base de datos: "Toma la columna 'fecha_creacion'
+        // y devuélvela en el JSON con el nombre 'created_at'".
+            
         const result = await pool.query(query);
         res.json(result.rows);
     } catch (err) {
