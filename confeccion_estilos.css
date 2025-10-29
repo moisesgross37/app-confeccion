@@ -269,13 +269,17 @@ button[type="submit"]:hover {
     vertical-align: middle; /* Centra el contenido verticalmente */
 }
 
-/* 3. Definimos el ancho de cada columna para un control total */
+/* ========================================================== */
+/* === CORRECCIÓN: Definimos 7 columnas que suman 100% === */
+/* ========================================================== */
 .table th:nth-child(1), .table td:nth-child(1) { width: 8%; }  /* Código */
-.table th:nth-child(2), .table td:nth-child(2) { width: 25%; } /* Centro */
+.table th:nth-child(2), .table td:nth-child(2) { width: 24%; } /* Centro */
 .table th:nth-child(3), .table td:nth-child(3) { width: 15%; } /* Asesor */
 .table th:nth-child(4), .table td:nth-child(4) { width: 15%; } /* Diseñador */
-.table th:nth-child(5), .table td:nth-child(5) { width: 20%; } /* Estatus */
-.table th:nth-child(6), .table td:nth-child(6) { width: 17%; } /* Acciones */
+.table th:nth-child(5), .table td:nth-child(5) { width: 18%; } /* Estatus */
+.table th:nth-child(6), .table td:nth-child(6) { width: 8%; }  /* Antigüedad (NUEVA) */
+.table th:nth-child(7), .table td:nth-child(7) { width: 12%; } /* Acciones (NUEVA) */
+/* Total: 8+24+15+15+18+8+12 = 100% */
 
 
 /* --- Responsividad para Móviles --- */
@@ -283,5 +287,16 @@ button[type="submit"]:hover {
 @media (max-width: 768px) {
     .filtros-container {
         grid-template-columns: 1fr; /* Una sola columna en móviles */
+    }
+
+    /* En móvil, dejamos que la tabla se ajuste sola */
+    .table {
+        table-layout: auto;
+    }
+    
+    .table th, .table td {
+        /* Permitimos que el texto se parta en varias líneas */
+        white-space: normal; 
+        overflow: visible;
     }
 }
