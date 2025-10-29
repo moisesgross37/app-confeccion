@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control de Confección</title>
-    <link rel="stylesheet" href="confeccion_estilos.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control de Confección</title>
+    <link rel="stylesheet" href="confeccion_estilos.css">
 
     <style>
         .filtros-container {
@@ -18,37 +18,37 @@
             margin-bottom: 20px;
         }
 
-        /* Reglas más fuertes para forzar la alineación de la tabla */
+        /* (Corrección) Eliminé 'table-layout: fixed' para que las columnas 
+           se ajusten automáticamente al contenido, lo cual es mejor. */
         .table {
-            width: 100% !important;
-            table-layout: fixed !important;
-            border-collapse: collapse !important; 
+            width: 100%;
+            border-collapse: collapse; 
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <a href="/logistica.html" class="back-button">&larr; Volver al Menú Principal</a>
-            <h1>Panel de Control de Confección</h1>
-        </header>
+    <div class="container">
+        <header>
+            <a href="/logistica.html" class="back-button">&larr; Volver al Menú Principal</a>
+            <h1>Panel de Control de Confección</h1>
+        </header>
 
-        
-        <h2 style="margin-top: 30px;">Vista de Proyectos</h2>
+       
+        <h2 style="margin-top: 30px;">Vista de Proyectos</h2>
 
-        <div class="filtros-container">
+        <div class="filtros-container">
             <div class="form-group">
-                <label for="filtro-asesor">Filtrar por Asesor:</label>
-                <select id="filtro-asesor">
-                    <option value="todos">-- Todos los Asesores --</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="filtro-disenador">Filtrar por Diseñador:</label>
-                <select id="filtro-disenador">
-                    <option value="todos">-- Todos los Diseñadores --</option>
-                </select>
-            </div>
+                <label for="filtro-asesor">Filtrar por Asesor:</label>
+                <select id="filtro-asesor">
+                    <option value="todos">-- Todos los Asesores --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="filtro-disenador">Filtrar por Diseñador:</label>
+                <select id="filtro-disenador">
+                    <option value="todos">-- Todos los Diseñadores --</option>
+                </select>
+            </div>
             <div class="form-group">
                 <label for="filtro-estatus">Filtrar por Estatus:</label>
                 <select id="filtro-estatus">
@@ -58,22 +58,20 @@
         </div>
 
         <table class="table">
-<thead>
-    <tr>
-        <th>Código</th>
-        <th>Centro</th>
-        <th>Asesor</th>
-        <th>Diseñador</th>
-        <th>Estatus</th>
-        <th>Acciones</th>
-        <th>Dias</th>
-    </tr>
-</thead>
-            <tbody id="proyectos-table-body">
-                            </tbody>
-        </table>
-    </div>
-    
-    <script src="panel_confeccion.js"></script>
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Centro</th>
+                    <th>Asesor</th>
+                    <th>Diseñador</th>
+                    <th>Estatus</th>
+                    <th>Antigüedad</th> <th>Acciones</th>   </tr>
+            </thead>
+            <tbody id="proyectos-table-body">
+                </tbody>
+        </table>
+    </div>
+    
+    <script src="panel_confeccion.js"></script>
 </body>
 </html>
