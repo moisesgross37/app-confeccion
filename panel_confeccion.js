@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td><mark>${proyecto.status}</mark></td>
                 ${antiguedadHtml} 
                 <td>
-                    <a href="detalle_proyecto.html?id=${proyecto.id}" class="button">Ver / Gestionar</a>
+                    <a href="detalle_proyecto.html?id=${proyecto.id}" class="button">Ver</a>
                     ${eliminarButtonHtml}
                 </td>
             `;
