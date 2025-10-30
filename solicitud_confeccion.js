@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ==================================================
-    // === NUEVA FUNCIÓN PARA CARGAR PRODUCTOS (TAREA 1.4) ===
+    // === FUNCIÓN DE CARGAR PRODUCTOS (MODIFICADA) ===
     // ==================================================
     const loadProducts = () => {
         fetch('/api/proxy/productos')
@@ -41,14 +41,19 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(productos => {
                 productosContainer.innerHTML = ''; // Limpiar "Cargando..."
                 
-                // Usamos un Set para obtener solo los nombres únicos de productos/servicios
-                const productosUnicos = [...new Set(productos
-                    .map(p => p['PRODUCTO / SERVICIO'])
-                    .filter(Boolean) // Filtra nombres vacíos o nulos
-                )];
+                // --- ¡AQUÍ ESTÁ TU FILTRO! ---
+                // 1. Filtramos el array para incluir solo los que dicen "PROMOCIONALES"
+                const productosFiltrados = productos
+                    .filter(p => p.RENGLON && p.RENGLON.toUpperCase() === 'PROMOCIONALES')
+                    .map(p => p['PRODUCTO / SERVICIO']) // 2. Obtenemos solo el nombre
+                    .filter(Boolean); // 3. Filtramos nombres vacíos
+                
+                // 4. Obtenemos los nombres únicos
+                const productosUnicos = [...new Set(productosFiltrados)];
+                // --- FIN DE LA MODIFICACIÓN ---
                 
                 if (productosUnicos.length === 0) {
-                     productosContainer.innerHTML = '<p>No hay productos definidos.</p>';
+                     productosContainer.innerHTML = '<p>No hay productos promocionales definidos.</p>';
                      return;
                 }
 
@@ -101,11 +106,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- LÓGICA DE ENVÍO FINAL (MODIFICADA) ---
+    // --- LÓGICA DE ENVÍO FINAL (sin cambios) ---
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         
-        // --- MODIFICACIÓN (TAREA 1.4): Recolectar productos ---
+        // --- Recolectar productos ---
         const productosSeleccionados = [];
         document.querySelectorAll('#productos-checkbox-container input[type="checkbox"]:checked').forEach(checkbox => {
             productosSeleccionados.push(checkbox.value);
@@ -113,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Guardamos el array como un string JSON en el input oculto
         productosHiddenInput.value = JSON.stringify(productosSeleccionados);
-        // --- FIN DE LA MODIFICACIÓN ---
+        // --- FIN ---
 
         const formData = new FormData(form);
         
