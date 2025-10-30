@@ -5,9 +5,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnAnadirArchivo = document.getElementById('btn-anadir-archivo');
     const inputArchivoOculto = document.getElementById('input-archivo-oculto');
     const listaArchivosSubidos = document.getElementById('lista-archivos-subidos');
+    
+    // --- NUEVAS VARIABLES (TAREA 1.4) ---
+    const productosContainer = document.getElementById('productos-checkbox-container');
+    const productosHiddenInput = document.getElementById('productos-seleccionados');
+    
     let selectedFiles = []; // Aquí se guardarán los archivos seleccionados
 
-    // --- Carga inicial de datos (sin cambios) ---
+    // --- Carga inicial de datos (Centros) ---
     const loadAllCenters = () => {
         fetch('/api/proxy/all-centers')
             .then(res => res.ok ? res.json() : Promise.reject('Error al cargar los centros'))
@@ -17,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }).catch(err => console.error(err));
     };
 
+    // --- Carga inicial de datos (Asesores) ---
     const loadAdvisors = () => {
         fetch('/api/proxy/advisors-list')
             .then(res => res.ok ? res.json() : Promise.reject('Error al cargar asesores'))
@@ -26,22 +32,55 @@ document.addEventListener('DOMContentLoaded', () => {
             }).catch(err => console.error(err));
     };
 
-    // --- LÓGICA DE ARCHIVOS MEJORADA ---
+    // ==================================================
+    // === NUEVA FUNCIÓN PARA CARGAR PRODUCTOS (TAREA 1.4) ===
+    // ==================================================
+    const loadProducts = () => {
+        fetch('/api/proxy/productos')
+            .then(res => res.ok ? res.json() : Promise.reject('Error al cargar productos'))
+            .then(productos => {
+                productosContainer.innerHTML = ''; // Limpiar "Cargando..."
+                
+                // Usamos un Set para obtener solo los nombres únicos de productos/servicios
+                const productosUnicos = [...new Set(productos
+                    .map(p => p['PRODUCTO / SERVICIO'])
+                    .filter(Boolean) // Filtra nombres vacíos o nulos
+                )];
+                
+                if (productosUnicos.length === 0) {
+                     productosContainer.innerHTML = '<p>No hay productos definidos.</p>';
+                     return;
+                }
+
+                // Creamos un checkbox por cada producto único
+                productosUnicos.sort().forEach((productoNombre, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'checkbox-item'; // Puedes darle estilo a esto en CSS
+                    div.innerHTML = `
+                        <input type="checkbox" id="prod-${index}" name="producto_check" value="${productoNombre}" style="margin-right: 5px;">
+                        <label for="prod-${index}">${productoNombre}</label>
+                    `;
+                    productosContainer.appendChild(div);
+                });
+            }).catch(err => {
+                console.error(err);
+                productosContainer.innerHTML = '<p style="color: red;">Error al cargar productos. Intente recargar.</p>';
+            });
+    };
+
+    // --- LÓGICA DE ARCHIVOS (sin cambios) ---
     btnAnadirArchivo.addEventListener('click', () => {
-        inputArchivoOculto.click(); // Simula un clic en el input oculto
+        inputArchivoOculto.click(); 
     });
 
     inputArchivoOculto.addEventListener('change', () => {
-        // Añade los nuevos archivos seleccionados a nuestra lista
         for (const file of inputArchivoOculto.files) {
             selectedFiles.push(file);
         }
-        renderFileList(); // Actualiza la lista en la pantalla
-        // Limpia el input para que el usuario pueda añadir más archivos si quiere
+        renderFileList(); 
         inputArchivoOculto.value = '';
     });
 
-    // Dibuja la lista de archivos en la pantalla
     const renderFileList = () => {
         listaArchivosSubidos.innerHTML = '';
         if (selectedFiles.length === 0) return;
@@ -54,18 +93,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Permite eliminar archivos de la lista antes de enviar
     listaArchivosSubidos.addEventListener('click', (event) => {
         if (event.target.classList.contains('btn-remove-file')) {
             const indexToRemove = parseInt(event.target.dataset.index, 10);
-            selectedFiles.splice(indexToRemove, 1); // Elimina el archivo de nuestra lista
-            renderFileList(); // Vuelve a dibujar la lista actualizada
+            selectedFiles.splice(indexToRemove, 1); 
+            renderFileList(); 
         }
     });
 
-    // --- LÓGICA DE ENVÍO FINAL (sin cambios) ---
+    // --- LÓGICA DE ENVÍO FINAL (MODIFICADA) ---
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        
+        // --- MODIFICACIÓN (TAREA 1.4): Recolectar productos ---
+        const productosSeleccionados = [];
+        document.querySelectorAll('#productos-checkbox-container input[type="checkbox"]:checked').forEach(checkbox => {
+            productosSeleccionados.push(checkbox.value);
+        });
+
+        // Guardamos el array como un string JSON en el input oculto
+        productosHiddenInput.value = JSON.stringify(productosSeleccionados);
+        // --- FIN DE LA MODIFICACIÓN ---
+
         const formData = new FormData(form);
         
         // Añade todos los archivos de nuestra lista al FormData
@@ -77,7 +126,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return alert('Por favor, seleccione el centro y el asesor.');
         }
         if (selectedFiles.length === 0) {
-            return alert('Por favor, añada al menos un archivo de referencia.');
+            // Lo hacemos opcional, ya que a veces la descripción es suficiente
+            if (!confirm('No has añadido imágenes de referencia. ¿Estás seguro de que deseas continuar?')) {
+                 return;
+            }
+        }
+        if (productosSeleccionados.length === 0) {
+             if (!confirm('No has seleccionado ningún producto. ¿Estás seguro de que deseas continuar?')) {
+                 return;
+            }
         }
 
         try {
@@ -99,6 +156,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Cargar todos los datos al iniciar ---
     loadAdvisors();
     loadAllCenters();
+    loadProducts(); // <-- Llamamos a la nueva función
 });
