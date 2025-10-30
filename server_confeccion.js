@@ -212,6 +212,23 @@ app.get('/api/proxy/advisors-list', requireLogin, async (req, res) => {
         res.status(500).json({ message: "Error al obtener la lista de asesores." });
     }
 });
+// --- PEGA ESTA NUEVA RUTA PROXY JUNTO A LAS OTRAS ---
+app.get('/api/proxy/productos', requireLogin, async (req, res) => {
+    try {
+        const gestionApiUrl = `https://be-gestion.onrender.com/api/productos`;
+        
+        // Llamamos a la nueva ruta que acabas de crear
+        const response = await axios.get(gestionApiUrl, {
+            headers: { 'X-API-Key': GESTION_API_KEY }
+        });
+        
+        res.json(response.data);
+
+    } catch (error) {
+        console.error("Error en el proxy de productos:", error.message);
+        res.status(500).json({ message: "Error al obtener la lista de productos." });
+    }
+});
         
 // ===== FIN: NUEVAS RUTAS PROXY =====
 
@@ -418,26 +435,41 @@ app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
         console.error('Error al obtener los detalles del proyecto:', err);
         res.status(500).json({ message: 'Error en el servidor al obtener el proyecto' });
     }
-});
-// ===== REEMPLAZA TU RUTA '/api/solicitudes' CON ESTA VERSIÓN PARA DEPURAR =====
+});// ===== REEMPLAZA TU RUTA '/api/solicitudes' COMPLETA CON ESTA VERSIÓN =====
 app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']), upload.array('imagenes_referencia'), async (req, res) => {
     console.log("=====================================================");
     console.log("===== INICIANDO CREACIÓN DE NUEVA SOLICITUD... =====");
     console.log("=====================================================");
     
-    const { nombre_centro, nombre_asesor, detalles_solicitud } = req.body;
-    console.log(`Datos recibidos del formulario: Centro=${nombre_centro}, Asesor=${nombre_asesor}`);
-
+    // --- MODIFICACIÓN (TAREA 1.2) ---
+    // Ahora también recibimos 'productos' del formulario
+    const { nombre_centro, nombre_asesor, detalles_solicitud, productos } = req.body;
+    
+    // Convertimos los productos (que llegan como un string JSON) a un objeto JSON
+    let productosJson;
+    try {
+        productosJson = JSON.parse(productos || '[]');
+    } catch (e) {
+        console.error("Error al parsear JSON de productos, guardando array vacío.");
+        productosJson = [];
+    }
+    
+    console.log(`Datos recibidos: Centro=${nombre_centro}, Asesor=${nombre_asesor}`);
+    console.log(`Productos seleccionados:`, productosJson);
+    
     const client = await pool.connect();
     
     try {
         await client.query('BEGIN');
         console.log("Transacción de base de datos iniciada.");
 
+        // --- MODIFICACIÓN (TAREA 1.2) ---
+        // Añadimos la columna 'productos' al INSERT
         const projectResult = await client.query(
-            'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud) VALUES ($1, $2, $3, $4) RETURNING *',
-            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud]
+            'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud, productos) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud, productosJson]
         );
+        
         const nuevoProyecto = projectResult.rows[0];
         console.log(`✅ Proyecto base creado con ID: ${nuevoProyecto.id}`);
 
@@ -471,7 +503,7 @@ app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']
         console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         console.error("!!!!! ERROR DURANTE LA CREACIÓN DE LA SOLICITUD !!!!!");
         console.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        console.error("Error completo:", err); // Logueamos el error completo
+        console.error("Error completo:", err);
         res.status(500).json({ error: 'Error interno del servidor al crear la solicitud.' });
     
     } finally {
