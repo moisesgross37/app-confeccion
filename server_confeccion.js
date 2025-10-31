@@ -84,6 +84,19 @@ const initializeDatabase = async () => {
 
         await client.query(`CREATE TABLE IF NOT EXISTS "confeccion_session" ("sid" varchar NOT NULL PRIMARY KEY, "sess" json NOT NULL, "expire" timestamp(6) NOT NULL);`);
         
+        // ==========================================================
+        // === ¡AQUÍ ESTÁ LA CORRECCIÓN! (TAREA 1.1 DEL PLAN) ===
+        // ==========================================================
+        
+        // Esta línea añade la nueva columna para guardar el listado de productos
+        await client.query(`
+            ALTER TABLE confeccion_projects ADD COLUMN IF NOT EXISTS productos JSONB;
+        `);
+        
+        // ==========================================================
+        // === FIN DE LA CORRECCIÓN ===
+        // ==========================================================
+        
         const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
         if (adminUser.rows.length === 0) {
             console.log("Creando usuario 'admin' por defecto...");
