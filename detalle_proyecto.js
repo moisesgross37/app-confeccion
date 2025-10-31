@@ -140,10 +140,6 @@ function renderizarTiemposEHistorial(proyecto) {
     }
 }
 
-// ==========================================================
-// === INICIO DE LA CORRECCIÓN (BUG DE "EN CONFECCIÓN") ===
-// ==========================================================
-
 // --- 4. RENDERIZAR LÍNEA DE TIEMPO (AHORA COMPLETA Y CORRECTA) ---
 function renderizarLineaDeTiempo(proyecto, user) {
     const container = document.getElementById('flujo-de-etapas-container');
@@ -162,9 +158,10 @@ function renderizarLineaDeTiempo(proyecto, user) {
         'En Diagramación': 10,
         'En Impresión': 11,
         'En Calandrado': 12,
-        'En Confección': 12, // Ambos flujos (normal y devolución) apuntan a la Etapa 12
+        'En Confección': 12, 
         'Supervisión de Calidad': 13,
-        'Listo para Entrega': 14 
+        'Listo para Entrega': 14,
+        'Completado': 15 // ¡Estado FINAL!
     };
 
     const etapaActualNum = estadoEtapaMap[proyecto.status] || 1; 
@@ -185,7 +182,7 @@ function renderizarLineaDeTiempo(proyecto, user) {
         { num: 12, titulo: 'Confección', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Confección')?.fecha, panelId: 'panel-etapa-12' },
         { num: 13, titulo: 'Control de Calidad', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'Supervisión de Calidad')?.fecha, panelId: 'panel-etapa-13' },
         { num: 14, titulo: 'Entrega del Combo', fecha: proyecto.fecha_entrega, panelId: 'panel-etapa-14' } 
-    ]; // ¡El bug del "3" repetido se ha eliminado!
+    ];
 
     etapas.forEach(etapa => {
         const li = document.createElement('li');
@@ -204,8 +201,14 @@ function renderizarLineaDeTiempo(proyecto, user) {
         if (estado === 'completado' && etapa.num === etapaActualNum) {
              estado = 'actual';
         }
+        // Lógica mejorada para marcar etapas pasadas como completadas
         if (estado === 'pendiente' && etapa.num < etapaActualNum) {
              estado = 'completado'; 
+        }
+
+        // Si el proyecto está completado, todas las etapas están completadas
+        if (proyecto.status === 'Completado') {
+            estado = 'completado';
         }
 
         li.setAttribute('data-estado', estado);
@@ -222,7 +225,7 @@ function renderizarLineaDeTiempo(proyecto, user) {
         container.appendChild(li);
     });
 
-    // --- "CEREBRO" (IF/ELSE) CON ORDEN CORREGIDO ---
+    // --- "CEREBRO" (IF/ELSE) ACTUALIZADO (TAREA 3.4) ---
     
     const rolesAdmin = ['Administrador', 'Coordinador'];
     const rolesDiseno = ['Administrador', 'Diseñador'];
@@ -249,9 +252,7 @@ function renderizarLineaDeTiempo(proyecto, user) {
     else if (proyecto.status === 'Pendiente Autorización Producción' && esAsesor) {
         mostrarPanelAutorizarProduccion(document.getElementById('panel-etapa-8'), proyecto.id, proyecto);
     }
-    // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
-    // Verificamos el flujo de PRODUCCIÓN (Admin) ANTES que el flujo de DISEÑO (Diseñador)
-    else if (esAdmin && (etapaActualNum >= 9 && etapaActualNum <= 13)) {
+    else if (esAdmin && (etapaActualNum >= 9 && etapaActualNum <= 13) && proyecto.status !== 'Listo para Entrega' ) {
         // El Admin está en el flujo de Producción (Etapas 9-13)
         const panelId = `panel-etapa-${etapaActualNum}`;
         const panelContainer = document.getElementById(panelId);
@@ -264,17 +265,16 @@ function renderizarLineaDeTiempo(proyecto, user) {
         const panelId = (proyecto.status === 'En Confección') ? 'panel-etapa-12' : 'panel-etapa-3';
         mostrarPanelSubirPropuesta(document.getElementById(panelId), proyecto.id, proyecto);
     }
-    // --- FIN DE LA CORRECCIÓN ---
     else if (proyecto.status === 'Listo para Entrega' && esAdmin) {
+        // --- ¡AQUÍ CONECTAMOS LA ETAPA 14! ---
         const panelContainer = document.getElementById('panel-etapa-14');
         if (panelContainer) {
-            panelContainer.innerHTML = '<p><em>(Próxima tarea: Implementar panel de Entrega)</em></p>';
+            mostrarPanelEntrega(panelContainer, proyecto.id);
         }
     }
 }
-// ==========================================================
-// === FIN DE LA CORRECCIÓN ===
-// ==========================================================
+// ==================================================================
+// ==================================================================
 // ===== BLOQUE 2/4: FUNCIONES DE ACCIÓN (PANELES) =====
 // (Aquí están todas las funciones de ayuda que necesita el "Cerebro")
 // ==================================================================
@@ -426,7 +426,7 @@ async function mostrarPanelRevisarPropuesta(container, projectId, proyecto) {
     if (!container) return;
     const ultimaPropuesta = proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno');
     const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'N/A';
-    const fileUrl = ultimaPropuesta ? ultimaPropuesta.url_archivo : '#';
+    const fileUrl = ultimaPropuesta ? ultimaPropuesta.url_archivo : '#'; // Corregido: quitada la / extra
     
     const panelId = `panel-revisar-${Math.random()}`;
     const div = document.createElement('div');
@@ -449,7 +449,7 @@ async function mostrarPanelAprobarCliente(container, projectId, proyecto) {
     if (!container) return;
     const ultimaPropuesta = proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno');
     const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'N/A';
-    const fileUrl = ultimaPropuesta ? `/${ultimaPropuesta.url_archivo}` : '#';
+    const fileUrl = ultimaPropuesta ? ultimaPropuesta.url_archivo : '#'; // Corregido: quitada la / extra
     
     const panelId = `panel-cliente-${Math.random()}`;
     const div = document.createElement('div');
@@ -531,7 +531,7 @@ async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
     
     const ultimaProforma = proyecto.archivos.find(a => a.tipo_archivo === 'proforma');
     const proformaFileName = ultimaProforma ? ultimaProforma.nombre_archivo : 'No disponible';
-    const proformaFileUrl = ultimaProforma ? `/${ultimaProforma.url_archivo}` : '#';
+    const proformaFileUrl = ultimaProforma ? ultimaProforma.url_archivo : '#'; // Corregido: quitada la / extra
     
     const panelId = `panel-revision-proforma-${Math.random()}`;
     const div = document.createElement('div');
@@ -628,10 +628,7 @@ async function mostrarPanelAutorizarProduccion(container, projectId, proyecto) {
         }
     });
 }
-// ==========================================================
-// === BLOQUE 4/4 (TAREA 5.2 CORREGIDA) ===
-// (Simplificada a UN solo botón de "Reportar Incidencia")
-// ==========================================================
+// --- PANELES DE ACCIÓN: ETAPAS 9-13 ---
 async function mostrarPanelProduccion(container, proyecto) {
     if (!container) return;
     const projectId = proyecto.id;
@@ -651,6 +648,7 @@ async function mostrarPanelProduccion(container, proyecto) {
         `;
     }
     
+    // Flujo de producción
     const flujo = {
         'En Lista de Producción': { texto: 'Pasar a Diagramación', siguienteEstado: 'En Diagramación' },
         'En Diagramación': { texto: 'Pasar a Impresión', siguienteEstado: 'En Impresión' },
@@ -663,8 +661,7 @@ async function mostrarPanelProduccion(container, proyecto) {
         const accion = flujo[estadoActual];
         panelHTML = `<button id="avanzar-btn-${panelId}" class="btn btn-primary">${accion.texto}</button>`;
     
-    // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
-    // (Panel de Control de Calidad - Etapa 13)
+    // Panel de Control de Calidad (Simplificado por Tarea 5.2)
     } else if (estadoActual === 'Supervisión de Calidad') {
         panelHTML = `
             <h4>Decisión Final de Calidad</h4>
@@ -678,7 +675,6 @@ async function mostrarPanelProduccion(container, proyecto) {
             </div>
         `;
     }
-    // --- FIN DEL CAMBIO ---
 
     div.innerHTML = `<div class="card">${incidenciaHtml}${panelHTML}</div>`;
     container.appendChild(div);
@@ -709,8 +705,7 @@ async function mostrarPanelProduccion(container, proyecto) {
         });
     }
 
-    // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
-    // (Lógica simplificada para UN solo botón de "Reportar Incidencia")
+    // Lógica simplificada (Tarea 5.2)
     const reportarIncidenciaBtn = document.getElementById(`reportar-incidencia-btn-${panelId}`);
     if (reportarIncidenciaBtn) {
         reportarIncidenciaBtn.addEventListener('click', async () => {
@@ -722,7 +717,6 @@ async function mostrarPanelProduccion(container, proyecto) {
                     headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify({ 
                         comentarios: comentarios
-                        // Ya no enviamos 'tipo_incidencia' porque el backend ahora es más simple
                     }) 
                 });
                 if (!response.ok) throw new Error('Error al reportar la incidencia.');
@@ -732,4 +726,40 @@ async function mostrarPanelProduccion(container, proyecto) {
         });
     }
 }
-// --- ESTA ES LA '}' QUE FALTABA ---
+
+// ==========================================================
+// === TAREA 6.3 (Frontend): NUEVA FUNCIÓN PARA ETAPA 14 ===
+// ==========================================================
+async function mostrarPanelEntrega(container, projectId) {
+    if (!container) return;
+    const panelId = `panel-entrega-${Math.random()}`;
+    const div = document.createElement('div');
+    
+    div.innerHTML = `
+        <h3>Entrega Final del Proyecto</h3>
+        <div class="card">
+            <div class="card-body">
+                <p>El proyecto está listo para ser entregado. Al confirmar la entrega, el proyecto se marcará como "Completado" y se archivará, desapareciendo del panel principal.</p>
+                <button id="completar-entrega-btn-${panelId}" class="btn btn-primary">Confirmar Entrega y Archivar Proyecto</button>
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+
+    // Lógica del botón
+    document.getElementById(`completar-entrega-btn-${panelId}`).addEventListener('click', async () => {
+        if (!confirm('¿Estás seguro de que deseas marcar este proyecto como "Completado" y archivarlo? Esta acción es final.')) return;
+        
+        try {
+            // Llama a la NUEVA ruta del backend que creamos (Tarea 6.1)
+            const response = await fetch(`/api/proyectos/${projectId}/completar-entrega`, { method: 'PUT' });
+            if (!response.ok) { const err = await response.json(); throw new Error(err.message || 'Error del servidor'); }
+            
+            alert('¡Proyecto completado y archivado con éxito!');
+            // Devuelve al usuario al panel, donde el proyecto ya no estará visible
+            window.location.href = '/panel_confeccion.html'; 
+        } catch (error) { 
+            alert(`Error: ${error.message}`); 
+        }
+    });
+}
