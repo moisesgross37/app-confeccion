@@ -49,18 +49,18 @@ const initializeDatabase = async () => {
                 quote_id INTEGER,
                 quote_number VARCHAR(50),
                 codigo_proyecto VARCHAR(255) UNIQUE NOT NULL,
-                fecha_creacion TIMESTAMZ DEFAULT NOW(),
+                fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
                 cliente VARCHAR(255),
                 nombre_asesor VARCHAR(255),
                 detalles_solicitud TEXT,
                 status VARCHAR(100) DEFAULT 'Diseño Pendiente de Asignación',
                 diseñador_id INTEGER,
-                fecha_de_asignacion TIMESTAMZ,
-                fecha_propuesta TIMESTAMZ,
-                fecha_aprobacion_interna TIMESTAMZ,
-                fecha_aprobacion_cliente TIMESTAMZ,
-                fecha_proforma_subida TIMESTAMZ,
-                fecha_autorizacion_produccion TIMESTAMZ,
+                fecha_de_asignacion TIMESTAMPTZ,
+                fecha_propuesta TIMESTAMPTZ,
+                fecha_aprobacion_interna TIMESTAMPTZ,
+                fecha_aprobacion_cliente TIMESTAMPTZ,
+                fecha_proforma_subida TIMESTAMPTZ,
+                fecha_autorizacion_produccion TIMESTAMPTZ,
                 historial_revisiones JSONB,
                 historial_produccion JSONB,
                 historial_incidencias JSONB
@@ -77,7 +77,7 @@ const initializeDatabase = async () => {
                 tipo_archivo VARCHAR(100) NOT NULL,
                 url_archivo VARCHAR(255) NOT NULL,
                 nombre_archivo VARCHAR(255),
-                fecha_subida TIMESTAMZ DEFAULT NOW(),
+                fecha_subida TIMESTAMPTZ DEFAULT NOW(),
                 subido_por VARCHAR(255)
             );
         `);
@@ -93,7 +93,7 @@ const initializeDatabase = async () => {
         
         // 2. AÑADE LA COLUMNA 'fecha_entrega' QUE FALTABA
         await client.query(`
-            ALTER TABLE confeccion_projects ADD COLUMN IF NOT EXISTS fecha_entrega TIMESTAMZ;
+            ALTER TABLE confeccion_projects ADD COLUMN IF NOT EXISTS fecha_entrega TIMESTAMPTZ;
         `);
         
         // --- FIN DE LOS ARREGLOS ---
