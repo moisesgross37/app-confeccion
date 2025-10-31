@@ -39,9 +39,6 @@ const gestionPool = new Pool({
     }
 });
 
-// ==========================================================
-// === TAREA 6.4 (Arreglo): REEMPLAZA ESTA FUNCIÓN COMPLETA ===
-// ==========================================================
 const initializeDatabase = async () => {
     const client = await pool.connect();
     try {
@@ -67,7 +64,6 @@ const initializeDatabase = async () => {
                 historial_revisiones JSONB,
                 historial_produccion JSONB,
                 historial_incidencias JSONB
-                // La nueva 'fecha_entrega' se añade con ALTER TABLE abajo
             );
         `);
         
