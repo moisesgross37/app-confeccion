@@ -448,27 +448,23 @@ app.get('/api/proyectos/:id', requireLogin, async (req, res) => {
         console.error('Error al obtener los detalles del proyecto:', err);
         res.status(500).json({ message: 'Error en el servidor al obtener el proyecto' });
     }
-});// ===== REEMPLAZA TU RUTA '/api/solicitudes' COMPLETA CON ESTA VERSIÓN =====
+});
+// ===== REEMPLAZA TU RUTA '/api/solicitudes' COMPLETA CON ESTA VERSIÓN CORREGIDA =====
 app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']), upload.array('imagenes_referencia'), async (req, res) => {
     console.log("=====================================================");
     console.log("===== INICIANDO CREACIÓN DE NUEVA SOLICITUD... =====");
     console.log("=====================================================");
     
-    // --- MODIFICACIÓN (TAREA 1.2) ---
-    // Ahora también recibimos 'productos' del formulario
+    // --- MODIFICACIÓN (CORRECCIÓN DE BUG) ---
+    // 'productos' ya es un string JSON válido (ej: '["prod1", "prod2"]')
+    // ¡No debemos hacerle JSON.parse()! La base de datos JSONB quiere el string.
     const { nombre_centro, nombre_asesor, detalles_solicitud, productos } = req.body;
     
-    // Convertimos los productos (que llegan como un string JSON) a un objeto JSON
-    let productosJson;
-    try {
-        productosJson = JSON.parse(productos || '[]');
-    } catch (e) {
-        console.error("Error al parsear JSON de productos, guardando array vacío.");
-        productosJson = [];
-    }
+    // Simplemente nos aseguramos de que no sea nulo y lo pasamos tal cual.
+    const productosJsonString = productos || '[]';
     
     console.log(`Datos recibidos: Centro=${nombre_centro}, Asesor=${nombre_asesor}`);
-    console.log(`Productos seleccionados:`, productosJson);
+    console.log(`Productos JSON string a guardar:`, productosJsonString); // Log actualizado
     
     const client = await pool.connect();
     
@@ -476,11 +472,12 @@ app.post('/api/solicitudes', requireLogin, checkRole(['Asesor', 'Administrador']
         await client.query('BEGIN');
         console.log("Transacción de base de datos iniciada.");
 
-        // --- MODIFICACIÓN (TAREA 1.2) ---
-        // Añadimos la columna 'productos' al INSERT
+        // --- MODIFICACIÓN (CORRECCIÓN DE BUG) ---
+        // Pasamos el 'productosJsonString' (el string) directamente a la consulta.
+        // Este es el parámetro $5 que estaba fallando.
         const projectResult = await client.query(
             'INSERT INTO confeccion_projects (codigo_proyecto, cliente, nombre_asesor, detalles_solicitud, productos) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud, productosJson]
+            [`PROY-CONF-${Date.now()}`, nombre_centro, nombre_asesor, detalles_solicitud, productosJsonString]
         );
         
         const nuevoProyecto = projectResult.rows[0];
