@@ -147,42 +147,46 @@ function renderizarLineaDeTiempo(proyecto, user) {
     const container = document.getElementById('flujo-de-etapas-container');
     container.innerHTML = ''; // Limpiar
     
-    // Mapeo de estados a etapas
+    // ==========================================================
+    // === CORRECCIÓN DE NUMERACIÓN (TAREA 2.5) ===
+    // ==========================================================
+    
+    // Mapeo de estados a las NUEVAS etapas (ahora son 13)
     const estadoEtapaMap = {
-        'Diseño Pendiente de Asignación': 3,
-        'Diseño en Proceso': 4,
-        'Pendiente Aprobación Interna': 5,
-        'Pendiente Aprobación Cliente': 6,
-        'Pendiente de Proforma': 7,
-        'Pendiente Aprobación Proforma': 8, // Tarea de refactorización (Etapa 7/8)
-        'En Lista de Producción': 9,
-        'En Diagramación': 10,
-        'En Impresión': 11,
-        'En Calandrado': 12,
-        'En Confección': 12, // (Devuelto por calidad, sigue en confección)
-        'Supervisión de Calidad': 13,
-        'Listo para Entrega': 14
+        'Diseño Pendiente de Asignación': 2, // Antes era 3
+        'Diseño en Proceso': 3, // Antes era 4
+        'Pendiente Aprobación Interna': 4, // Antes era 5
+        'Pendiente Aprobación Cliente': 5, // Antes era 6
+        'Pendiente de Proforma': 6, // Antes era 7
+        'Pendiente Aprobación Proforma': 7, // Antes era 8
+        'En Lista de Producción': 8, // Antes era 9
+        'En Diagramación': 9, // Antes era 10
+        'En Impresión': 10, // Antes era 11
+        'En Calandrado': 11, // Antes era 12
+        'En Confección': 11, // Devuelto por calidad, vuelve a "Confección" (antes 12)
+        'Supervisión de Calidad': 12, // Antes era 13
+        'Listo para Entrega': 13 // Antes era 14
     };
 
-    const etapaActualNum = estadoEtapaMap[proyecto.status] || 1; // 1 si no se encuentra (ej. Completado)
+    const etapaActualNum = estadoEtapaMap[proyecto.status] || 1; 
     
-    // Definimos las 14 etapas
+    // Definimos las 13 etapas (Ocultamos GAPs y renumeramos)
     const etapas = [
         { num: 1, titulo: 'Solicitud Creada', fecha: proyecto.fecha_creacion },
-        { num: 2, titulo: 'GAP: Listado de Productos', fecha: null, nota: 'Etapa de Plan (aún no funcional)' }, // Tarea GAP 1
-        { num: 3, titulo: 'Asignación de Diseñador', fecha: proyecto.fecha_de_asignacion, panelId: 'panel-etapa-3' },
-        { num: 4, titulo: 'Propuesta del Diseñador', fecha: proyecto.fecha_propuesta, panelId: 'panel-etapa-4' },
-        { num: 5, titulo: 'Autorización Interna', fecha: proyecto.fecha_aprobacion_interna, panelId: 'panel-etapa-5' },
-        { num: 6, titulo: 'Aprobación del Cliente', fecha: proyecto.fecha_aprobacion_cliente, panelId: 'panel-etapa-6' },
-        { num: 7, titulo: 'Subida de Proforma', fecha: proyecto.fecha_proforma_subida, panelId: 'panel-etapa-7' },
-        { num: 8, titulo: 'Producción Autorizada', fecha: proyecto.fecha_autorizacion_produccion, panelId: 'panel-etapa-8' },
-        { num: 9, titulo: 'Diagramación', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Diagramación')?.fecha, panelId: 'panel-etapa-9' },
-        { num: 10, titulo: 'Impresión', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Impresión')?.fecha, panelId: 'panel-etapa-10' },
-        { num: 11, titulo: 'Calandrado', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Calandrado')?.fecha, panelId: 'panel-etapa-11' },
-        { num: 12, titulo: 'Confección', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Confección')?.fecha, panelId: 'panel-etapa-12' },
-        { num: 13, titulo: 'Control de Calidad', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'Supervisión de Calidad')?.fecha, panelId: 'panel-etapa-13' },
-        { num: 14, titulo: 'Entrega del Combo', fecha: proyecto.fecha_entrega, panelId: 'panel-etapa-14' } // Tarea GAP 14
+        { num: 2, titulo: 'Asignación de Diseñador', fecha: proyecto.fecha_de_asignacion, panelId: 'panel-etapa-2' },
+        { num: 3, titulo: 'Propuesta del Diseñador', fecha: proyecto.fecha_propuesta, panelId: 'panel-etapa-3' },
+        { num: 4, titulo: 'Autorización Interna', fecha: proyecto.fecha_aprobacion_interna, panelId: 'panel-etapa-4' },
+        { num: 5, titulo: 'Aprobación del Cliente', fecha: proyecto.fecha_aprobacion_cliente, panelId: 'panel-etapa-5' },
+        { num: 6, titulo: 'Subida de Proforma', fecha: proyecto.fecha_proforma_subida, panelId: 'panel-etapa-6' },
+        { num: 7, titulo: 'Producción Autorizada', fecha: proyecto.fecha_autorizacion_produccion, panelId: 'panel-etapa-7' },
+        { num: 8, titulo: 'Diagramación', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Diagramación')?.fecha, panelId: 'panel-etapa-8' },
+        { num: 9, titulo: 'Impresión', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Impresión')?.fecha, panelId: 'panel-etapa-9' },
+        { num: 10, titulo: 'Calandrado', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Calandrado')?.fecha, panelId: 'panel-etapa-10' },
+        { num: 11, titulo: 'Confección', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Confección')?.fecha, panelId: 'panel-etapa-11' },
+        { num: 12, titulo: 'Control de Calidad', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'Supervisión de Calidad')?.fecha, panelId: 'panel-etapa-12' },
+        { num: 13, titulo: 'Entrega del Combo', fecha: proyecto.fecha_entrega, panelId: 'panel-etapa-13' } 
     ];
+    // ==========================================================
 
     // Recorremos y dibujamos cada etapa
     etapas.forEach(etapa => {
@@ -193,9 +197,24 @@ function renderizarLineaDeTiempo(proyecto, user) {
         if (etapa.fecha) {
             estado = 'completado'; // Si tiene fecha, está completada
         }
+        // Corregimos: la etapa 1 se completa en cuanto se crea
+        if (etapa.num === 1 && proyecto.fecha_creacion) {
+            estado = 'completado';
+        }
+
         if (etapa.num === etapaActualNum) {
             estado = 'actual'; // Si es la etapa actual
         }
+
+        // Si la etapa actual ya tiene fecha (ej. Producción), sigue "actual" no "completada"
+        if (estado === 'completado' && etapa.num === etapaActualNum) {
+             estado = 'actual';
+        }
+        // Si las etapas anteriores a la actual no tienen fecha, siguen pendientes
+        if (estado === 'pendiente' && etapa.num < etapaActualNum) {
+             estado = 'completado'; // Asumimos que si estamos en la 5, la 1-4 están listas
+        }
+
 
         li.setAttribute('data-estado', estado);
         
@@ -213,35 +232,34 @@ function renderizarLineaDeTiempo(proyecto, user) {
     });
 
     // --- AHORA, POBLAMOS EL PANEL DE LA ETAPA ACTUAL ---
-    // Esta lógica reemplaza el antiguo 'if/else' (Sección 5)
     
     const rolesAdmin = ['Administrador', 'Coordinador'];
     const rolesDiseno = ['Administrador', 'Diseñador'];
     const rolesAsesor = ['Administrador', 'Asesor', 'Coordinador'];
 
+    // Usamos los NUEVOS números de etapa
     if (proyecto.status === 'Diseño Pendiente de Asignación' && rolesAdmin.includes(user.rol)) {
-        mostrarPanelAsignacion(document.getElementById('panel-etapa-3'), proyecto.id);
+        mostrarPanelAsignacion(document.getElementById('panel-etapa-2'), proyecto.id);
     } 
     else if (['Diseño en Proceso', 'En Confección'].includes(proyecto.status) && rolesDiseno.includes(user.rol)) {
-        // Si el estado es "En Confección", es por una devolución de calidad. El panel de propuesta (Etapa 4) se muestra
-        const panelId = (proyecto.status === 'En Confección') ? 'panel-etapa-12' : 'panel-etapa-4';
+        // Si el estado es "En Confección", es por una devolución de calidad. El panel de propuesta (Etapa 3) se muestra
+        const panelId = (proyecto.status === 'En Confección') ? 'panel-etapa-11' : 'panel-etapa-3';
         mostrarPanelSubirPropuesta(document.getElementById(panelId), proyecto.id, proyecto);
     } 
     else if (proyecto.status === 'Pendiente Aprobación Interna' && rolesAdmin.includes(user.rol)) {
-        mostrarPanelRevisarPropuesta(document.getElementById('panel-etapa-5'), proyecto.id, proyecto);
+        mostrarPanelRevisarPropuesta(document.getElementById('panel-etapa-4'), proyecto.id, proyecto);
     } 
     else if (proyecto.status === 'Pendiente Aprobación Cliente' && rolesAsesor.includes(user.rol)) {
-        mostrarPanelAprobarCliente(document.getElementById('panel-etapa-6'), proyecto.id, proyecto);
+        mostrarPanelAprobarCliente(document.getElementById('panel-etapa-5'), proyecto.id, proyecto);
     } 
     else if (proyecto.status === 'Pendiente de Proforma' && rolesDiseno.includes(user.rol)) { 
-        mostrarPanelSubirProforma(document.getElementById('panel-etapa-7'), proyecto.id);
+        mostrarPanelSubirProforma(document.getElementById('panel-etapa-6'), proyecto.id);
     } 
     else if (proyecto.status === 'Pendiente Aprobación Proforma' && rolesAsesor.includes(user.rol)) {
-        // TAREA DE REFACTORIZACIÓN (Etapa 7/8): Por ahora, sigue llamando al panel fusionado
-        mostrarPanelRevisionProforma(document.getElementById('panel-etapa-8'), proyecto.id, proyecto);
+        mostrarPanelRevisionProforma(document.getElementById('panel-etapa-7'), proyecto.id, proyecto);
     } 
-    else if (rolesAdmin.includes(user.rol)) {
-        // Lógica de producción (Etapas 9-13)
+    else if (rolesAdmin.includes(user.rol) && etapaActualNum >= 8 && etapaActualNum <= 12) {
+        // Lógica de producción (Etapas 8-12)
         const panelId = `panel-etapa-${etapaActualNum}`;
         const panelContainer = document.getElementById(panelId);
         if (panelContainer) {
@@ -254,7 +272,8 @@ function renderizarLineaDeTiempo(proyecto, user) {
 // ==================================================================
 // ==================================================================
 // ===== FUNCIONES DE ACCIÓN (PANELES) - SIN CAMBIOS =====
-// (Estas son las funciones que ya tenías, copiadas tal cual)
+// (Pega el resto de tus funciones de ayuda aquí,
+//  desde 'loadDesigners' hasta el final del archivo)
 // ==================================================================
 // ==================================================================
 
@@ -614,14 +633,16 @@ async function mostrarPanelProduccion(container, proyecto) {
             </div>
         `;
     }
-
+    
+    // --- CORRECCIÓN EN EL FLUJO DE PRODUCCIÓN ---
     const flujo = {
-        'En Lista de Producción': { texto: 'Pasar a Diagramación', siguienteEstado: 'En Diagramación', panelId: 'panel-etapa-9' },
-        'En Diagramación': { texto: 'Pasar a Impresión', siguienteEstado: 'En Impresión', panelId: 'panel-etapa-10' },
-        'En Impresión': { texto: 'Pasar a Calandra', siguienteEstado: 'En Calandrado', panelId: 'panel-etapa-11' },
-        'En Calandrado': { texto: 'Enviar a Confección', siguienteEstado: 'En Confección', panelId: 'panel-etapa-12' },
-        'En Confección': { texto: 'Pasar a Supervisión de Calidad', siguienteEstado: 'Supervisión de Calidad', panelId: 'panel-etapa-13' }
+        'En Lista de Producción': { texto: 'Pasar a Diagramación', siguienteEstado: 'En Diagramación', panelId: 'panel-etapa-8' },
+        'En Diagramación': { texto: 'Pasar a Impresión', siguienteEstado: 'En Impresión', panelId: 'panel-etapa-9' },
+        'En Impresión': { texto: 'Pasar a Calandra', siguienteEstado: 'En Calandrado', panelId: 'panel-etapa-10' },
+        'En Calandrado': { texto: 'Enviar a Confección', siguienteEstado: 'En Confección', panelId: 'panel-etapa-11' },
+        'En Confección': { texto: 'Pasar a Supervisión de Calidad', siguienteEstado: 'Supervisión de Calidad', panelId: 'panel-etapa-12' }
     };
+    // --- FIN DE LA CORRECCIÓN ---
 
     if (flujo[estadoActual]) {
         const accion = flujo[estadoActual];
