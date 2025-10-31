@@ -418,7 +418,7 @@ async function mostrarPanelRevisarPropuesta(container, projectId, proyecto) {
     if (!container) return;
     const ultimaPropuesta = proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno');
     const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'N/A';
-    const fileUrl = ultimaPropuesta ? `/${ultimaPropuesta.url_archivo}` : '#';
+    const fileUrl = ultimaPropuesta ? ${ultimaPropuesta.url_archivo}` : '#';
     
     const panelId = `panel-revisar-${Math.random()}`;
     const div = document.createElement('div');
