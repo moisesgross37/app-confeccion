@@ -5,6 +5,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
+    // Almacenamos el proyecto y el usuario globalmente en esta página
+    let g_proyecto = null;
+    let g_user = null;
+
     Promise.all([
         fetch(`/api/proyectos/${projectId}`, { cache: 'no-store' }).then(res => {
             if (!res.ok) throw new Error(`Error del servidor al cargar proyecto: ${res.status}`);
@@ -16,7 +20,17 @@ document.addEventListener('DOMContentLoaded', () => {
         })
     ])
     .then(([proyecto, user]) => {
-        renderizarPagina(proyecto, user);
+        // Guardamos los datos globalmente
+        g_proyecto = proyecto;
+        g_user = user;
+        
+        // Iniciamos el renderizado de la página
+        renderizarInfoPrincipal(proyecto);
+        renderizarArchivos(proyecto);
+        renderizarTiemposEHistorial(proyecto);
+        
+        // La nueva función principal que dibuja las 14 etapas
+        renderizarLineaDeTiempo(proyecto, user);
     })
     .catch(error => {
         console.error('Error fatal al cargar la página:', error);
@@ -24,8 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-function renderizarPagina(proyecto, user) {
-    // 1. Rellena la información principal del proyecto en el HTML.
+// --- 1. RENDERIZAR INFO BÁSICA (TAREA 2.2 INCLUIDA) ---
+function renderizarInfoPrincipal(proyecto) {
     document.getElementById('codigo-proyecto').textContent = proyecto.codigo_proyecto || 'N/A';
     document.getElementById('centro-proyecto').textContent = proyecto.cliente || 'N/A';
     document.getElementById('asesor-proyecto').textContent = proyecto.nombre_asesor || 'N/A';
@@ -33,32 +47,26 @@ function renderizarPagina(proyecto, user) {
     document.getElementById('estado-proyecto').textContent = proyecto.status || 'N/A';
     document.getElementById('detalles-proyecto').textContent = proyecto.detalles_solicitud || 'N/A';
 
-    // ==================================================
-    // === NUEVA SECCIÓN PARA RENDERIZAR PRODUCTOS (TAREA 2.2) ===
-    // ==================================================
+    // (Tarea 2.2) Renderizar productos
     const productosContainer = document.getElementById('productos-proyecto-container');
-    productosContainer.innerHTML = ''; // Limpiar "Cargando..."
-    
+    productosContainer.innerHTML = '';
     if (proyecto.productos && proyecto.productos.length > 0) {
-        // Si hay productos, crear una lista
         const ul = document.createElement('ul');
         ul.style.margin = '0';
         ul.style.paddingLeft = '20px';
-        
         proyecto.productos.forEach(productoNombre => {
             const li = document.createElement('li');
             li.textContent = productoNombre;
             ul.appendChild(li);
         });
         productosContainer.appendChild(ul);
-        
     } else {
-        // Si el array está vacío o no existe
         productosContainer.innerHTML = '<em>No se especificaron productos en esta solicitud.</em>';
     }
-    // ==================================================
+}
 
-    // 2. Muestra todos los archivos del proyecto, organizados por tipo.
+// --- 2. RENDERIZAR ARCHIVOS (Separado para limpieza) ---
+function renderizarArchivos(proyecto) {
     const archivosReferencia = document.getElementById('archivos-referencia');
     const archivosDiseno = document.getElementById('archivos-propuesta_diseno');
     const archivosProforma = document.getElementById('archivos-proforma');
@@ -76,18 +84,10 @@ function renderizarPagina(proyecto, user) {
             li.innerHTML = `<a href="${archivo.url_archivo}" target="_blank">${archivo.nombre_archivo}</a> <span style="color: #666; font-size: 0.9em;">(Subido por ${archivo.subido_por} - ${fecha})</span>`;
             
             switch (archivo.tipo_archivo) {
-                case 'referencia':
-                    archivosReferencia.appendChild(li);
-                    break;
-                case 'propuesta_diseno':
-                    archivosDiseno.appendChild(li);
-                    break;
-                case 'proforma':
-                    archivosProforma.appendChild(li);
-                    break;
-                case 'listado_final':
-                    archivosListado.appendChild(li);
-                    break;
+                case 'referencia': archivosReferencia.appendChild(li); break;
+                case 'propuesta_diseno': archivosDiseno.appendChild(li); break;
+                case 'proforma': archivosProforma.appendChild(li); break;
+                case 'listado_final': archivosListado.appendChild(li); break;
             }
         });
     }
@@ -96,8 +96,11 @@ function renderizarPagina(proyecto, user) {
     if (archivosDiseno.childElementCount === 0) archivosDiseno.innerHTML = '<li>No hay propuestas de diseño.</li>';
     if (archivosProforma.childElementCount === 0) archivosProforma.innerHTML = '<li>No hay proformas.</li>';
     if (archivosListado.childElementCount === 0) archivosListado.innerHTML = '<li>No hay listados finales.</li>';
+}
 
-    // 3. Calcula y muestra los contadores de días.
+// --- 3. RENDERIZAR TIEMPOS E HISTORIAL (Separado para limpieza) ---
+function renderizarTiemposEHistorial(proyecto) {
+    // Contadores de días
     const diasTotales = Math.ceil((new Date() - new Date(proyecto.fecha_creacion)) / (1000 * 60 * 60 * 24)) || 1;
     document.getElementById('dias-totales').textContent = diasTotales;
     
@@ -108,71 +111,151 @@ function renderizarPagina(proyecto, user) {
         document.getElementById('dias-en-produccion').textContent = '--';
     }
     
-    // 4. Construye y muestra el historial de fechas y revisiones del proyecto.
+    // Historial de Fechas (Log)
     const historialFechasElement = document.getElementById('historial-fechas');
     historialFechasElement.innerHTML = '';
-    if (proyecto.fecha_creacion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_creacion).toLocaleDateString()}: Solicitud Creada.</li>`;
-    if (proyecto.fecha_de_asignacion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_de_asignacion).toLocaleDateString()}: Diseño Asignado.</li>`;
-    if (proyecto.fecha_propuesta) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_propuesta).toLocaleDateString()}: Propuesta enviada a revisión.</li>`;
+    const addHistorial = (fecha, texto, color = 'black') => {
+        if (fecha) {
+            historialFechasElement.innerHTML += `<li style="color: ${color};"><b>${new Date(fecha).toLocaleDateString()}:</b> ${texto}</li>`;
+        }
+    };
+
+    addHistorial(proyecto.fecha_creacion, 'Solicitud Creada.');
+    addHistorial(proyecto.fecha_de_asignacion, 'Diseño Asignado.');
+    addHistorial(proyecto.fecha_propuesta, 'Propuesta enviada a revisión.');
 
     if (proyecto.historial_revisiones && proyecto.historial_revisiones.length > 0) {
         proyecto.historial_revisiones.forEach(revision => {
-            historialFechasElement.innerHTML += `<li style="color: #d9534f;"><b>${new Date(revision.fecha).toLocaleDateString()}: Devuelto por ${revision.rol} (${revision.usuario}) con el comentario:</b> "${revision.comentario}"</li>`;
+            addHistorial(revision.fecha, `Devuelto por ${revision.rol} (${revision.usuario}): "${revision.comentario}"`, '#d9534f');
         });
     }
 
-    if (proyecto.fecha_aprobacion_interna) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_aprobacion_interna).toLocaleDateString()}: Aprobado internamente.</li>`;
-    if (proyecto.fecha_aprobacion_cliente) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_aprobacion_cliente).toLocaleDateString()}: Aprobado por cliente.</li>`;
-    if (proyecto.fecha_proforma_subida) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_proforma_subida).toLocaleDateString()}: Proforma subida a revisión.</li>`;
-    if (proyecto.fecha_autorizacion_produccion) historialFechasElement.innerHTML += `<li>${new Date(proyecto.fecha_autorizacion_produccion).toLocaleDateString()}: <b>Producción Autorizada.</b></li>`;
+    addHistorial(proyecto.fecha_aprobacion_interna, 'Aprobado internamente.');
+    addHistorial(proyecto.fecha_aprobacion_cliente, 'Aprobado por cliente.');
+    addHistorial(proyecto.fecha_proforma_subida, 'Proforma subida a revisión.');
+    addHistorial(proyecto.fecha_autorizacion_produccion, '<b>Producción Autorizada.</b>');
+
     if (proyecto.historial_produccion && proyecto.historial_produccion.length > 0) {
         proyecto.historial_produccion.forEach(etapa => {
-            historialFechasElement.innerHTML += `<li>${new Date(etapa.fecha).toLocaleDateString()}: Pasó a <b>${etapa.etapa}</b>.</li>`;
+            addHistorial(etapa.fecha, `Pasó a <b>${etapa.etapa}</b>.`);
         });
-    }
-
-    // 5. Lógica completa para mostrar los paneles de "Flujo de Trabajo" según el rol.
-    const contenedorAcciones = document.getElementById('flujo-trabajo');
-    const userRol = user.rol;
-    const projectId = proyecto.id;
-    let actionPanelRendered = false;
-    
-    if (proyecto.status === 'Diseño Pendiente de Asignación' && ['Administrador', 'Coordinador'].includes(userRol)) {
-        mostrarPanelAsignacion(contenedorAcciones, projectId);
-        actionPanelRendered = true;
-    } 
-    else if (['Diseño en Proceso', 'En Confección'].includes(proyecto.status) && ['Administrador', 'Diseñador'].includes(userRol)) {
-        mostrarPanelSubirPropuesta(contenedorAcciones, projectId, proyecto);
-        actionPanelRendered = true;
-    } 
-    else if (proyecto.status === 'Pendiente Aprobación Interna' && ['Administrador', 'Coordinador'].includes(userRol)) {
-        mostrarPanelRevisarPropuesta(contenedorAcciones, projectId, proyecto);
-        actionPanelRendered = true;
-    } 
-    else if (proyecto.status === 'Pendiente Aprobación Cliente' && ['Administrador', 'Asesor', 'Coordinador'].includes(userRol)) {
-        mostrarPanelAprobarCliente(contenedorAcciones, projectId, proyecto);
-        actionPanelRendered = true;
-    } 
-    else if (proyecto.status === 'Pendiente de Proforma' && ['Administrador', 'Diseñador'].includes(userRol)) { 
-        mostrarPanelSubirProforma(contenedorAcciones, projectId);
-        actionPanelRendered = true;
-    } 
-    else if (proyecto.status === 'Pendiente Aprobación Proforma' && ['Administrador', 'Asesor', 'Coordinador'].includes(userRol)) {
-        mostrarPanelRevisionProforma(contenedorAcciones, projectId, proyecto);
-        actionPanelRendered = true;
-    } 
-    else if (['En Lista de Producción', 'En Diagramación', 'En Impresión', 'En Calandrado', 'En Confección', 'Supervisión de Calidad'].includes(proyecto.status) && ['Administrador', 'Coordinador'].includes(userRol)) {
-        mostrarPanelProduccion(contenedorAcciones, proyecto);
-        actionPanelRendered = true;
-    }
-
-    if (!actionPanelRendered) {
-        contenedorAcciones.innerHTML = `<h2>Flujo de Trabajo</h2><p>No hay acciones disponibles para tu rol (<strong>${userRol}</strong>) en el estado actual del proyecto (<strong>${proyecto.status}</strong>).</p>`;
     }
 }
 
+// --- 4. RENDERIZAR LÍNEA DE TIEMPO (LA NUEVA LÓGICA) ---
+function renderizarLineaDeTiempo(proyecto, user) {
+    const container = document.getElementById('flujo-de-etapas-container');
+    container.innerHTML = ''; // Limpiar
+    
+    // Mapeo de estados a etapas
+    const estadoEtapaMap = {
+        'Diseño Pendiente de Asignación': 3,
+        'Diseño en Proceso': 4,
+        'Pendiente Aprobación Interna': 5,
+        'Pendiente Aprobación Cliente': 6,
+        'Pendiente de Proforma': 7,
+        'Pendiente Aprobación Proforma': 8, // Tarea de refactorización (Etapa 7/8)
+        'En Lista de Producción': 9,
+        'En Diagramación': 10,
+        'En Impresión': 11,
+        'En Calandrado': 12,
+        'En Confección': 12, // (Devuelto por calidad, sigue en confección)
+        'Supervisión de Calidad': 13,
+        'Listo para Entrega': 14
+    };
+
+    const etapaActualNum = estadoEtapaMap[proyecto.status] || 1; // 1 si no se encuentra (ej. Completado)
+    
+    // Definimos las 14 etapas
+    const etapas = [
+        { num: 1, titulo: 'Solicitud Creada', fecha: proyecto.fecha_creacion },
+        { num: 2, titulo: 'GAP: Listado de Productos', fecha: null, nota: 'Etapa de Plan (aún no funcional)' }, // Tarea GAP 1
+        { num: 3, titulo: 'Asignación de Diseñador', fecha: proyecto.fecha_de_asignacion, panelId: 'panel-etapa-3' },
+        { num: 4, titulo: 'Propuesta del Diseñador', fecha: proyecto.fecha_propuesta, panelId: 'panel-etapa-4' },
+        { num: 5, titulo: 'Autorización Interna', fecha: proyecto.fecha_aprobacion_interna, panelId: 'panel-etapa-5' },
+        { num: 6, titulo: 'Aprobación del Cliente', fecha: proyecto.fecha_aprobacion_cliente, panelId: 'panel-etapa-6' },
+        { num: 7, titulo: 'Subida de Proforma', fecha: proyecto.fecha_proforma_subida, panelId: 'panel-etapa-7' },
+        { num: 8, titulo: 'Producción Autorizada', fecha: proyecto.fecha_autorizacion_produccion, panelId: 'panel-etapa-8' },
+        { num: 9, titulo: 'Diagramación', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Diagramación')?.fecha, panelId: 'panel-etapa-9' },
+        { num: 10, titulo: 'Impresión', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Impresión')?.fecha, panelId: 'panel-etapa-10' },
+        { num: 11, titulo: 'Calandrado', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Calandrado')?.fecha, panelId: 'panel-etapa-11' },
+        { num: 12, titulo: 'Confección', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Confección')?.fecha, panelId: 'panel-etapa-12' },
+        { num: 13, titulo: 'Control de Calidad', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'Supervisión de Calidad')?.fecha, panelId: 'panel-etapa-13' },
+        { num: 14, titulo: 'Entrega del Combo', fecha: proyecto.fecha_entrega, panelId: 'panel-etapa-14' } // Tarea GAP 14
+    ];
+
+    // Recorremos y dibujamos cada etapa
+    etapas.forEach(etapa => {
+        const li = document.createElement('li');
+        li.className = 'timeline-etapa';
+        
+        let estado = 'pendiente'; // Estado por defecto
+        if (etapa.fecha) {
+            estado = 'completado'; // Si tiene fecha, está completada
+        }
+        if (etapa.num === etapaActualNum) {
+            estado = 'actual'; // Si es la etapa actual
+        }
+
+        li.setAttribute('data-estado', estado);
+        
+        const fechaFormateada = etapa.fecha ? new Date(etapa.fecha).toLocaleDateString() : '';
+        
+        li.innerHTML = `
+            <div class="etapa-header">
+                <h3>${etapa.num}. ${etapa.titulo}</h3>
+                <span class="etapa-fecha">${fechaFormateada}</span>
+            </div>
+            ${etapa.panelId && estado === 'actual' ? `<div class="etapa-panel-acciones" id="${etapa.panelId}"></div>` : ''}
+        `;
+        
+        container.appendChild(li);
+    });
+
+    // --- AHORA, POBLAMOS EL PANEL DE LA ETAPA ACTUAL ---
+    // Esta lógica reemplaza el antiguo 'if/else' (Sección 5)
+    
+    const rolesAdmin = ['Administrador', 'Coordinador'];
+    const rolesDiseno = ['Administrador', 'Diseñador'];
+    const rolesAsesor = ['Administrador', 'Asesor', 'Coordinador'];
+
+    if (proyecto.status === 'Diseño Pendiente de Asignación' && rolesAdmin.includes(user.rol)) {
+        mostrarPanelAsignacion(document.getElementById('panel-etapa-3'), proyecto.id);
+    } 
+    else if (['Diseño en Proceso', 'En Confección'].includes(proyecto.status) && rolesDiseno.includes(user.rol)) {
+        // Si el estado es "En Confección", es por una devolución de calidad. El panel de propuesta (Etapa 4) se muestra
+        const panelId = (proyecto.status === 'En Confección') ? 'panel-etapa-12' : 'panel-etapa-4';
+        mostrarPanelSubirPropuesta(document.getElementById(panelId), proyecto.id, proyecto);
+    } 
+    else if (proyecto.status === 'Pendiente Aprobación Interna' && rolesAdmin.includes(user.rol)) {
+        mostrarPanelRevisarPropuesta(document.getElementById('panel-etapa-5'), proyecto.id, proyecto);
+    } 
+    else if (proyecto.status === 'Pendiente Aprobación Cliente' && rolesAsesor.includes(user.rol)) {
+        mostrarPanelAprobarCliente(document.getElementById('panel-etapa-6'), proyecto.id, proyecto);
+    } 
+    else if (proyecto.status === 'Pendiente de Proforma' && rolesDiseno.includes(user.rol)) { 
+        mostrarPanelSubirProforma(document.getElementById('panel-etapa-7'), proyecto.id);
+    } 
+    else if (proyecto.status === 'Pendiente Aprobación Proforma' && rolesAsesor.includes(user.rol)) {
+        // TAREA DE REFACTORIZACIÓN (Etapa 7/8): Por ahora, sigue llamando al panel fusionado
+        mostrarPanelRevisionProforma(document.getElementById('panel-etapa-8'), proyecto.id, proyecto);
+    } 
+    else if (rolesAdmin.includes(user.rol)) {
+        // Lógica de producción (Etapas 9-13)
+        const panelId = `panel-etapa-${etapaActualNum}`;
+        const panelContainer = document.getElementById(panelId);
+        if (panelContainer) {
+            mostrarPanelProduccion(panelContainer, proyecto);
+        }
+    }
+}
+
+
 // ==================================================================
-// ===== INICIO: TODAS LAS FUNCIONES DE AYUDA DEBEN ESTAR AQUÍ =====
+// ==================================================================
+// ===== FUNCIONES DE ACCIÓN (PANELES) - SIN CAMBIOS =====
+// (Estas son las funciones que ya tenías, copiadas tal cual)
+// ==================================================================
 // ==================================================================
 
 // Pega esta nueva función aquí
@@ -205,6 +288,7 @@ const loadDesigners = async (selectElement) => {
 
 // Reemplaza tu función 'mostrarPanelAsignacion' existente con esta
 async function mostrarPanelAsignacion(container, projectId) {
+    if (!container) return; // Seguridad
     const panelId = `panel-asignacion-${Math.random()}`;
     const div = document.createElement('div');
     div.innerHTML = `<h3>Asignar Tarea</h3><div class="form-group"><label for="designer-select-${panelId}">Diseñador:</label><select id="designer-select-${panelId}" required><option value="">Cargando...</option></select></div><button id="assign-designer-btn-${panelId}" class="button">Asignar</button><p id="assign-error-${panelId}" style="color: red; display: none;"></p>`;
@@ -240,11 +324,12 @@ async function mostrarPanelAsignacion(container, projectId) {
 }
 // REEMPLAZA ESTA FUNCIÓN COMPLETA EN detalle_proyecto.js
 async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
+    if (!container) return; // Seguridad
     let revisionHtml = '';
     
     // --- INICIO DE LA MEJORA ---
     // Verificamos si hay una incidencia reportada desde calidad.
-    if (proyecto?.historial_incidencias?.length > 0) {
+    if (proyecto?.historial_incidencias?.length > 0 && proyecto.status === 'En Confección') {
         const ultimaIncidencia = proyecto.historial_incidencias[proyecto.historial_incidencias.length - 1];
         revisionHtml = `
             <div style="background-color: #f2dede; border: 1px solid #ebccd1; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
@@ -328,6 +413,7 @@ async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
     });
 }
 async function mostrarPanelRevisarPropuesta(container, projectId, proyecto) {
+    if (!container) return; // Seguridad
     const ultimaPropuesta = proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno');
     const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'N/A';
     const fileUrl = ultimaPropuesta ? `/${ultimaPropuesta.url_archivo}` : '#';
@@ -349,6 +435,7 @@ async function mostrarPanelRevisarPropuesta(container, projectId, proyecto) {
 }
 
 async function mostrarPanelAprobarCliente(container, projectId, proyecto) {
+    if (!container) return; // Seguridad
     const ultimaPropuesta = proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno');
     const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'N/A';
     const fileUrl = ultimaPropuesta ? `/${ultimaPropuesta.url_archivo}` : '#';
@@ -371,6 +458,7 @@ async function mostrarPanelAprobarCliente(container, projectId, proyecto) {
 
 // REEMPLAZA LA FUNCIÓN COMPLETA EN detalle_proyecto.js
 async function mostrarPanelSubirProforma(container, projectId) {
+    if (!container) return; // Seguridad
     const panelId = `panel-proforma-${projectId}`;
     const div = document.createElement('div');
     div.innerHTML = `
@@ -444,6 +532,7 @@ function renderFileList(files, container) {
     });
 }
 async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
+    if (!container) return; // Seguridad
     const ultimaProforma = proyecto.archivos.find(a => a.tipo_archivo === 'proforma');
     const proformaFileName = ultimaProforma ? ultimaProforma.nombre_archivo : 'No disponible';
     const proformaFileUrl = ultimaProforma ? `/${ultimaProforma.url_archivo}` : '#';
@@ -508,6 +597,7 @@ document.getElementById(`solicitar-mejora-proforma-btn-${panelId}`).addEventList
 });
 }
 async function mostrarPanelProduccion(container, proyecto) {
+    if (!container) return; // Seguridad
     const projectId = proyecto.id;
     const estadoActual = proyecto.status;
     let panelHTML = '';
@@ -526,11 +616,11 @@ async function mostrarPanelProduccion(container, proyecto) {
     }
 
     const flujo = {
-        'En Lista de Producción': { texto: 'Pasar a Diagramación', siguienteEstado: 'En Diagramación' },
-        'En Diagramación': { texto: 'Pasar a Impresión', siguienteEstado: 'En Impresión' },
-        'En Impresión': { texto: 'Pasar a Calandra', siguienteEstado: 'En Calandrado' },
-        'En Calandrado': { texto: 'Enviar a Confección', siguienteEstado: 'En Confección' },
-        'En Confección': { texto: 'Pasar a Supervisión de Calidad', siguienteEstado: 'Supervisión de Calidad' }
+        'En Lista de Producción': { texto: 'Pasar a Diagramación', siguienteEstado: 'En Diagramación', panelId: 'panel-etapa-9' },
+        'En Diagramación': { texto: 'Pasar a Impresión', siguienteEstado: 'En Impresión', panelId: 'panel-etapa-10' },
+        'En Impresión': { texto: 'Pasar a Calandra', siguienteEstado: 'En Calandrado', panelId: 'panel-etapa-11' },
+        'En Calandrado': { texto: 'Enviar a Confección', siguienteEstado: 'En Confección', panelId: 'panel-etapa-12' },
+        'En Confección': { texto: 'Pasar a Supervisión de Calidad', siguienteEstado: 'Supervisión de Calidad', panelId: 'panel-etapa-13' }
     };
 
     if (flujo[estadoActual]) {
