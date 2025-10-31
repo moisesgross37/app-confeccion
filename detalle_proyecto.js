@@ -628,7 +628,10 @@ async function mostrarPanelAutorizarProduccion(container, projectId, proyecto) {
         }
     });
 }
-// --- PANELES DE ACCIÓN: ETAPAS 9-13 ---
+// ==========================================================
+// === TAREA 4.1: REEMPLAZA ESTA FUNCIÓN COMPLETA ===
+// (Actualiza el panel de "Control de Calidad")
+// ==========================================================
 async function mostrarPanelProduccion(container, proyecto) {
     if (!container) return;
     const projectId = proyecto.id;
@@ -659,15 +662,24 @@ async function mostrarPanelProduccion(container, proyecto) {
     if (flujo[estadoActual]) {
         const accion = flujo[estadoActual];
         panelHTML = `<button id="avanzar-btn-${panelId}" class="btn btn-primary">${accion.texto}</button>`;
+    
+    // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
+    // (Panel de Control de Calidad - Etapa 13)
     } else if (estadoActual === 'Supervisión de Calidad') {
         panelHTML = `
             <h4>Decisión Final de Calidad</h4>
             <div class="button-group">
                 <button id="aprobar-calidad-btn-${panelId}" class="btn btn-success">Aprobar Calidad / Listo para Entrega</button>
-                <button id="reportar-incidencia-btn-${panelId}" class="btn btn-warning">Reportar Incidencia</button>
+            </div>
+            <hr>
+            <h4>Reportar Incidencia (Devolver a):</h4>
+            <div class="button-group">
+                <button id="reportar-falla-confeccion-${panelId}" class="btn btn-warning">1. Confección (Etapa 12)</button>
+                <button id="reportar-falla-diseno-${panelId}" class="btn btn-danger">2. Diseño (Etapa 3)</button>
             </div>
         `;
     }
+    // --- FIN DEL CAMBIO ---
 
     div.innerHTML = `<div class="card">${incidenciaHtml}${panelHTML}</div>`;
     container.appendChild(div);
@@ -698,17 +710,53 @@ async function mostrarPanelProduccion(container, proyecto) {
         });
     }
 
-    const reportarIncidenciaBtn = document.getElementById(`reportar-incidencia-btn-${panelId}`);
-    if (reportarIncidenciaBtn) {
-        reportarIncidenciaBtn.addEventListener('click', async () => {
-            const comentarios = prompt('Por favor, describe la incidencia o las mejoras requeridas:');
-            if (!comentarios || comentarios.trim() === '') { alert('Debes incluir un comentario para reportar una incidencia.'); return; }
+    // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
+    // (Lógica para los 2 nuevos botones)
+
+    // 1. Botón para "Reportar Falla de CONFECCIÓN"
+    const reportarConfeccionBtn = document.getElementById(`reportar-falla-confeccion-${panelId}`);
+    if (reportarConfeccionBtn) {
+        reportarConfeccionBtn.addEventListener('click', async () => {
+            const comentarios = prompt('Describa la falla de CONFECCIÓN:');
+            if (!comentarios || comentarios.trim() === '') { alert('Debes incluir un comentario.'); return; }
             try {
-                const response = await fetch(`/api/proyectos/${projectId}/reportar-incidencia`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comentarios }) });
+                const response = await fetch(`/api/proyectos/${projectId}/reportar-incidencia`, { 
+                    method: 'PUT', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        comentarios: comentarios,
+                        tipo_incidencia: 'CONFECCION' // Enviamos el tipo
+                    }) 
+                });
                 if (!response.ok) throw new Error('Error al reportar la incidencia.');
-                alert('Incidencia reportada. El proyecto volverá a la etapa de Confección.');
+                alert('Incidencia reportada. El proyecto volverá a Confección (Etapa 12).');
+                window.location.reload();
+            } catch (error) { alert(`Error: ${error.message}`); }
+        });
+    }
+
+    // 2. Botón para "Reportar Falla de DISEÑO"
+    const reportarDisenoBtn = document.getElementById(`reportar-falla-diseno-${panelId}`);
+    if (reportarDisenoBtn) {
+        reportarDisenoBtn.addEventListener('click', async () => {
+            const comentarios = prompt('Describa la falla de DISEÑO (para el diseñador):');
+            if (!comentarios || comentarios.trim() === '') { alert('Debes incluir un comentario.'); return; }
+            try {
+                const response = await fetch(`/api/proyectos/${projectId}/reportar-incidencia`, { 
+                    method: 'PUT', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        comentarios: comentarios,
+                        tipo_incidencia: 'DISEÑO' // Enviamos el tipo
+                    }) 
+                });
+                if (!response.ok) throw new Error('Error al reportar la incidencia.');
+                alert('Incidencia reportada. El proyecto volverá a Diseño (Etapa 3).');
                 window.location.reload();
             } catch (error) { alert(`Error: ${error.message}`); }
         });
     }
 }
+// ==========================================================
+// === FIN TAREA 4.1 ===
+// ==========================================================
