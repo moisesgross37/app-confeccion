@@ -147,30 +147,37 @@ function renderizarLineaDeTiempo(proyecto, user) {
     const container = document.getElementById('flujo-de-etapas-container');
     container.innerHTML = ''; // Limpiar
     
-   // ==========================================================
-    // === INICIO DE LA CORRECCIÓN (Numeración y Bug) ===
-    // ==========================================================
+ // ==========================================================
+// === INICIO TAREA 3.4: REEMPLAZA TU FUNCIÓN COMPLETA ===
+// ==========================================================
+
+// --- 4. RENDERIZAR LÍNEA DE TIEMPO (LA NUEVA LÓGICA) ---
+function renderizarLineaDeTiempo(proyecto, user) {
+    const container = document.getElementById('flujo-de-etapas-container');
+    container.innerHTML = ''; // Limpiar
     
     // Mapeo de estados a las NUEVAS etapas (ahora son 13)
+    // ESTE ES EL MAPA CORRECTO DE LA TAREA 3.4
     const estadoEtapaMap = {
-        'Diseño Pendiente de Asignación': 2, // Antes era 3
-        'Diseño en Proceso': 3, // Antes era 4
-        'Pendiente Aprobación Interna': 4, // Antes era 5
-        'Pendiente Aprobación Cliente': 5, // Antes era 6
-        'Pendiente de Proforma': 6, // Antes era 7
-        'Pendiente Aprobación Proforma': 7, // Antes era 8
-        'En Lista de Producción': 8, // Antes era 9
-        'En Diagramación': 9, // Antes era 10
-        'En Impresión': 10, // Antes era 11
-        'En Calandrado': 11, // Antes era 12
-        'En Confección': 11, // Devuelto por calidad, vuelve a "Confección" (antes 12)
-        'Supervisión de Calidad': 12, // Antes era 13
-        'Listo para Entrega': 13 // Antes era 14
+        'Diseño Pendiente de Asignación': 2, 
+        'Diseño en Proceso': 3, 
+        'Pendiente Aprobación Interna': 4, 
+        'Pendiente Aprobación Cliente': 5, 
+        'Pendiente de Proforma': 6, 
+        'Pendiente Aprobación Proforma': 7, // Etapa 7
+        'Pendiente Autorización Producción': 8, // ¡NUEVO ESTADO PARA ETAPA 8!
+        'En Lista de Producción': 9, // Ahora es 9
+        'En Diagramación': 10,
+        'En Impresión': 11,
+        'En Calandrado': 12,
+        'En Confección': 12, 
+        'Supervisión de Calidad': 13, // Ahora es 13
+        'Listo para Entrega': 14 // Lo dejaremos en 14 por ahora, luego renumeramos
     };
 
     const etapaActualNum = estadoEtapaMap[proyecto.status] || 1; 
     
-    // Definimos las 13 etapas (Ocultamos GAPs, renumeramos y ELIMINAMOS EL BUG)
+    // ESTA ES LA LISTA DE ETAPAS CORRECTA
     const etapas = [
         { num: 1, titulo: 'Solicitud Creada', fecha: proyecto.fecha_creacion },
         { num: 2, titulo: 'Asignación de Diseñador', fecha: proyecto.fecha_de_asignacion, panelId: 'panel-etapa-2' },
@@ -178,44 +185,39 @@ function renderizarLineaDeTiempo(proyecto, user) {
         { num: 4, titulo: 'Autorización Interna', fecha: proyecto.fecha_aprobacion_interna, panelId: 'panel-etapa-4' },
         { num: 5, titulo: 'Aprobación del Cliente', fecha: proyecto.fecha_aprobacion_cliente, panelId: 'panel-etapa-5' },
         { num: 6, titulo: 'Subida de Proforma', fecha: proyecto.fecha_proforma_subida, panelId: 'panel-etapa-6' },
-        { num: 7, titulo: 'Producción Autorizada', fecha: proyecto.fecha_autorizacion_produccion, panelId: 'panel-etapa-7' },
-        { num: 8, titulo: 'Diagramación', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Diagramación')?.fecha, panelId: 'panel-etapa-8' },
-        { num: 9, titulo: 'Impresión', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Impresión')?.fecha, panelId: 'panel-etapa-9' },
-        { num: 10, titulo: 'Calandrado', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Calandrado')?.fecha, panelId: 'panel-etapa-10' },
-        { num: 11, titulo: 'Confección', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Confección')?.fecha, panelId: 'panel-etapa-11' },
-        { num: 12, titulo: 'Control de Calidad', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'Supervisión de Calidad')?.fecha, panelId: 'panel-etapa-12' },
-        { num: 13, titulo: 'Entrega del Combo', fecha: proyecto.fecha_entrega, panelId: 'panel-etapa-13' } 
+        // AHORA LAS ETAPAS 7 Y 8 ESTÁN SEPARADAS
+        { num: 7, titulo: 'Aprobación de Proforma', fecha: proyecto.status === 'Pendiente Autorización Producción' ? new Date() : null, panelId: 'panel-etapa-7' }, // Se marca completa si ya pasamos
+        { num: 8, titulo: 'Producción Autorizada', fecha: proyecto.fecha_autorizacion_produccion, panelId: 'panel-etapa-8' },
+        { num: 9, titulo: 'Diagramación', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Diagramación')?.fecha, panelId: 'panel-etapa-9' },
+        { num: 10, titulo: 'Impresión', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Impresión')?.fecha, panelId: 'panel-etapa-10' },
+        { num: 11, titulo: 'Calandrado', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Calandrado')?.fecha, panelId: 'panel-etapa-11' },
+        { num: 12, titulo: 'Confección', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Confección')?.fecha, panelId: 'panel-etapa-12' },
+        { num: 13, titulo: 'Control de Calidad', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'Supervisión de Calidad')?.fecha, panelId: 'panel-etapa-13' },
+        { num: 14, titulo: 'Entrega del Combo', fecha: proyecto.fecha_entrega, panelId: 'panel-etapa-14' } 
     ];
-    // ==========================================================
-    // === FIN DE LA CORRECCIÓN ===
-    // ==========================================================
-    // Recorremos y dibujamos cada etapa
+
+    // Recorremos y dibujamos cada etapa (SIN CAMBIOS)
     etapas.forEach(etapa => {
         const li = document.createElement('li');
         li.className = 'timeline-etapa';
         
-        let estado = 'pendiente'; // Estado por defecto
+        let estado = 'pendiente'; 
         if (etapa.fecha) {
-            estado = 'completado'; // Si tiene fecha, está completada
+            estado = 'completado'; 
         }
-        // Corregimos: la etapa 1 se completa en cuanto se crea
         if (etapa.num === 1 && proyecto.fecha_creacion) {
             estado = 'completado';
         }
-
         if (etapa.num === etapaActualNum) {
-            estado = 'actual'; // Si es la etapa actual
+            estado = 'actual'; 
         }
-
-        // Si la etapa actual ya tiene fecha (ej. Producción), sigue "actual" no "completada"
         if (estado === 'completado' && etapa.num === etapaActualNum) {
              estado = 'actual';
         }
-        // Si las etapas anteriores a la actual no tienen fecha, siguen pendientes
+        // Lógica mejorada para marcar etapas pasadas como completadas
         if (estado === 'pendiente' && etapa.num < etapaActualNum) {
-             estado = 'completado'; // Asumimos que si estamos en la 5, la 1-4 están listas
+             estado = 'completado'; 
         }
-
 
         li.setAttribute('data-estado', estado);
         
@@ -233,18 +235,17 @@ function renderizarLineaDeTiempo(proyecto, user) {
     });
 
     // --- AHORA, POBLAMOS EL PANEL DE LA ETAPA ACTUAL ---
+    // ESTE ES EL "CEREBRO" (IF/ELSE) CORREGIDO DE LA TAREA 3.4
     
     const rolesAdmin = ['Administrador', 'Coordinador'];
     const rolesDiseno = ['Administrador', 'Diseñador'];
     const rolesAsesor = ['Administrador', 'Asesor', 'Coordinador'];
 
-    // Usamos los NUEVOS números de etapa
     if (proyecto.status === 'Diseño Pendiente de Asignación' && rolesAdmin.includes(user.rol)) {
         mostrarPanelAsignacion(document.getElementById('panel-etapa-2'), proyecto.id);
     } 
     else if (['Diseño en Proceso', 'En Confección'].includes(proyecto.status) && rolesDiseno.includes(user.rol)) {
-        // Si el estado es "En Confección", es por una devolución de calidad. El panel de propuesta (Etapa 3) se muestra
-        const panelId = (proyecto.status === 'En Confección') ? 'panel-etapa-11' : 'panel-etapa-3';
+        const panelId = (proyecto.status === 'En Confección') ? 'panel-etapa-12' : 'panel-etapa-3';
         mostrarPanelSubirPropuesta(document.getElementById(panelId), proyecto.id, proyecto);
     } 
     else if (proyecto.status === 'Pendiente Aprobación Interna' && rolesAdmin.includes(user.rol)) {
@@ -256,22 +257,39 @@ function renderizarLineaDeTiempo(proyecto, user) {
     else if (proyecto.status === 'Pendiente de Proforma' && rolesDiseno.includes(user.rol)) { 
         mostrarPanelSubirProforma(document.getElementById('panel-etapa-6'), proyecto.id);
     } 
+    // --- ¡AQUÍ ESTÁ LA LÓGICA SEPARADA! ---
     else if (proyecto.status === 'Pendiente Aprobación Proforma' && rolesAsesor.includes(user.rol)) {
+        // ETAPA 7: Llama a la función simplificada
         mostrarPanelRevisionProforma(document.getElementById('panel-etapa-7'), proyecto.id, proyecto);
-    } 
-    else if (rolesAdmin.includes(user.rol) && etapaActualNum >= 8 && etapaActualNum <= 12) {
-        // Lógica de producción (Etapas 8-12)
+    }
+    else if (proyecto.status === 'Pendiente Autorización Producción' && rolesAsesor.includes(user.rol)) {
+        // ETAPA 8: Llama a la NUEVA función
+        mostrarPanelAutorizarProduccion(document.getElementById('panel-etapa-8'), proyecto.id, proyecto);
+    }
+    // --- FIN DEL CAMBIO ---
+    else if (rolesAdmin.includes(user.rol) && etapaActualNum >= 9 && etapaActualNum <= 13) {
+        // Lógica de producción (Etapas 9-13)
+        // Corregido para manejar el estado 'Listo para Entrega' (etapa 14)
         const panelId = `panel-etapa-${etapaActualNum}`;
         const panelContainer = document.getElementById(panelId);
         if (panelContainer) {
             mostrarPanelProduccion(panelContainer, proyecto);
         }
     }
+    else if (proyecto.status === 'Listo para Entrega' && rolesAdmin.includes(user.rol)) {
+        // Lógica de Etapa 14 (cuando la implementemos)
+        const panelContainer = document.getElementById('panel-etapa-14');
+        if (panelContainer) {
+            // Aún no hemos creado 'mostrarPanelEntrega', pero aquí iría
+            // mostrarPanelEntrega(panelContainer, proyecto.id);
+            panelContainer.innerHTML = '<p><em>(Próxima tarea: Implementar panel de Entrega)</em></p>';
+        }
+    }
 }
-
-
-// ==================================================================
-// ==================================================================
+// ==========================================================
+// === FIN TAREA 3.4 ===
+// ==========================================================
+    
 // ===== FUNCIONES DE ACCIÓN (PANELES) - SIN CAMBIOS =====
 // (Pega el resto de tus funciones de ayuda aquí,
 //  desde 'loadDesigners' hasta el final del archivo)
@@ -550,72 +568,127 @@ function renderFileList(files, container) {
         fileElement.innerHTML = `<span>✅ ${file.name}</span><button type="button" class="btn-remove-file" data-index="${index}">❌</button>`;
         container.appendChild(fileElement);
     });
-}
+}// ==========================================================
+// === INICIO TAREA 3.2: REEMPLAZA ESTA FUNCIÓN COMPLETA ===
+// ==========================================================
 async function mostrarPanelRevisionProforma(container, projectId, proyecto) {
     if (!container) return; // Seguridad
+    
     const ultimaProforma = proyecto.archivos.find(a => a.tipo_archivo === 'proforma');
     const proformaFileName = ultimaProforma ? ultimaProforma.nombre_archivo : 'No disponible';
     const proformaFileUrl = ultimaProforma ? `/${ultimaProforma.url_archivo}` : '#';
     
     const panelId = `panel-revision-proforma-${Math.random()}`;
     const div = document.createElement('div');
+    
+    // HTML simplificado: solo aprobación o rechazo de proforma.
     div.innerHTML = `
-        <h2>Revisión de Proforma</h2>
+        <h3>Revisión de Proforma</h3>
         <div class="card">
             <div class="card-body">
-                <p>El diseñador ha subido la proforma. Por favor, revísala y procede con la autorización final.</p>
+                <p>El diseñador ha subido la proforma. Por favor, revísala.</p>
                 <p><strong>Proforma:</strong> <a href="${proformaFileUrl}" target="_blank">${proformaFileName}</a></p>
                 <hr>
-                <h4>Autorización Final de Producción</h4>
-                <div class="mb-3">
-                    <label for="listado-final-input-${panelId}" class="form-label"><strong>Paso 1:</strong> Cargar listado final de clientes (Obligatorio)</label>
-                    <input class="form-control" type="file" id="listado-final-input-${panelId}" required>
+                <div class="button-group">
+                    <button id="aprobar-proforma-btn-${panelId}" class="btn btn-success">Aprobar Proforma</button>
+                    <button id="solicitar-mejora-proforma-btn-${panelId}" class="btn btn-warning mt-2">Solicitar Modificación</button>
                 </div>
-                <button id="autorizar-produccion-btn-${panelId}" class="btn btn-success w-100"><strong>Paso 2:</strong> Autorizar e Iniciar Producción</button>
-                <hr>
-                <button id="solicitar-mejora-proforma-btn-${panelId}" class="btn btn-warning w-100 mt-2">Solicitar Modificación en Proforma</button>
             </div>
         </div>
     `;
     container.appendChild(div);
 
+    // --- LÓGICA ACTUALIZADA ---
+    // 1. Botón de Aprobar (¡NUEVO!)
+    document.getElementById(`aprobar-proforma-btn-${panelId}`).addEventListener('click', async () => {
+        if (!confirm('¿Estás seguro de APROBAR esta proforma y pasar a la autorización de producción?')) return;
+        try {
+            // Llama a la NUEVA ruta del backend que creamos
+            const response = await fetch(`/api/proyectos/${projectId}/aprobar-proforma`, { method: 'PUT' });
+            if (!response.ok) { const err = await response.json(); throw new Error(err.message || 'Error del servidor'); }
+            
+            alert('¡Proforma aprobada! El proyecto pasará a "Pendiente Autorización Producción".');
+            window.location.reload();
+        } catch (error) { 
+            alert(`Error: ${error.message}`); 
+        }
+    });
+    
+    // 2. Botón de Solicitar Mejora (Sin cambios, solo se copió)
+    document.getElementById(`solicitar-mejora-proforma-btn-${panelId}`).addEventListener('click', async () => {
+        const comentarios = prompt('Escriba los cambios necesarios para la proforma:');
+        if (comentarios === null || comentarios.trim() === "") return;
+        try {
+            const response = await fetch(`/api/proyectos/${projectId}/solicitar-mejora`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ comentarios: `PROFORMA: ${comentarios}` }) 
+            });
+            if (!response.ok) throw new Error('Error al solicitar la modificación.');
+            
+            alert('Solicitud de modificación enviada.');
+            window.location.reload();
+        } catch(error) { 
+            alert(`Error: ${error.message}`); 
+        }
+    });
+}
+// ==========================================================
+// === FIN TAREA 3.2 ===
+// ==========================================================
+
+// ==========================================================
+// === INICIO TAREA 3.3: PEGA ESTA FUNCIÓN NUEVA ===
+// ==========================================================
+async function mostrarPanelAutorizarProduccion(container, projectId, proyecto) {
+    if (!container) return; // Seguridad
+
+    const panelId = `panel-autorizar-produccion-${Math.random()}`;
+    const div = document.createElement('div');
+    
+    // Este es el HTML que "cortamos" de la función anterior
+    div.innerHTML = `
+        <h3>Autorización Final de Producción</h3>
+        <div class="card">
+            <div class="card-body">
+                <p>La proforma ha sido aprobada. Por favor, cargue el listado final para iniciar la producción.</p>
+                <div class="mb-3">
+                    <label for="listado-final-input-${panelId}" class="form-label"><strong>Paso 1:</strong> Cargar listado final de clientes (Obligatorio)</label>
+                    <input class="form-control" type="file" id="listado-final-input-${panelId}" required>
+                </div>
+                <button id="autorizar-produccion-btn-${panelId}" class="btn btn-success w-100"><strong>Paso 2:</strong> Autorizar e Iniciar Producción</button>
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+
+    // Lógica del botón (esta es la lógica original, sin cambios)
     document.getElementById(`autorizar-produccion-btn-${panelId}`).addEventListener('click', async () => {
         const listadoInput = document.getElementById(`listado-final-input-${panelId}`);
         const listadoFile = listadoInput.files[0];
         if (!listadoFile) { alert('Debes cargar el archivo con el listado final para poder autorizar.'); return; }
         if (!confirm('¿Estás seguro de que quieres autorizar el inicio de la producción?')) return;
+        
         const formData = new FormData();
         formData.append('listado_final', listadoFile);
+        
         try {
+            // Llama a la ruta de backend ORIGINAL que ya existía
             const response = await fetch(`/api/proyectos/${projectId}/autorizar-produccion`, { method: 'PUT', body: formData });
             if (!response.ok) { const err = await response.json(); throw new Error(err.message || 'Error del servidor'); }
+            
             alert('¡Producción autorizada con éxito!');
             window.location.reload();
-        } catch (error) { alert(`Error: ${error.message}`); }
+        } catch (error) { 
+            alert(`Error: ${error.message}`); 
+        }
     });
-    
-    // Busca este bloque y reemplázalo completo
-document.getElementById(`solicitar-mejora-proforma-btn-${panelId}`).addEventListener('click', async () => {
-    const comentarios = prompt('Escriba los cambios necesarios para la proforma:');
-    if (comentarios === null || comentarios.trim() === "") return;
-    try {
-        // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
-        // Usamos la ruta genérica que ya funciona.
-        const response = await fetch(`/api/proyectos/${projectId}/solicitar-mejora`, { 
-            method: 'PUT', 
-            headers: { 'Content-Type': 'application/json' }, 
-            // Añadimos un prefijo al comentario para saber que vino de la proforma.
-            body: JSON.stringify({ comentarios: `PROFORMA: ${comentarios}` }) 
-        });
-        if (!response.ok) throw new Error('Error al solicitar la modificación.');
-        
-        alert('Solicitud de modificación enviada.');
-        window.location.reload();
-    } catch(error) { 
-        alert(`Error: ${error.message}`); 
-    }
-});
 }
+// ==========================================================
+// === FIN TAREA 3.3 ===
+// ==========================================================
+
+
 async function mostrarPanelProduccion(container, proyecto) {
     if (!container) return; // Seguridad
     const projectId = proyecto.id;
