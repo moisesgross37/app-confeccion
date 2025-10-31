@@ -561,7 +561,10 @@ app.put('/api/proyectos/:id/asignar', requireLogin, checkRole(['Administrador', 
     } catch (err) { res.status(500).json({ message: 'Error al asignar proyecto' }); }
 });
 
-// REEMPLAZA LA RUTA COMPLETA EN server_confeccion.js
+// ==========================================================
+// === TAREA 4.3 (Backend): REEMPLAZA ESTA RUTA COMPLETA ===
+// (Ruta "subir-propuesta" ahora activa el "Carril Rápido")
+// ==========================================================
 app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñador', 'Administrador']), upload.array('propuestas_diseno'), async (req, res) => {
     const { id } = req.params;
 
@@ -573,6 +576,31 @@ app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñad
     try {
         await client.query('BEGIN');
 
+        // --- ¡AQUÍ ESTÁ LA NUEVA LÓGICA! ---
+        // 1. Obtenemos el historial del proyecto ANTES de hacer cambios
+        const currentProjectResult = await client.query('SELECT historial_incidencias FROM confeccion_projects WHERE id = $1', [id]);
+        
+        if (currentProjectResult.rows.length === 0) {
+            throw new Error('Proyecto no encontrado.');
+        }
+        
+        const currentProject = currentProjectResult.rows[0];
+        
+        let nuevoStatus = 'Pendiente Aprobación Interna'; // (Etapa 4) - Flujo Normal
+
+        // 2. Revisamos si hay incidencias de diseño
+        if (currentProject.historial_incidencias && currentProject.historial_incidencias.length > 0) {
+            const ultimaIncidencia = currentProject.historial_incidencias[currentProject.historial_incidencias.length - 1];
+            
+            // 3. Si la última incidencia fue de 'DISEÑO', activamos el "Carril Rápido"
+            if (ultimaIncidencia.tipo === 'DISEÑO') {
+                nuevoStatus = 'En Lista de Producción'; // ¡Salta directo a la Etapa 9!
+                console.log(`¡Carril Rápido Activado! Devolviendo a: ${nuevoStatus}`);
+            }
+        }
+        // --- FIN DE LA NUEVA LÓGICA ---
+
+        // 4. Guardamos los nuevos archivos de propuesta (esto ya lo hacía)
         for (const file of req.files) {
             const webUrl = `/uploads_confeccion/${file.filename}`;
             await client.query(
@@ -582,9 +610,10 @@ app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñad
             );
         }
 
+        // 5. Actualizamos el proyecto con el 'nuevoStatus' (inteligente)
         const projectResult = await client.query(
             'UPDATE confeccion_projects SET status = $1, fecha_propuesta = NOW() WHERE id = $2 RETURNING *', 
-            ['Pendiente Aprobación Interna', id]
+            [nuevoStatus, id]
         );
 
         await client.query('COMMIT');
@@ -598,6 +627,9 @@ app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñad
         client.release();
     }
 });
+// ==========================================================
+// === FIN TAREA 4.3 ===
+// ==========================================================
 // REEMPLAZA LA RUTA COMPLETA EN server_confeccion.js
 app.put('/api/proyectos/:id/subir-proforma', requireLogin, checkRole(['Administrador', 'Diseñador']), upload.array('proformas'), async (req, res) => {
     const { id } = req.params;
