@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle de Proyecto</title>
-        <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
-    <link rel="stylesheet" href="confeccion_estilos.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Proyecto</title>
+        <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
+    <link rel="stylesheet" href="confeccion_estilos.css">
 </head>
 <body>
     <div class="container">
@@ -28,8 +28,15 @@
                         <p><strong>Asesor:</strong> <span id="asesor-proyecto">Cargando...</span></p>
                         <p><strong>Diseñador:</strong> <span id="disenador-proyecto">Cargando...</span></p>
                         <p><strong>Estado:</strong> <mark id="estado-proyecto">Cargando...</mark></p>
+                        
+                        <div class="form-group" style="margin-top: 15px;">
+                            <strong>Productos del Paquete:</strong>
+                            <div id="productos-proyecto-container" style="background-color: #f9f9f9; border: 1px solid #ddd; padding: 10px; border-radius: 4px; min-height: 30px;">
+                                <em>Cargando...</em>
+                            </div>
+                        </div>
                         <div>
-                            <strong>Detalles Solicitud:</strong>
+                            <strong style="margin-top: 15px; display: block;">Detalles Solicitud:</strong>
                             <textarea id="detalles-proyecto" readonly>Cargando...</textarea>
                         </div>
                     </div>
