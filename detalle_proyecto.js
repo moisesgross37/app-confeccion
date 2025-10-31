@@ -629,8 +629,8 @@ async function mostrarPanelAutorizarProduccion(container, projectId, proyecto) {
     });
 }
 // ==========================================================
-// === TAREA 4.1: REEMPLAZA ESTA FUNCIÓN COMPLETA ===
-// (Actualiza el panel de "Control de Calidad")
+// === TAREA 5.2 (Frontend): REEMPLAZA ESTA FUNCIÓN COMPLETA ===
+// (Simplificada a UN solo botón de "Reportar Incidencia")
 // ==========================================================
 async function mostrarPanelProduccion(container, proyecto) {
     if (!container) return;
@@ -672,10 +672,9 @@ async function mostrarPanelProduccion(container, proyecto) {
                 <button id="aprobar-calidad-btn-${panelId}" class="btn btn-success">Aprobar Calidad / Listo para Entrega</button>
             </div>
             <hr>
-            <h4>Reportar Incidencia (Devolver a):</h4>
+            <h4>Reportar Incidencia</h4>
             <div class="button-group">
-                <button id="reportar-falla-confeccion-${panelId}" class="btn btn-warning">1. Confección (Etapa 12)</button>
-                <button id="reportar-falla-diseno-${panelId}" class="btn btn-danger">2. Diseño (Etapa 3)</button>
+                <button id="reportar-incidencia-btn-${panelId}" class="btn btn-danger">Devolver a Diseño (Etapa 3)</button>
             </div>
         `;
     }
@@ -711,30 +710,31 @@ async function mostrarPanelProduccion(container, proyecto) {
     }
 
     // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
-    // (Lógica para los 2 nuevos botones)
-
-    // 1. Botón para "Reportar Falla de CONFECCIÓN"
-    const reportarConfeccionBtn = document.getElementById(`reportar-falla-confeccion-${panelId}`);
-    if (reportarConfeccionBtn) {
-        reportarConfeccionBtn.addEventListener('click', async () => {
-            const comentarios = prompt('Describa la falla de CONFECCIÓN:');
+    // (Lógica simplificada para UN solo botón de "Reportar Incidencia")
+    const reportarIncidenciaBtn = document.getElementById(`reportar-incidencia-btn-${panelId}`);
+    if (reportarIncidenciaBtn) {
+        reportarIncidenciaBtn.addEventListener('click', async () => {
+            const comentarios = prompt('Describa la falla (se devolverá a Diseño):');
             if (!comentarios || comentarios.trim() === '') { alert('Debes incluir un comentario.'); return; }
             try {
                 const response = await fetch(`/api/proyectos/${projectId}/reportar-incidencia`, { 
                     method: 'PUT', 
                     headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify({ 
-                        comentarios: comentarios,
-                        tipo_incidencia: 'CONFECCION' // Enviamos el tipo
+                        comentarios: comentarios
+                        // Ya no enviamos 'tipo_incidencia' porque el backend ahora es más simple
                     }) 
                 });
                 if (!response.ok) throw new Error('Error al reportar la incidencia.');
-                alert('Incidencia reportada. El proyecto volverá a Confección (Etapa 12).');
+                alert('Incidencia reportada. El proyecto volverá a Diseño (Etapa 3).');
                 window.location.reload();
             } catch (error) { alert(`Error: ${error.message}`); }
         });
     }
-
+}
+// ==========================================================
+// === FIN TAREA 5.2 ===
+// ==========================================================
     // 2. Botón para "Reportar Falla de DISEÑO"
     const reportarDisenoBtn = document.getElementById(`reportar-falla-diseno-${panelId}`);
     if (reportarDisenoBtn) {
