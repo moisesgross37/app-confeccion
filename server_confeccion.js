@@ -365,26 +365,44 @@ app.get('/api/asesores', requireLogin, (req, res) => {
     res.json(asesores);
 });
 
-// Obtener todos los proyectos
+// ==========================================================
+// === TAREA 6.2 (Backend): REEMPLAZA ESTA RUTA COMPLETA ===
+// (Oculta proyectos "Completados" del panel)
+// ==========================================================
 app.get('/api/proyectos', requireLogin, async (req, res) => {
     try {
-        const query = `
+        // --- ¡NUEVA LÓGICA DE FILTRO! ---
+        // Comprueba si la URL tiene un parámetro ?filtro=completados
+        const filtroCompletados = req.query.filtro === 'completados';
+        
+        let query = `
             SELECT p.*, d.name AS nombre_disenador, p.fecha_creacion AS created_at
             FROM confeccion_projects p
             LEFT JOIN confeccion_designers d ON p.diseñador_id = d.id
-            ORDER BY p.fecha_creacion DESC`;
-            
-        // NOTA: 'p.fecha_creacion AS created_at' es la única parte que cambió.
-        // Esto le dice a la base de datos: "Toma la columna 'fecha_creacion'
-        // y devuélvela en el JSON con el nombre 'created_at'".
+        `;
+
+        if (filtroCompletados) {
+            // Si piden los completados, los muestra
+            query += " WHERE p.status = 'Completado'";
+        } else {
+            // Por defecto, oculta los completados
+            query += " WHERE p.status != 'Completado'";
+        }
+        
+        query += " ORDER BY p.fecha_creacion DESC";
+        // --- FIN DE LA LÓGICA DE FILTRO ---
             
         const result = await pool.query(query);
         res.json(result.rows);
+        
     } catch (err) {
         console.error("Error en /api/proyectos:", err);
         res.status(500).json({ message: 'Error al obtener proyectos' });
     }
 });
+// ==========================================================
+// === FIN TAREA 6.2 ===
+// ==========================================================
 
 // (LÓGICA CORREGIDA) Eliminar un proyecto
 app.delete('/api/proyectos/:id', requireLogin, checkRole(['Administrador']), async (req, res) => {
