@@ -629,7 +629,7 @@ async function mostrarPanelAutorizarProduccion(container, projectId, proyecto) {
     });
 }
 // ==========================================================
-// === TAREA 5.2 (Frontend): REEMPLAZA ESTA FUNCIÓN COMPLETA ===
+// === BLOQUE 4/4 (TAREA 5.2 CORREGIDA) ===
 // (Simplificada a UN solo botón de "Reportar Incidencia")
 // ==========================================================
 async function mostrarPanelProduccion(container, proyecto) {
@@ -732,31 +732,4 @@ async function mostrarPanelProduccion(container, proyecto) {
         });
     }
 }
-// ==========================================================
-// === FIN TAREA 5.2 ===
-// ==========================================================
-    // 2. Botón para "Reportar Falla de DISEÑO"
-    const reportarDisenoBtn = document.getElementById(`reportar-falla-diseno-${panelId}`);
-    if (reportarDisenoBtn) {
-        reportarDisenoBtn.addEventListener('click', async () => {
-            const comentarios = prompt('Describa la falla de DISEÑO (para el diseñador):');
-            if (!comentarios || comentarios.trim() === '') { alert('Debes incluir un comentario.'); return; }
-            try {
-                const response = await fetch(`/api/proyectos/${projectId}/reportar-incidencia`, { 
-                    method: 'PUT', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ 
-                        comentarios: comentarios,
-                        tipo_incidencia: 'DISEÑO' // Enviamos el tipo
-                    }) 
-                });
-                if (!response.ok) throw new Error('Error al reportar la incidencia.');
-                alert('Incidencia reportada. El proyecto volverá a Diseño (Etapa 3).');
-                window.location.reload();
-            } catch (error) { alert(`Error: ${error.message}`); }
-        });
-    }
-}
-// ==========================================================
-// === FIN TAREA 4.1 ===
-// ==========================================================
+// --- ESTA ES LA '}' QUE FALTABA ---
