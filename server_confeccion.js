@@ -655,6 +655,39 @@ app.put('/api/proyectos/:id/aprobar-cliente', requireLogin, checkRole(['Asesor',
         res.status(500).json({ message: 'Error en el servidor' });
     }
 });
+
+// ==========================================================
+// === INICIO TAREA 3.1: NUEVA RUTA PARA ETAPA 7 ===
+// =Details.
+// ==========================================================
+app.put('/api/proyectos/:id/aprobar-proforma', requireLogin, checkRole(['Asesor', 'Administrador', 'Coordinador']), async (req, res) => {
+    try {
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET status = 'Pendiente Autorización Producción' 
+             WHERE id = $1 RETURNING *`,
+            [req.params.id]
+        );
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Proyecto no encontrado.' });
+        }
+        
+        // No necesitamos guardar fecha aquí, porque la "autorización" real
+        // es la Etapa 8 (cuando se sube el listado).
+        
+        res.json(result.rows[0]);
+
+    } catch (err) {
+        console.error('Error al aprobar la proforma:', err);
+        res.status(500).json({ message: 'Error en el servidor al aprobar la proforma' });
+    }
+});
+// ==========================================================
+// === FIN TAREA 3.1 ===
+// ==========================================================
+
+
 // REEMPLAZA ESTE BLOQUE COMPLETO EN server_confeccion.js
 app.put('/api/proyectos/:id/aprobar-calidad', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     try {
