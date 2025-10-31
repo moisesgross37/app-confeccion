@@ -730,7 +730,35 @@ app.put('/api/proyectos/:id/aprobar-proforma', requireLogin, checkRole(['Asesor'
 // ==========================================================
 // === FIN TAREA 3.1 ===
 // ==========================================================
+// ==========================================================
+// === TAREA 6.1 (Backend): PEGA ESTA NUEVA RUTA ===
+// (Implementa la Etapa 14: Completar Entrega)
+// ==========================================================
+app.put('/api/proyectos/:id/completar-entrega', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+    try {
+        const result = await pool.query(
+            `UPDATE confeccion_projects 
+             SET 
+                 status = 'Completado', 
+                 fecha_entrega = NOW() 
+             WHERE id = $1 RETURNING *`,
+            [req.params.id]
+        );
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Proyecto no encontrado.' });
+        }
+        
+        res.json(result.rows[0]);
 
+    } catch (err) {
+        console.error('Error al completar la entrega:', err);
+        res.status(500).json({ message: 'Error en el servidor al completar la entrega' });
+    }
+});
+// ==========================================================
+// === FIN TAREA 6.1 ===
+// ==========================================================
 
 // REEMPLAZA ESTE BLOQUE COMPLETO EN server_confeccion.js
 app.put('/api/proyectos/:id/aprobar-calidad', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
