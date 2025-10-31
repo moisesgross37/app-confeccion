@@ -4,8 +4,98 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle de Proyecto</title>
-        <link rel="stylesheet" href="https://unpkg.com/sakura.css/css/sakura.css" type="text/css">
     <link rel="stylesheet" href="confeccion_estilos.css">
+
+    <style>
+        /* Estructura de la página */
+        .detalle-layout {
+            display: grid;
+            grid-template-columns: 1fr; /* Una sola columna para el flujo principal */
+            gap: 20px;
+        }
+
+        /* Contenedor para las tarjetas de info y archivos */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        /* Estilos para la nueva Línea de Tiempo Visual */
+        .timeline-container {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            border-left: 3px solid #0056b3; /* Línea azul central */
+            position: relative;
+        }
+
+        .timeline-etapa {
+            margin: 0 0 20px 20px; /* Separación de la línea */
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        /* El círculo en la línea */
+        .timeline-etapa::before {
+            content: '';
+            position: absolute;
+            left: -31px; /* (20px de margen) + (mitad del círculo) + (mitad de la línea) */
+            top: 18px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: #ddd; /* Color por defecto (Pendiente) */
+            border: 2px solid #0056b3;
+        }
+
+        /* Estilos de Estado */
+        .timeline-etapa[data-estado="completado"] {
+            background-color: #f4f8f4;
+            border-color: #c8e6c9;
+        }
+        .timeline-etapa[data-estado="completado"]::before {
+            background-color: #4CAF50; /* Verde */
+        }
+
+        .timeline-etapa[data-estado="actual"] {
+            background-color: #fff;
+            border: 2px solid #0056b3; /* Borde azul resaltado */
+            box-shadow: 0 2px 8px rgba(0, 86, 179, 0.2);
+        }
+        .timeline-etapa[data-estado="actual"]::before {
+            background-color: #007bff; /* Azul brillante */
+            transform: scale(1.1);
+        }
+        
+        .etapa-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .etapa-header h3 {
+            margin: 0;
+            color: #0056b3;
+            font-size: 1.1em;
+        }
+        
+        .etapa-fecha {
+            font-size: 0.9em;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .etapa-panel-acciones {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #ccc;
+        }
+
+    </style>
 </head>
 <body>
     <div class="container">
@@ -14,10 +104,10 @@
             <h1>Detalle de Proyecto</h1>
         </header>
 
-        <div class="dashboard-grid">
+        <div class="detalle-layout">
 
-            <div class="main-content">
-
+            <div class="info-grid">
+                
                 <div class="card">
                     <div class="card-header">
                         <h2>Detalles del Proyecto</h2>
@@ -35,6 +125,7 @@
                                 <em>Cargando...</em>
                             </div>
                         </div>
+
                         <div>
                             <strong style="margin-top: 15px; display: block;">Detalles Solicitud:</strong>
                             <textarea id="detalles-proyecto" readonly>Cargando...</textarea>
@@ -61,43 +152,50 @@
                     </div>
                 </div>
 
+            </div> <div class="card">
+                <div class="card-header">
+                    <h2>Tiempos e Historial</h2>
+                </div>
+                <div class="card-body">
+                    <div class="time-counters" style="display: flex; gap: 20px;">
+                        <div class="counter" style="flex: 1; text-align: center;">
+                            <span id="dias-totales" class="count-number" style="font-size: 2em; font-weight: bold; color: #0056b3;">--</span>
+                            <span class="count-label" style="display: block; font-size: 0.9em;">Días Totales</span>
+                        </div>
+                        <div class="counter" style="flex: 1; text-align: center;">
+                            <span id="dias-en-produccion" class="count-number" style="font-size: 2em; font-weight: bold; color: #0056b3;">--</span>
+                            <span class="count-label" style="display: block; font-size: 0.9em;">Días en Producción</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <h4>Historial de Fechas (Log)</h4>
+                    <ul id="historial-fechas" class="history-list" style="font-size: 0.9em; max-height: 150px; overflow-y: auto; background: #f9f9f9; padding: 10px; border-radius: 4px;">
+                    </ul>
+                </div>
             </div>
 
-            <div class="sidebar-content">
-
-                <div class="card">
-                    <div class="card-header">
-                        <h2>Flujo de Trabajo</h2>
-                    </div>
-                    <div class="card-body" id="flujo-trabajo">
-                        </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2>Flujo de Trabajo (14 Etapas)</h2>
                 </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h2>Tiempos e Historial</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="time-counters">
-                            <div class="counter">
-                                <span id="dias-totales" class="count-number">--</span>
-                                <span class="count-label">Días Totales</span>
-                            </div>
-                            <div class="counter">
-                                <span id="dias-en-produccion" class="count-number">--</span>
-                                <span class="count-label">Días en Producción</span>
-                            </div>
+                <div class="card-body">
+                    <ul class="timeline-container" id="flujo-de-etapas-container">
+                        
                         </div>
-                        <hr>
-                        <h4>Historial de Fechas</h4>
-                        <ul id="historial-fechas" class="history-list">
-                            </ul>
-                    </div>
-                </div>
+                        </li>
+                        
+                        <li class="timeline-etapa" data-estado="pendiente">
+                            <div class="etapa-header">
+                                <h3>3. Propuesta del Diseñador</h3>
+                            </div>
+                        </li>
+                        -->
 
+                    </ul>
+                </div>
             </div>
-        </div>
-        </div>
+
+        </div> </div>
 
     <script src="detalle_proyecto.js"></script>
 </body>
