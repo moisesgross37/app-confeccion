@@ -245,7 +245,9 @@ app.get('/api/proxy/productos', requireLogin, async (req, res) => {
         
 // ===== FIN: NUEVAS RUTAS PROXY =====
 
-// REEMPLAZA ESTE BLOQUE COMPLETO
+// ==========================================================
+// === TAREA (BUGFIX): REEMPLAZA ESTA RUTA COMPLETA ===
+// ==========================================================
 app.put('/api/proyectos/:id/solicitar-mejora', requireLogin, checkRole(['Administrador', 'Coordinador', 'Asesor']), async (req, res) => {
     const { id } = req.params;
     const { comentarios } = req.body;
@@ -255,6 +257,16 @@ app.put('/api/proyectos/:id/solicitar-mejora', requireLogin, checkRole(['Adminis
     }
 
     try {
+        // --- ¡AQUÍ ESTÁ LA NUEVA LÓGICA! ---
+        // 1. Definimos el estado por defecto al que volver
+        let nuevoStatus = 'Diseño en Proceso'; // (Etapa 3)
+
+        // 2. Comprobamos si es un rechazo de proforma
+        if (comentarios.startsWith('PROFORMA:')) {
+            nuevoStatus = 'Pendiente de Proforma'; // (Etapa 6)
+        }
+        // --- FIN DE LA NUEVA LÓGICA ---
+
         const nuevaRevision = {
             fecha: new Date(),
             usuario: req.session.user.username,
@@ -264,10 +276,10 @@ app.put('/api/proyectos/:id/solicitar-mejora', requireLogin, checkRole(['Adminis
 
         const result = await pool.query(
             `UPDATE confeccion_projects 
-             SET status = 'Diseño en Proceso', 
-                 historial_revisiones = COALESCE(historial_revisiones, '[]'::jsonb) || $1::jsonb 
-             WHERE id = $2 RETURNING *`,
-            [JSON.stringify(nuevaRevision), id]
+             SET status = $1, 
+                 historial_revisiones = COALESCE(historial_revisiones, '[]'::jsonb) || $2::jsonb 
+             WHERE id = $3 RETURNING *`,
+            [nuevoStatus, JSON.stringify(nuevaRevision), id] // Usamos el 'nuevoStatus'
         );
         
         if (result.rowCount === 0) {
