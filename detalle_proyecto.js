@@ -147,8 +147,8 @@ function renderizarLineaDeTiempo(proyecto, user) {
     const container = document.getElementById('flujo-de-etapas-container');
     container.innerHTML = ''; // Limpiar
     
-    // ==========================================================
-    // === CORRECCIÓN DE NUMERACIÓN (TAREA 2.5) ===
+   // ==========================================================
+    // === INICIO DE LA CORRECCIÓN (Numeración y Bug) ===
     // ==========================================================
     
     // Mapeo de estados a las NUEVAS etapas (ahora son 13)
@@ -170,7 +170,7 @@ function renderizarLineaDeTiempo(proyecto, user) {
 
     const etapaActualNum = estadoEtapaMap[proyecto.status] || 1; 
     
-    // Definimos las 13 etapas (Ocultamos GAPs y renumeramos)
+    // Definimos las 13 etapas (Ocultamos GAPs, renumeramos y ELIMINAMOS EL BUG)
     const etapas = [
         { num: 1, titulo: 'Solicitud Creada', fecha: proyecto.fecha_creacion },
         { num: 2, titulo: 'Asignación de Diseñador', fecha: proyecto.fecha_de_asignacion, panelId: 'panel-etapa-2' },
@@ -187,7 +187,8 @@ function renderizarLineaDeTiempo(proyecto, user) {
         { num: 13, titulo: 'Entrega del Combo', fecha: proyecto.fecha_entrega, panelId: 'panel-etapa-13' } 
     ];
     // ==========================================================
-
+    // === FIN DE LA CORRECCIÓN ===
+    // ==========================================================
     // Recorremos y dibujamos cada etapa
     etapas.forEach(etapa => {
         const li = document.createElement('li');
