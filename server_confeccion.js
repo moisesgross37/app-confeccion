@@ -752,35 +752,50 @@ app.put('/api/proyectos/:id/autorizar-produccion', requireLogin, checkRole(['Ase
         client.release();
     }
 });
-// REEMPLAZA ESTE BLOQUE COMPLETO
+// ==========================================================
+// === TAREA 4.2 (Backend): REEMPLAZA ESTA RUTA COMPLETA ===
+// (Ruta "reportar-incidencia" ahora es inteligente)
+// ==========================================================
 app.put('/api/proyectos/:id/reportar-incidencia', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     const { id } = req.params;
-    const { comentarios } = req.body;
+    // ¡Ahora recibimos el "tipo_incidencia" desde el frontend!
+    const { comentarios, tipo_incidencia } = req.body;
 
     if (!comentarios) {
         return res.status(400).json({ message: 'El comentario es obligatorio para reportar una incidencia.' });
     }
 
     try {
+        // --- ¡AQUÍ ESTÁ LA NUEVA LÓGICA! ---
+        let nuevoStatus = 'En Confección'; // (Etapa 12) - Por defecto
+        let historialEtapa = 'En Confección (Devuelto por Calidad)';
+
+        if (tipo_incidencia === 'DISEÑO') {
+            nuevoStatus = 'Diseño en Proceso'; // (Etapa 3)
+            historialEtapa = 'Diseño en Proceso (Devuelto por Calidad)';
+        }
+        // --- FIN DE LA NUEVA LÓGICA ---
+
         const nuevaIncidencia = {
             fecha: new Date(),
             usuario: req.session.user.username,
-            comentario: comentarios
+            comentario: comentarios,
+            tipo: tipo_incidencia // Guardamos el tipo para referencia futura
         };
 
         const nuevoRegistroHistorial = {
-            etapa: 'En Confección (Devuelto por Calidad)',
+            etapa: historialEtapa,
             fecha: new Date()
         };
 
         const result = await pool.query(
             `UPDATE confeccion_projects 
              SET 
-                 status = 'En Confección', 
-                 historial_incidencias = COALESCE(historial_incidencias, '[]'::jsonb) || $1::jsonb,
-                 historial_produccion = COALESCE(historial_produccion, '[]'::jsonb) || $2::jsonb
-             WHERE id = $3 RETURNING *`,
-            [JSON.stringify(nuevaIncidencia), JSON.stringify(nuevoRegistroHistorial), id]
+                 status = $1, // Usamos el nuevoStatus
+                 historial_incidencias = COALESCE(historial_incidencias, '[]'::jsonb) || $2::jsonb,
+                 historial_produccion = COALESCE(historial_produccion, '[]'::jsonb) || $3::jsonb
+             WHERE id = $4 RETURNING *`,
+            [nuevoStatus, JSON.stringify(nuevaIncidencia), JSON.stringify(nuevoRegistroHistorial), id]
         );
         
         if (result.rowCount === 0) {
@@ -794,6 +809,9 @@ app.put('/api/proyectos/:id/reportar-incidencia', requireLogin, checkRole(['Admi
         res.status(500).json({ message: 'Error en el servidor al reportar la incidencia.' });
     }
 });
+// ==========================================================
+// === FIN TAREA 4.2 ===
+// ==========================================================
 // REEMPLAZA ESTE BLOQUE COMPLETO
 app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     const { nuevaEtapa } = req.body;
