@@ -140,6 +140,10 @@ function renderizarTiemposEHistorial(proyecto) {
     }
 }
 
+// ==========================================================
+// === INICIO DE LA CORRECCIÓN (BUG DE "EN CONFECCIÓN") ===
+// ==========================================================
+
 // --- 4. RENDERIZAR LÍNEA DE TIEMPO (AHORA COMPLETA Y CORRECTA) ---
 function renderizarLineaDeTiempo(proyecto, user) {
     const container = document.getElementById('flujo-de-etapas-container');
@@ -158,14 +162,14 @@ function renderizarLineaDeTiempo(proyecto, user) {
         'En Diagramación': 10,
         'En Impresión': 11,
         'En Calandrado': 12,
-        'En Confección': 12, 
+        'En Confección': 12, // Ambos flujos (normal y devolución) apuntan a la Etapa 12
         'Supervisión de Calidad': 13,
         'Listo para Entrega': 14 
     };
 
     const etapaActualNum = estadoEtapaMap[proyecto.status] || 1; 
     
-    // Lista de etapas (Corregida, sin bugs)
+    // Lista de etapas (Corregida, 14 etapas, sin bugs visuales)
     const etapas = [
         { num: 1, titulo: 'Solicitud Creada', fecha: proyecto.fecha_creacion },
         { num: 2, titulo: 'Asignación de Diseñador', fecha: proyecto.fecha_de_asignacion, panelId: 'panel-etapa-2' },
@@ -181,7 +185,7 @@ function renderizarLineaDeTiempo(proyecto, user) {
         { num: 12, titulo: 'Confección', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Confección')?.fecha, panelId: 'panel-etapa-12' },
         { num: 13, titulo: 'Control de Calidad', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'Supervisión de Calidad')?.fecha, panelId: 'panel-etapa-13' },
         { num: 14, titulo: 'Entrega del Combo', fecha: proyecto.fecha_entrega, panelId: 'panel-etapa-14' } 
-    ];
+    ]; // ¡El bug del "3" repetido se ha eliminado!
 
     etapas.forEach(etapa => {
         const li = document.createElement('li');
@@ -200,7 +204,6 @@ function renderizarLineaDeTiempo(proyecto, user) {
         if (estado === 'completado' && etapa.num === etapaActualNum) {
              estado = 'actual';
         }
-        // Lógica mejorada para marcar etapas pasadas como completadas
         if (estado === 'pendiente' && etapa.num < etapaActualNum) {
              estado = 'completado'; 
         }
@@ -219,54 +222,59 @@ function renderizarLineaDeTiempo(proyecto, user) {
         container.appendChild(li);
     });
 
-    // --- "CEREBRO" (IF/ELSE) ACTUALIZADO (TAREA 3.4) ---
+    // --- "CEREBRO" (IF/ELSE) CON ORDEN CORREGIDO ---
     
     const rolesAdmin = ['Administrador', 'Coordinador'];
     const rolesDiseno = ['Administrador', 'Diseñador'];
     const rolesAsesor = ['Administrador', 'Asesor', 'Coordinador'];
+    const esAdmin = rolesAdmin.includes(user.rol);
+    const esDisenador = rolesDiseno.includes(user.rol);
+    const esAsesor = rolesAsesor.includes(user.rol);
 
-    if (proyecto.status === 'Diseño Pendiente de Asignación' && rolesAdmin.includes(user.rol)) {
+    if (proyecto.status === 'Diseño Pendiente de Asignación' && esAdmin) {
         mostrarPanelAsignacion(document.getElementById('panel-etapa-2'), proyecto.id);
     } 
-    else if (['Diseño en Proceso', 'En Confección'].includes(proyecto.status) && rolesDiseno.includes(user.rol)) {
-        const panelId = (proyecto.status === 'En Confección') ? 'panel-etapa-12' : 'panel-etapa-3';
-        mostrarPanelSubirPropuesta(document.getElementById(panelId), proyecto.id, proyecto);
-    } 
-    else if (proyecto.status === 'Pendiente Aprobación Interna' && rolesAdmin.includes(user.rol)) {
+    else if (proyecto.status === 'Pendiente Aprobación Interna' && esAdmin) {
         mostrarPanelRevisarPropuesta(document.getElementById('panel-etapa-4'), proyecto.id, proyecto);
     } 
-    else if (proyecto.status === 'Pendiente Aprobación Cliente' && rolesAsesor.includes(user.rol)) {
+    else if (proyecto.status === 'Pendiente Aprobación Cliente' && esAsesor) {
         mostrarPanelAprobarCliente(document.getElementById('panel-etapa-5'), proyecto.id, proyecto);
     } 
-    else if (proyecto.status === 'Pendiente de Proforma' && rolesDiseno.includes(user.rol)) { 
+    else if (proyecto.status === 'Pendiente de Proforma' && esDisenador) { 
         mostrarPanelSubirProforma(document.getElementById('panel-etapa-6'), proyecto.id);
     } 
-    else if (proyecto.status === 'Pendiente Aprobación Proforma' && rolesAsesor.includes(user.rol)) {
-        // ETAPA 7: Llama a la función simplificada (Tarea 3.2)
+    else if (proyecto.status === 'Pendiente Aprobación Proforma' && esAsesor) {
         mostrarPanelRevisionProforma(document.getElementById('panel-etapa-7'), proyecto.id, proyecto);
     }
-    else if (proyecto.status === 'Pendiente Autorización Producción' && rolesAsesor.includes(user.rol)) {
-        // ETAPA 8: Llama a la NUEVA función (Tarea 3.3)
+    else if (proyecto.status === 'Pendiente Autorización Producción' && esAsesor) {
         mostrarPanelAutorizarProduccion(document.getElementById('panel-etapa-8'), proyecto.id, proyecto);
     }
-    else if (rolesAdmin.includes(user.rol) && etapaActualNum >= 9 && etapaActualNum <= 13) {
-        // Lógica de producción (Etapas 9-13)
+    // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+    // Verificamos el flujo de PRODUCCIÓN (Admin) ANTES que el flujo de DISEÑO (Diseñador)
+    else if (esAdmin && (etapaActualNum >= 9 && etapaActualNum <= 13)) {
+        // El Admin está en el flujo de Producción (Etapas 9-13)
         const panelId = `panel-etapa-${etapaActualNum}`;
         const panelContainer = document.getElementById(panelId);
         if (panelContainer) {
             mostrarPanelProduccion(panelContainer, proyecto);
         }
     }
-    else if (proyecto.status === 'Listo para Entrega' && rolesAdmin.includes(user.rol)) {
+    else if (esDisenador && (proyecto.status === 'Diseño en Proceso' || (proyecto.status === 'En Confección' && proyecto.historial_incidencias?.length > 0))) {
+        // El Diseñador debe subir propuesta (Etapa 3) o arreglar incidencia (Etapa 12)
+        const panelId = (proyecto.status === 'En Confección') ? 'panel-etapa-12' : 'panel-etapa-3';
+        mostrarPanelSubirPropuesta(document.getElementById(panelId), proyecto.id, proyecto);
+    }
+    // --- FIN DE LA CORRECCIÓN ---
+    else if (proyecto.status === 'Listo para Entrega' && esAdmin) {
         const panelContainer = document.getElementById('panel-etapa-14');
         if (panelContainer) {
-            // (Próxima tarea)
             panelContainer.innerHTML = '<p><em>(Próxima tarea: Implementar panel de Entrega)</em></p>';
         }
     }
 }
-// ==================================================================
-// ==================================================================
+// ==========================================================
+// === FIN DE LA CORRECCIÓN ===
+// ==========================================================
 // ===== BLOQUE 2/4: FUNCIONES DE ACCIÓN (PANELES) =====
 // (Aquí están todas las funciones de ayuda que necesita el "Cerebro")
 // ==================================================================
