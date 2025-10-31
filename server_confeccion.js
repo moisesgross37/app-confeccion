@@ -39,31 +39,35 @@ const gestionPool = new Pool({
     }
 });
 
+// ==========================================================
+// === TAREA 6.4 (Arreglo): REEMPLAZA ESTA FUNCIÓN COMPLETA ===
+// ==========================================================
 const initializeDatabase = async () => {
     const client = await pool.connect();
     try {
-        // Corrección de la estructura de la tabla de proyectos para que coincida con el resto del código
+        // Corrección de la estructura de la tabla de proyectos
         await client.query(`
             CREATE TABLE IF NOT EXISTS confeccion_projects (
                 id SERIAL PRIMARY KEY,
                 quote_id INTEGER,
                 quote_number VARCHAR(50),
                 codigo_proyecto VARCHAR(255) UNIQUE NOT NULL,
-                fecha_creacion TIMESTAMPTZ DEFAULT NOW(),
+                fecha_creacion TIMESTAMZ DEFAULT NOW(),
                 cliente VARCHAR(255),
                 nombre_asesor VARCHAR(255),
                 detalles_solicitud TEXT,
                 status VARCHAR(100) DEFAULT 'Diseño Pendiente de Asignación',
                 diseñador_id INTEGER,
-                fecha_de_asignacion TIMESTAMPTZ,
-                fecha_propuesta TIMESTAMPTZ,
-                fecha_aprobacion_interna TIMESTAMPTZ,
-                fecha_aprobacion_cliente TIMESTAMPTZ,
-                fecha_proforma_subida TIMESTAMPTZ,
-                fecha_autorizacion_produccion TIMESTAMPTZ,
+                fecha_de_asignacion TIMESTAMZ,
+                fecha_propuesta TIMESTAMZ,
+                fecha_aprobacion_interna TIMESTAMZ,
+                fecha_aprobacion_cliente TIMESTAMZ,
+                fecha_proforma_subida TIMESTAMZ,
+                fecha_autorizacion_produccion TIMESTAMZ,
                 historial_revisiones JSONB,
                 historial_produccion JSONB,
                 historial_incidencias JSONB
+                // La nueva 'fecha_entrega' se añade con ALTER TABLE abajo
             );
         `);
         
@@ -77,25 +81,26 @@ const initializeDatabase = async () => {
                 tipo_archivo VARCHAR(100) NOT NULL,
                 url_archivo VARCHAR(255) NOT NULL,
                 nombre_archivo VARCHAR(255),
-                fecha_subida TIMESTAMPTZ DEFAULT NOW(),
+                fecha_subida TIMESTAMZ DEFAULT NOW(),
                 subido_por VARCHAR(255)
             );
         `);
 
         await client.query(`CREATE TABLE IF NOT EXISTS "confeccion_session" ("sid" varchar NOT NULL PRIMARY KEY, "sess" json NOT NULL, "expire" timestamp(6) NOT NULL);`);
         
-        // ==========================================================
-        // === ¡AQUÍ ESTÁ LA CORRECCIÓN! (TAREA 1.1 DEL PLAN) ===
-        // ==========================================================
+        // --- ¡AQUÍ ESTÁN LOS ARREGLOS! ---
         
-        // Esta línea añade la nueva columna para guardar el listado de productos
+        // 1. Añade la columna 'productos' (que ya teníamos)
         await client.query(`
             ALTER TABLE confeccion_projects ADD COLUMN IF NOT EXISTS productos JSONB;
         `);
         
-        // ==========================================================
-        // === FIN DE LA CORRECCIÓN ===
-        // ==========================================================
+        // 2. AÑADE LA COLUMNA 'fecha_entrega' QUE FALTABA
+        await client.query(`
+            ALTER TABLE confeccion_projects ADD COLUMN IF NOT EXISTS fecha_entrega TIMESTAMZ;
+        `);
+        
+        // --- FIN DE LOS ARREGLOS ---
         
         const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
         if (adminUser.rows.length === 0) {
@@ -106,7 +111,6 @@ const initializeDatabase = async () => {
         }
     } catch (err) {
         console.error('Error al inicializar la base de datos de confección:', err);
-        // Lanzamos el error para que el proceso se detenga si la BD falla
         throw err; 
     } finally {
         client.release();
