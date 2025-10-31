@@ -785,34 +785,28 @@ app.put('/api/proyectos/:id/autorizar-produccion', requireLogin, checkRole(['Ase
     }
 });
 // ==========================================================
-// === TAREA 4.2 (Backend): REEMPLAZA ESTA RUTA COMPLETA ===
-// (Ruta "reportar-incidencia" ahora es inteligente)
+// === TAREA 5.1 (Backend): REEMPLAZA ESTA RUTA COMPLETA ===
+// (Simplificada para que SIEMPRE devuelva a Diseño)
 // ==========================================================
 app.put('/api/proyectos/:id/reportar-incidencia', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     const { id } = req.params;
-    // ¡Ahora recibimos el "tipo_incidencia" desde el frontend!
-    const { comentarios, tipo_incidencia } = req.body;
+    const { comentarios } = req.body; // Ya no necesitamos 'tipo_incidencia'
 
     if (!comentarios) {
         return res.status(400).json({ message: 'El comentario es obligatorio para reportar una incidencia.' });
     }
 
     try {
-        // --- ¡AQUÍ ESTÁ LA NUEVA LÓGICA! ---
-        let nuevoStatus = 'En Confección'; // (Etapa 12) - Por defecto
-        let historialEtapa = 'En Confección (Devuelto por Calidad)';
-
-        if (tipo_incidencia === 'DISEÑO') {
-            nuevoStatus = 'Diseño en Proceso'; // (Etapa 3)
-            historialEtapa = 'Diseño en Proceso (Devuelto por Calidad)';
-        }
-        // --- FIN DE LA NUEVA LÓGICA ---
+        // ¡LÓGICA SIMPLIFICADA!
+        // Siempre vuelve a "Diseño en Proceso" (Etapa 3)
+        const nuevoStatus = 'Diseño en Proceso'; 
+        const historialEtapa = 'Diseño en Proceso (Devuelto por Calidad)';
 
         const nuevaIncidencia = {
             fecha: new Date(),
             usuario: req.session.user.username,
             comentario: comentarios,
-            tipo: tipo_incidencia // Guardamos el tipo para referencia futura
+            tipo: 'DISEÑO' // Lo marcamos como 'DISEÑO' para el "Carril Rápido"
         };
 
         const nuevoRegistroHistorial = {
@@ -823,7 +817,7 @@ app.put('/api/proyectos/:id/reportar-incidencia', requireLogin, checkRole(['Admi
         const result = await pool.query(
             `UPDATE confeccion_projects 
              SET 
-                 status = $1, // Usamos el nuevoStatus
+                 status = $1, 
                  historial_incidencias = COALESCE(historial_incidencias, '[]'::jsonb) || $2::jsonb,
                  historial_produccion = COALESCE(historial_produccion, '[]'::jsonb) || $3::jsonb
              WHERE id = $4 RETURNING *`,
@@ -842,7 +836,7 @@ app.put('/api/proyectos/:id/reportar-incidencia', requireLogin, checkRole(['Admi
     }
 });
 // ==========================================================
-// === FIN TAREA 4.2 ===
+// === FIN TAREA 5.1 ===
 // ==========================================================
 // REEMPLAZA ESTE BLOQUE COMPLETO
 app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
