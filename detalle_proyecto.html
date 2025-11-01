@@ -94,6 +94,19 @@
             padding-top: 15px;
             border-top: 1px dashed #ccc;
         }
+        
+        /* Estilo para el nuevo botón de añadir referencia */
+        .btn-add-more {
+            font-size: 0.8em;
+            padding: 3px 8px;
+            margin-left: 10px;
+            background-color: #e9ecef;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+        .btn-add-more:hover {
+            background-color: #dee2e6;
+        }
 
     </style>
 </head>
@@ -138,7 +151,13 @@
                         <h2>Archivos del Proyecto</h2>
                     </div>
                     <div class="card-body">
-                        <h4>Imágenes de Referencia</h4>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4>Imágenes de Referencia</h4>
+                            <button id="btn-add-referencia" class="button btn-add-more">Añadir más...</button>
+                        </div>
+                        <input type="file" id="input-add-referencia" multiple accept="image/*,application/pdf" style="display: none;">
+                        <span id="upload-status" style="font-size: 0.9em; color: #0056b3;"></span>
                         <ul id="archivos-referencia"><li>Cargando...</li></ul>
                         <hr>
                         <h4>Propuestas de Diseño</h4>
@@ -176,22 +195,11 @@
 
             <div class="card">
                 <div class="card-header">
-                    <h2>Flujo de Trabajo (13 Etapas)</h2>
+                    <h2>Flujo de Trabajo (14 Etapas)</h2>
                 </div>
                 <div class="card-body">
                     <ul class="timeline-container" id="flujo-de-etapas-container">
-                        
-                        </div>
-                        </li>
-                        
-                        <li class="timeline-etapa" data-estado="pendiente">
-                            <div class="etapa-header">
-                                <h3>3. Propuesta del Diseñador</h3>
-                            </div>
-                        </li>
-                        -->
-
-                    </ul>
+                        </ul>
                 </div>
             </div>
 
