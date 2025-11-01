@@ -65,7 +65,12 @@ function renderizarInfoPrincipal(proyecto) {
     }
 }
 
-// --- 2. RENDERIZAR ARCHIVOS ---
+// ==========================================================
+// === TAREA 8.3: REEMPLAZA ESTE BLOQUE COMPLETO ===
+// (Desde "RENDERIZAR ARCHIVOS" hasta "RENDERIZAR LÍNEA DE TIEMPO")
+// ==========================================================
+
+// --- 2. RENDERIZAR ARCHIVOS (Ahora con lógica para añadir más) ---
 function renderizarArchivos(proyecto) {
     const archivosReferencia = document.getElementById('archivos-referencia');
     const archivosDiseno = document.getElementById('archivos-propuesta_diseno');
@@ -77,25 +82,114 @@ function renderizarArchivos(proyecto) {
     archivosProforma.innerHTML = '';
     archivosListado.innerHTML = '';
 
-    if (proyecto.archivos && proyecto.archivos.length > 0) {
-        proyecto.archivos.forEach(archivo => {
+    // --- ¡NUEVA LÓGICA DE RENDERIZADO DE LISTA! ---
+    // Creamos una función de ayuda interna para poder llamarla más tarde
+    const dibujarListaReferencias = (lista) => {
+        archivosReferencia.innerHTML = ''; // Limpiar la lista
+        if (!lista || lista.length === 0) {
+            archivosReferencia.innerHTML = '<li>No hay archivos de referencia.</li>';
+            return;
+        }
+        
+        // Ordenamos por fecha más reciente primero
+        lista.sort((a, b) => new Date(b.fecha_subida) - new Date(a.fecha_subida));
+        
+        lista.forEach(archivo => {
             const li = document.createElement('li');
             const fecha = new Date(archivo.fecha_subida).toLocaleString('es-DO', { dateStyle: 'short', timeStyle: 'short' });
             li.innerHTML = `<a href="${archivo.url_archivo}" target="_blank">${archivo.nombre_archivo}</a> <span style="color: #666; font-size: 0.9em;">(Subido por ${archivo.subido_por} - ${fecha})</span>`;
-            
-            switch (archivo.tipo_archivo) {
-                case 'referencia': archivosReferencia.appendChild(li); break;
-                case 'propuesta_diseno': archivosDiseno.appendChild(li); break;
-                case 'proforma': archivosProforma.appendChild(li); break;
-                case 'listado_final': archivosListado.appendChild(li); break;
-            }
+            archivosReferencia.appendChild(li);
         });
-    }
+    };
 
-    if (archivosReferencia.childElementCount === 0) archivosReferencia.innerHTML = '<li>No hay archivos de referencia.</li>';
-    if (archivosDiseno.childElementCount === 0) archivosDiseno.innerHTML = '<li>No hay propuestas de diseño.</li>';
-    if (archivosProforma.childElementCount === 0) archivosProforma.innerHTML = '<li>No hay proformas.</li>';
-    if (archivosListado.childElementCount === 0) archivosListado.innerHTML = '<li>No hay listados finales.</li>';
+    // Filtramos y dibujamos todas las demás listas (con lógica mejorada)
+    if (proyecto.archivos && proyecto.archivos.length > 0) {
+        
+        dibujarListaReferencias(proyecto.archivos.filter(a => a.tipo_archivo === 'referencia'));
+        
+        const propuestas = proyecto.archivos.filter(a => a.tipo_archivo === 'propuesta_diseno');
+        if (propuestas.length === 0) {
+             archivosDiseno.innerHTML = '<li>No hay propuestas de diseño.</li>';
+        } else {
+            propuestas.sort((a, b) => new Date(b.fecha_subida) - new Date(a.fecha_subida)); // Ordenar
+            propuestas.forEach(archivo => {
+                const li = document.createElement('li');
+                const fecha = new Date(archivo.fecha_subida).toLocaleString('es-DO', { dateStyle: 'short', timeStyle: 'short' });
+                li.innerHTML = `<a href="${archivo.url_archivo}" target="_blank">${archivo.nombre_archivo}</a> <span style="color: #666; font-size: 0.9em;">(Subido por ${archivo.subido_por} - ${fecha})</span>`;
+                archivosDiseno.appendChild(li);
+            });
+        }
+        
+        const proformas = proyecto.archivos.filter(a => a.tipo_archivo === 'proforma');
+        if (proformas.length === 0) {
+            archivosProforma.innerHTML = '<li>No hay proformas.</li>';
+        } else {
+            proformas.sort((a, b) => new Date(b.fecha_subida) - new Date(a.fecha_subida)); // Ordenar
+            proformas.forEach(archivo => {
+                const li = document.createElement('li');
+                const fecha = new Date(archivo.fecha_subida).toLocaleString('es-DO', { dateStyle: 'short', timeStyle: 'short' });
+                li.innerHTML = `<a href="${archivo.url_archivo}" target="_blank">${archivo.nombre_archivo}</a> <span style="color: #666; font-size: 0.9em;">(Subido por ${archivo.subido_por} - ${fecha})</span>`;
+                archivosProforma.appendChild(li);
+            });
+        }
+        
+        const listados = proyecto.archivos.filter(a => a.tipo_archivo === 'listado_final');
+        if (listados.length === 0) {
+            archivosListado.innerHTML = '<li>No hay listados finales.</li>';
+        } else {
+            listados.sort((a, b) => new Date(b.fecha_subida) - new Date(a.fecha_subida)); // Ordenar
+            listados.forEach(archivo => {
+                const li = document.createElement('li');
+                const fecha = new Date(archivo.fecha_subida).toLocaleString('es-DO', { dateStyle: 'short', timeStyle: 'short' });
+                li.innerHTML = `<a href="${archivo.url_archivo}" target="_blank">${archivo.nombre_archivo}</a> <span style="color: #666; font-size: 0.9em;">(Subido por ${archivo.subido_por} - ${fecha})</span>`;
+                archivosListado.appendChild(li);
+            });
+        }
+
+    } else {
+        // Si no hay archivos de ningún tipo
+        archivosReferencia.innerHTML = '<li>No hay archivos de referencia.</li>';
+        archivosDiseno.innerHTML = '<li>No hay propuestas de diseño.</li>';
+        archivosProforma.innerHTML = '<li>No hay proformas.</li>';
+        archivosListado.innerHTML = '<li>No hay listados finales.</li>';
+    }
+    
+    // --- ¡AQUÍ CONECTAMOS LOS NUEVOS BOTONES! ---
+    const btnAddReferencia = document.getElementById('btn-add-referencia');
+    const inputAddReferencia = document.getElementById('input-add-referencia');
+    const uploadStatus = document.getElementById('upload-status');
+    const projectId = proyecto.id;
+
+    btnAddReferencia.addEventListener('click', () => {
+        inputAddReferencia.click(); // Abre el selector de archivos
+    });
+
+    inputAddReferencia.addEventListener('change', async (event) => {
+        const files = event.target.files;
+        if (!files.length) return;
+        
+        uploadStatus.textContent = `Subiendo ${files.length} archivo(s)...`;
+        btnAddReferencia.disabled = true;
+
+        try {
+            // Llamamos a la nueva función de ayuda que añadiremos en el siguiente bloque
+            const nuevosArchivos = await subirNuevasReferencias(projectId, files);
+            
+            // Si tiene éxito, actualiza la lista SIN RECARGAR la página
+            dibujarListaReferencias(nuevosArchivos);
+            uploadStatus.textContent = '¡Archivos subidos con éxito!';
+        
+        } catch (error) {
+            console.error('Error al subir referencias:', error);
+            uploadStatus.textContent = `Error: ${error.message}`;
+            alert(`Error al subir archivos: ${error.message}`);
+        } finally {
+            btnAddReferencia.disabled = false;
+            inputAddReferencia.value = ''; // Limpia el input
+            // Borra el mensaje de estado después de 3 segundos
+            setTimeout(() => { uploadStatus.textContent = ''; }, 3000);
+        }
+    });
 }
 
 // --- 3. RENDERIZAR TIEMPOS E HISTORIAL ---
@@ -140,7 +234,6 @@ function renderizarTiemposEHistorial(proyecto) {
     }
 }
 
-// --- 4. RENDERIZAR LÍNEA DE TIEMPO (AHORA COMPLETA Y CORRECTA) ---
 function renderizarLineaDeTiempo(proyecto, user) {
     const container = document.getElementById('flujo-de-etapas-container');
     container.innerHTML = ''; 
@@ -762,4 +855,27 @@ async function mostrarPanelEntrega(container, projectId) {
             alert(`Error: ${error.message}`); 
         }
     });
+}
+// ==========================================================
+// === TAREA 8.4: AÑADE ESTA NUEVA FUNCIÓN AL FINAL DEL ARCHIVO ===
+// ==========================================================
+async function subirNuevasReferencias(projectId, files) {
+    const formData = new FormData();
+    for (const file of files) {
+        formData.append('imagenes_referencia', file);
+    }
+
+    // Llamamos a la nueva ruta del backend (Tarea 8.1)
+    const response = await fetch(`/api/proyectos/${projectId}/agregar-referencia`, {
+        method: 'POST',
+        body: formData
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+        throw new Error(result.message || 'Error del servidor al subir archivos.');
+    }
+    
+    // Devolvemos la lista actualizada de archivos de referencia
+    return result;
 }
