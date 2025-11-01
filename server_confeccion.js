@@ -645,6 +645,50 @@ app.put('/api/proyectos/:id/subir-propuesta', requireLogin, checkRole(['Diseñad
         client.release();
     }
 });
+
+// ==========================================================
+// === TAREA 8.1 (Backend): PEGA ESTA NUEVA RUTA ===
+// (Implementa el GAP 2: Añadir más referencias)
+// ==========================================================
+app.post('/api/proyectos/:id/agregar-referencia', requireLogin, upload.array('imagenes_referencia'), async (req, res) => {
+    const { id } = req.params;
+
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ message: 'No se ha enviado ningún archivo.' });
+    }
+    
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        for (const file of req.files) {
+            const webUrl = `/uploads_confeccion/${file.filename}`;
+            await client.query(
+                `INSERT INTO confeccion_archivos (proyecto_id, tipo_archivo, url_archivo, nombre_archivo, subido_por) 
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [id, 'referencia', webUrl, file.originalname, req.session.user.username]
+            );
+        }
+
+        await client.query('COMMIT');
+        
+        // Devolvemos los nuevos archivos guardados
+        const filesResult = await pool.query('SELECT * FROM confeccion_archivos WHERE proyecto_id = $1 AND tipo_archivo = $2 ORDER BY fecha_subida DESC', [id, 'referencia']);
+        res.status(201).json(filesResult.rows);
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error al agregar archivos de referencia:', err);
+        res.status(500).json({ message: 'Error en el servidor al agregar archivos.' });
+    } finally {
+        client.release();
+    }
+});
+// ==========================================================
+// === FIN TAREA 8.1 ===
+// ==========================================================
+
+
 // ==========================================================
 // === FIN TAREA 4.3 ===
 // ==========================================================
