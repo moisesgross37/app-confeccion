@@ -1,334 +1,387 @@
+/* ========================================================== */
+/* === SISTEMA DE ESTILOS DE CONFECCIÓN V2 (EMBELLECIMIENTO) === */
+/* ========================================================== */
+
+/* --- 1. Configuración Global (Tipografía y Espaciado) --- */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
+    background-color: #f4f7f6; /* Un gris muy claro y suave */
     color: #333;
     margin: 0;
     padding: 20px;
+    line-height: 1.6;
 }
 
 .container {
     max-width: 1200px;
     margin: auto;
     background-color: #fff;
-    padding: 30px;
+    padding: 20px 30px;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e0e0e0;
 }
 
-h1, h2 {
-    color: #0056b3;
+/* Títulos y Encabezados */
+h1, h2, h3, h4 {
+    color: #004a99; /* Azul oscuro de Be Eventos */
+    margin-top: 0;
+    margin-bottom: 0.75em;
+    font-weight: 600;
+}
+
+h1 {
+    font-size: 1.8em;
     border-bottom: 2px solid #0056b3;
     padding-bottom: 10px;
-    margin-bottom: 20px;
 }
 
-/* Button Styles */
-.btn {
+h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+}
+
+h3 {
+    font-size: 1.2em;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 20px 0;
+}
+
+/* --- 2. Componentes (Botones y Formularios) --- */
+
+/* Botón de volver */
+.back-button {
     display: inline-block;
-    background-color: #007bff;
+    margin-bottom: 20px;
+    color: #0056b3;
+    text-decoration: none;
+    font-weight: 600;
+}
+.back-button:hover {
+    text-decoration: underline;
+}
+
+/* Estilo de botón principal (usado en formularios) */
+.button, 
+button[type="submit"], 
+.btn-primary {
+    display: inline-block;
+    background-color: #0056b3; /* Azul primario */
     color: white;
-    padding: 10px 15px;
+    padding: 10px 18px;
     border-radius: 5px;
     text-decoration: none;
-    font-weight: bold;
+    font-weight: 600;
     text-align: center;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    margin-bottom: 20px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
     border: none;
     cursor: pointer;
+    font-size: 1em;
 }
-
-.btn:hover {
-    background-color: #0056b3;
+.button:hover, 
+button[type="submit"]:hover,
+.btn-primary:hover {
+    background-color: #004a99;
     transform: translateY(-2px);
 }
 
-/* Table Styles */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+/* Botones de Advertencia (Amarillo/Naranja) */
+.btn-warning,
+.button-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+.btn-warning:hover,
+.button-warning:hover {
+    background-color: #e0a800;
 }
 
-thead th {
-    background-color: #0056b3;
+/* Botones de Peligro (Rojo) */
+.btn-danger,
+.button-danger {
+    background-color: #dc3545;
     color: white;
-    text-align: left;
-    padding: 12px 15px;
+}
+.btn-danger:hover,
+.button-danger:hover {
+    background-color: #c82333;
 }
 
-tbody tr {
-    border-bottom: 1px solid #ddd;
-    transition: background-color 0.2s ease;
+/* Botones de Éxito (Verde) */
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+.btn-success:hover {
+    background-color: #218838;
 }
 
-tbody tr:nth-of-type(even) {
-    background-color: #f8f9fa;
+/* Botones en grupo (para paneles de acción) */
+.button-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-tbody tr:hover {
-    background-color: #e9ecef;
-    cursor: pointer;
-}
-
-td {
-    padding: 12px 15px;
-    vertical-align: middle;
-}
-
-/* Form styles */
-form {
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 500px;
-    margin: 20px auto; /* Center form if it's on its own page */
-}
-
-form div {
+/* Formularios */
+.form-group {
     margin-bottom: 15px;
 }
-
 label {
     display: block;
     margin-bottom: 5px;
-    color: #555;
-    font-weight: bold;
+    color: #333;
+    font-weight: 600;
 }
-
 input[type="text"],
 textarea,
 select {
-    width: 100%; /* Adjusted for box-sizing */
+    width: 100%;
     padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-    box-sizing: border-box;
-}
-
-input[type="file"] {
-    padding: 5px 0;
-}
-
-button[type="submit"] {
-    background-color: #007bff;
-    color: white;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 18px;
-    width: 100%;
-    box-sizing: border-box;
-    transition: background-color 0.3s ease;
-}
-
-button[type="submit"]:hover {
-    background-color: #0056b3;
-}
-
-/* Detalle Proyecto - Dos Columnas */
-.detalle-container {
-    display: flex;
-    gap: 30px;
-}
-
-.columna-izquierda {
-    flex: 2; /* Ocupa 2/3 del espacio */
-}
-
-.columna-derecha {
-    flex: 1; /* Ocupa 1/3 del espacio */
-    background-color: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-}
-
-/* Contadores de Tiempo */
-.contadores-tiempo {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.contador {
-    flex: 1;
-    background-color: #e9ecef;
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-}
-
-.contador .valor {
-    display: block;
-    font-size: 2.5em;
-    font-weight: bold;
-    color: #0056b3;
-}
-
-.contador .etiqueta {
-    display: block;
-    font-size: 0.9em;
-    color: #6c757d;
-}
-
-/* Historial de Fechas */
-.historial-fechas h3 {
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 8px;
-    margin-bottom: 15px;
-}
-
-.historial-fechas ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.historial-fechas li {
-    margin-bottom: 10px;
-    font-size: 0.9em;
-}
-
-.historial-fechas .fecha {
-    font-weight: bold;
-    color: #333;
-}
-
-.historial-fechas .evento {
-    color: #555;
-}
-
-/* Back button */
-.back-button {
-    margin-bottom: 0;
-}
-
-/* Accion Seccion */
-.accion-seccion {
-    margin-top: 20px;
-    padding: 20px;
-    background-color: #e9ecef;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-}
-
-.accion-seccion h3 {
-    margin-top: 0;
-    color: #0056b3;
-}
-
-.accion-seccion select {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-}
-
-.accion-seccion input[type="file"] {
-    display: block;
-    margin-bottom: 10px;
-}
-
-.accion-seccion textarea {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    min-height: 80px;
-    box-sizing: border-box;
+    font-size: 1em;
+    box-sizing: border-box; /* Asegura que el padding no rompa el ancho */
 }
-/* ===== MEJORAS VISUALES PARA EL PANEL DE CONFECCIÓN ===== */
+textarea {
+    min-height: 80px;
+}
 
-/* 1. Arregla los filtros para que siempre estén en 3 columnas */
+/* Filtros del Panel */
 .filtros-container {
     display: grid;
-    /* Forzamos 3 columnas de tamaño igual */
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 20px; /* Aumentamos un poco el espacio entre ellos */
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Ajustado para 4 columnas */
+    gap: 15px;
+    align-items: end;
+    background-color: #f8f9fa; 
+    padding: 20px; 
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+}
+.checkbox-item {
+    display: flex;
+    align-items: center;
 }
 
-/* 2. Arregla la tabla para alinear encabezados y optimizar columnas */
+/* --- 3. Estilos de Tabla (Panel de Control) --- */
 .table {
-    /* Esto es clave para que los anchos de columna se respeten */
-    table-layout: fixed;
     width: 100%;
-    border-collapse: collapse; /* Evita bordes dobles */
+    border-collapse: collapse; 
+    margin-top: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    table-layout: fixed; /* Mantiene los anchos fijos */
 }
-
-.table th, .table td {
-    /* Evita que el texto largo se desborde y lo corta si es necesario */
+.table thead th {
+    background-color: #004a99;
+    color: white;
+    text-align: left;
+    padding: 12px 10px;
+    font-size: 0.9em;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.table tbody tr {
+    border-bottom: 1px solid #ddd;
+    transition: background-color 0.2s ease;
+}
+.table tbody tr:nth-of-type(even) {
+    background-color: #f8f9fa;
+}
+.table tbody tr:hover {
+    background-color: #eef;
+}
+.table td {
+    padding: 10px;
+    vertical-align: middle;
+    font-size: 0.9em;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 12px 10px; /* Un poco más de espacio interno */
-    vertical-align: middle; /* Centra el contenido verticalmente */
+    text-overflow: ellipsis; /* Corta texto largo (...) */
 }
-
-/* 3. Definimos 7 columnas que suman 100% */
-.table th:nth-child(1), .table td:nth-child(1) { width: 8%; }  /* Código */
-.table th:nth-child(2), .table td:nth-child(2) { width: 24%; } /* Centro */
+/* Anchos de columna (Suma 100%) */
+.table th:nth-child(1), .table td:nth-child(1) { width: 6%; }  /* Código */
+.table th:nth-child(2), .table td:nth-child(2) { width: 25%; } /* Centro */
 .table th:nth-child(3), .table td:nth-child(3) { width: 15%; } /* Asesor */
 .table th:nth-child(4), .table td:nth-child(4) { width: 15%; } /* Diseñador */
 .table th:nth-child(5), .table td:nth-child(5) { width: 18%; } /* Estatus */
-.table th:nth-child(6), .table td:nth-child(6) { width: 8%; }  /* Antigüedad (NUEVA) */
-.table th:nth-child(7), .table td:nth-child(7) { width: 12%; } /* Acciones (NUEVA) */
-/* Total: 8+24+15+15+18+8+12 = 100% */
+.table th:nth-child(6), .table td:nth-child(6) { width: 8%; }  /* Antigüedad */
+.table th:nth-child(7), .table td:nth-child(7) { width: 13%; } /* Acciones */
 
-
-/* --- Responsividad para Móviles --- */
-/* Cuando la pantalla sea muy pequeña, los filtros se apilarán */
-@media (max-width: 768px) {
-    .filtros-container {
-        grid-template-columns: 1fr; /* Una sola columna en móviles */
-    }
-
-    /* En móvil, dejamos que la tabla se ajuste sola */
-    .table {
-        table-layout: auto;
-    }
-    
-    .table th, .table td {
-        /* Permitimos que el texto se parta en varias líneas */
-        white-space: normal; 
-        overflow: visible;
-    }
+/* Estado resaltado */
+mark {
+    background-color: #fff3cd;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    color: #664d03;
 }
 
-/* ========================================================== */
-/* === SEMÁFORO DE ANTIGÜEDAD (Colores de Bootstrap) === */
-/* ========================================================== */
-
-/* Clases de color de texto (que usa el JS) */
-.text-dark {
-    color: #212529 !important;
+/* --- 4. Detalle de Proyecto (Layout y Tarjetas) --- */
+.detalle-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+}
+.card {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+.card-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+.card-header h2 {
+    margin: 0;
+    font-size: 1.3em;
+    border: none;
+}
+.card-body {
+    padding: 20px;
 }
 
-.text-white {
-    color: #fff !important;
+/* Contadores de Tiempos */
+.time-counters { display: flex; gap: 20px; }
+.counter { flex: 1; text-align: center; }
+.count-number { font-size: 2em; font-weight: 600; color: #0056b3; }
+.count-label { display: block; font-size: 0.9em; color: #555; }
+.history-list { font-size: 0.9em; max-height: 150px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 4px; }
+
+/* Listas de Archivos */
+.card-body ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+.card-body li {
+    padding: 5px 0;
+    border-bottom: 1px dashed #eee;
+}
+.card-body li:last-child {
+    border-bottom: none;
+}
+.btn-add-more {
+    font-size: 0.8em;
+    padding: 3px 8px;
+    margin-left: 10px;
+    background-color: #e9ecef;
+    color: #333;
+    border: 1px solid #ccc;
+    font-weight: 500;
+    border-radius: 4px;
+}
+.btn-add-more:hover {
+    background-color: #dee2e6;
+    border-color: #bbb;
 }
 
-/* Azul (Info) */
-.bg-info {
-    background-color: #d1ecf1 !important;
-    border-color: #bee5eb !important;
-    color: #0c5460 !important;
+
+/* --- 5. Línea de Tiempo Visual (Punto 3) --- */
+.timeline-container {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-left: 3px solid #0056b3; /* Línea azul central */
+    position: relative;
+}
+.timeline-etapa {
+    margin: 0 0 20px 20px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    position: relative;
+    transition: all 0.2s ease;
+}
+.timeline-etapa::before {
+    content: '';
+    position: absolute;
+    left: -31px; 
+    top: 18px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background-color: #ddd; /* Pendiente */
+    border: 2px solid #0056b3;
+}
+/* Estado Completado */
+.timeline-etapa[data-estado="completado"] {
+    background-color: #f4f8f4;
+    border-color: #c8e6c9;
+}
+.timeline-etapa[data-estado="completado"]::before {
+    background-color: #4CAF50; /* Verde */
+}
+.timeline-etapa[data-estado="completado"] .etapa-header h3 {
+    color: #555;
+    font-weight: 500;
+}
+/* Estado Actual */
+.timeline-etapa[data-estado="actual"] {
+    background-color: #fff;
+    border: 2px solid #0056b3; 
+    box-shadow: 0 2px 8px rgba(0, 86, 179, 0.2);
+}
+.timeline-etapa[data-estado="actual"]::before {
+    background-color: #007bff; 
+    transform: scale(1.1);
+}
+.etapa-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.etapa-header h3 {
+    margin: 0;
+    color: #0056b3;
+    font-size: 1.1em;
+}
+.etapa-fecha {
+    font-size: 0.9em;
+    color: #555;
+    font-weight: 600;
+}
+.etapa-panel-acciones {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed #ccc;
+}
+/* Unifica los estilos de los paneles de acción */
+.etapa-panel-acciones .card {
+    background-color: #fdfdfd;
+    box-shadow: none;
+}
+.etapa-panel-acciones h3 {
+    font-size: 1.1em;
+    color: #333;
+    margin-bottom: 10px;
+}
+.etapa-panel-acciones h4 {
+    font-size: 1em;
+    color: #333;
+    margin-bottom: 10px;
+}
+.etapa-panel-acciones .form-group {
+    margin-bottom: 10px;
 }
 
-/* Naranja (Warning) */
-.bg-warning {
-    background-color: #fff3cd !important;
-    border-color: #ffeeba !important;
-    color: #856404 !important;
-}
 
-/* Rojo (Danger) */
-.bg-danger {
-    background-color: #f8d7da !important;
-    border-color: #f5c6cb !important;
-    color: #721c24 !important;
-}
+/* --- 6. Clases de Semáforo (Panel de Control) --- */
+.text-dark { color: #212529 !important; }
+.text-white { color: #fff !important; }
+.bg-info { background-color: #d1ecf1 !important; border-color: #bee5eb !important; color: #0c5460 !important; }
+.bg-warning { background-color: #fff3cd !important; border-color: #ffeeba !important; color: #856404 !important; }
+.bg-danger { background-color: #f8d7da !important; border-color: #f5c6cb !important; color: #721c24 !important; }
+.bg-secondary { background-color: #e2e3e5 !important; color: #383d41 !important; }
