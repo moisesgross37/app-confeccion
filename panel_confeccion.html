@@ -24,7 +24,6 @@
             width: 100%;
             border-collapse: collapse; 
         }
-
     </style>
 </head>
 <body>
@@ -56,7 +55,14 @@
                     <option value="todos">-- Todos los Estatus --</option>
                 </select>
             </div>
-        </div>
+
+            <div class="form-group" style="align-self: flex-end; padding-bottom: 0.5em;">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="filtro-completados" name="filtro-completados" style="margin-right: 5px;">
+                    <label for="filtro-completados">Ver Proyectos Completados (Archivados)</label>
+                </div>
+            </div>
+            </div>
 
         <table class="table">
             <thead>
