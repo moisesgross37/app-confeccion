@@ -233,24 +233,22 @@ function renderizarTiemposEHistorial(proyecto) {
         });
     }
 }
-
 // ==========================================================
-// === TAREA A.3 (Frontend): REEMPLAZA ESTA FUNCIÓN COMPLETA ===
-// (El "Cerebro" actualizado con la nueva Etapa 7)
+// === REEMPLAZA ESTA FUNCIÓN COMPLETA ("EL CEREBRO") ===
 // ==========================================================
 function renderizarLineaDeTiempo(proyecto, user) {
     const container = document.getElementById('flujo-de-etapas-container');
     container.innerHTML = ''; 
     
-    // --- MAPEO DE ESTADOS ACTUALIZADO ---
+    // Mapeo de estados (Tarea 3.4)
     const estadoEtapaMap = {
         'Diseño Pendiente de Asignación': 2, 
         'Diseño en Proceso': 3, 
         'Pendiente Aprobación Interna': 4, 
         'Pendiente Aprobación Cliente': 5, 
         'Pendiente de Proforma': 6, 
-        'Pendiente Aprob. Proforma Interna': 7, // ¡NUEVO ESTADO!
-        'Pendiente Aprob. Proforma Cliente': 8, // ¡NUEVO ESTADO!
+        'Pendiente Aprobación Proforma': 7,
+        'Pendiente Autorización Producción': 8, // ¡Estado NUEVO!
         'En Lista de Producción': 9,
         'En Diagramación': 10,
         'En Impresión': 11,
@@ -258,12 +256,12 @@ function renderizarLineaDeTiempo(proyecto, user) {
         'En Confección': 12, 
         'Supervisión de Calidad': 13,
         'Listo para Entrega': 14,
-        'Completado': 15 // Estado final
+        'Completado': 15 // ¡Estado FINAL!
     };
 
     const etapaActualNum = estadoEtapaMap[proyecto.status] || 1; 
     
-    // --- LISTA DE ETAPAS ACTUALIZADA (AHORA SÍ SON 14) ---
+    // Lista de etapas (Corregida, 14 etapas, sin bugs visuales)
     const etapas = [
         { num: 1, titulo: 'Solicitud Creada', fecha: proyecto.fecha_creacion },
         { num: 2, titulo: 'Asignación de Diseñador', fecha: proyecto.fecha_de_asignacion, panelId: 'panel-etapa-2' },
@@ -319,7 +317,7 @@ function renderizarLineaDeTiempo(proyecto, user) {
         container.appendChild(li);
     });
 
-    // --- "CEREBRO" (IF/ELSE) ACTUALIZADO ---
+    // --- "CEREBRO" (IF/ELSE) CORREGIDO CON ETAPA 14 ---
     
     const rolesAdmin = ['Administrador', 'Coordinador'];
     const rolesDiseno = ['Administrador', 'Diseñador'];
@@ -340,16 +338,12 @@ function renderizarLineaDeTiempo(proyecto, user) {
     else if (proyecto.status === 'Pendiente de Proforma' && esDisenador) { 
         mostrarPanelSubirProforma(document.getElementById('panel-etapa-6'), proyecto.id);
     } 
-    // --- ¡AQUÍ ESTÁ LA NUEVA LÓGICA DE PROFORMA! ---
     else if (proyecto.status === 'Pendiente Aprob. Proforma Interna' && esAdmin) {
-        // ETAPA 7: Llama al NUEVO panel (que crearemos en el prox. paso)
         mostrarPanelAprobProformaInterna(document.getElementById('panel-etapa-7'), proyecto.id, proyecto);
     }
     else if (proyecto.status === 'Pendiente Aprob. Proforma Cliente' && esAsesor) {
-        // ETAPA 8: Llama al panel de autorización (que renombraremos)
         mostrarPanelAprobProformaCliente(document.getElementById('panel-etapa-8'), proyecto.id, proyecto);
     }
-    // --- FIN DEL CAMBIO ---
     else if (esAdmin && (etapaActualNum >= 9 && etapaActualNum <= 13) && proyecto.status !== 'Listo para Entrega' ) {
         const panelId = `panel-etapa-${etapaActualNum}`;
         const panelContainer = document.getElementById(panelId);
@@ -362,6 +356,7 @@ function renderizarLineaDeTiempo(proyecto, user) {
         mostrarPanelSubirPropuesta(document.getElementById(panelId), proyecto.id, proyecto);
     }
     else if (proyecto.status === 'Listo para Entrega' && esAdmin) {
+        // --- ¡ESTA ES LA LÍNEA QUE CONECTA TODO! ---
         const panelContainer = document.getElementById('panel-etapa-14');
         if (panelContainer) {
             mostrarPanelEntrega(panelContainer, proyecto.id);
