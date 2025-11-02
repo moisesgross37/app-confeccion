@@ -134,11 +134,19 @@ app.use(session({
         httpOnly: true
     }
 }));
-// REEMPLAZA TU FUNCIÓN requireLogin CON ESTA VERSIÓN MEJORADA
+// ==========================================================
+// === ARREGLO DEL CRASH: REEMPLAZA ESTA FUNCIÓN COMPLETA ===
+// ==========================================================
 const requireLogin = (req, res, next) => {
     if (!req.session.user) {
         // Si la petición viene del JavaScript (API), envía un error de datos JSON.
-        if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+        
+        // --- ¡AQUÍ ESTÁ LA CORRECIÓN! ---
+        // Añadimos "req.headers.accept &&" para asegurarnos de que no 
+        // intente leer 'indexOf' de algo que no existe (undefined).
+        if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1)) {
+        // --- FIN DE LA CORRECIÓN ---
+            
             return res.status(401).json({ message: 'Su sesión ha expirado. Por favor, inicie sesión de nuevo.' });
         } else {
             // Si es una navegación normal desde el navegador, redirige a la página de login.
