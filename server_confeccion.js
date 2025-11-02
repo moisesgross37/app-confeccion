@@ -692,7 +692,9 @@ app.post('/api/proyectos/:id/agregar-referencia', requireLogin, upload.array('im
 // ==========================================================
 // === FIN TAREA 4.3 ===
 // ==========================================================
-// REEMPLAZA LA RUTA COMPLETA EN server_confeccion.js
+// === TAREA A.1 (Backend): REEMPLAZA ESTA RUTA COMPLETA ===
+// (Ruta "subir-proforma" ahora apunta a Aprobación Interna)
+// ==========================================================
 app.put('/api/proyectos/:id/subir-proforma', requireLogin, checkRole(['Administrador', 'Diseñador']), upload.array('proformas'), async (req, res) => {
     const { id } = req.params;
 
@@ -713,9 +715,13 @@ app.put('/api/proyectos/:id/subir-proforma', requireLogin, checkRole(['Administr
             );
         }
 
+        // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
+        // Ahora, el estado va a la nueva etapa de aprobación interna.
+        const nuevoStatus = 'Pendiente Aprob. Proforma Interna';
+        
         const projectResult = await client.query(
             'UPDATE confeccion_projects SET status = $1, fecha_proforma_subida = NOW() WHERE id = $2 RETURNING *',
-            ['Pendiente Aprobación Proforma', id]
+            [nuevoStatus, id]
         );
 
         await client.query('COMMIT');
@@ -729,7 +735,9 @@ app.put('/api/proyectos/:id/subir-proforma', requireLogin, checkRole(['Administr
         client.release();
     }
 });
-// REEMPLAZA ESTE BLOQUE COMPLETO
+// ==========================================================
+// === FIN TAREA A.1 ===
+// ==========================================================
 app.put('/api/proyectos/:id/aprobar-interno', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     try {
         const result = await pool.query(
@@ -761,16 +769,15 @@ app.put('/api/proyectos/:id/aprobar-cliente', requireLogin, checkRole(['Asesor',
         res.status(500).json({ message: 'Error en el servidor' });
     }
 });
-
 // ==========================================================
-// === INICIO TAREA 3.1: NUEVA RUTA PARA ETAPA 7 ===
-// =Details.
+// === TAREA A.2 (Backend): PEGA ESTA NUEVA RUTA ===
+// (Nueva ruta para Aprobación Interna de Proforma - Etapa 7)
 // ==========================================================
-app.put('/api/proyectos/:id/aprobar-proforma', requireLogin, checkRole(['Asesor', 'Administrador', 'Coordinador']), async (req, res) => {
+app.put('/api/proyectos/:id/aprobar-proforma-interna', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     try {
         const result = await pool.query(
             `UPDATE confeccion_projects 
-             SET status = 'Pendiente Autorización Producción' 
+             SET status = 'Pendiente Aprob. Proforma Cliente'
              WHERE id = $1 RETURNING *`,
             [req.params.id]
         );
@@ -779,22 +786,18 @@ app.put('/api/proyectos/:id/aprobar-proforma', requireLogin, checkRole(['Asesor'
             return res.status(404).json({ message: 'Proyecto no encontrado.' });
         }
         
-        // No necesitamos guardar fecha aquí, porque la "autorización" real
-        // es la Etapa 8 (cuando se sube el listado).
+        // Aquí podríamos guardar una fecha de 'fecha_aprobacion_proforma_interna'
+        // si la añadimos a la base de datos, pero por ahora solo cambiamos el estado.
         
         res.json(result.rows[0]);
 
     } catch (err) {
-        console.error('Error al aprobar la proforma:', err);
+        console.error('Error al aprobar la proforma internamente:', err);
         res.status(500).json({ message: 'Error en el servidor al aprobar la proforma' });
     }
 });
 // ==========================================================
-// === FIN TAREA 3.1 ===
-// ==========================================================
-// ==========================================================
-// === TAREA 6.1 (Backend): PEGA ESTA NUEVA RUTA ===
-// (Implementa la Etapa 14: Completar Entrega)
+// === FIN TAREA A.2 ===
 // ==========================================================
 app.put('/api/proyectos/:id/completar-entrega', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     try {
