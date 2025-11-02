@@ -95,7 +95,10 @@ const initializeDatabase = async () => {
         await client.query(`
             ALTER TABLE confeccion_projects ADD COLUMN IF NOT EXISTS fecha_entrega TIMESTAMPTZ;
         `);
-        
+        // 3. ¡NUEVA COLUMNA! Añade la columna para los datos del Conduce
+        await client.query(`
+            ALTER TABLE confeccion_projects ADD COLUMN IF NOT EXISTS conduce_data JSONB;
+        `);
         // --- FIN DE LOS ARREGLOS ---
         
         const adminUser = await client.query("SELECT * FROM confeccion_users WHERE username = 'admin'");
@@ -797,17 +800,40 @@ app.put('/api/proyectos/:id/aprobar-proforma-interna', requireLogin, checkRole([
     }
 });
 // ==========================================================
-// === FIN TAREA A.2 ===
+// === TAREA B.2 (Backend): REEMPLAZA ESTA RUTA COMPLETA ===
+// (Actualiza la ruta 'completar-entrega' para guardar el conduce)
 // ==========================================================
 app.put('/api/proyectos/:id/completar-entrega', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+    const { id } = req.params;
+    // ¡Ahora recibimos los datos del formulario!
+    const { conduceTabla, conduceComentarios } = req.body;
+
+    // --- Validación de Entrada ---
+    if (!conduceTabla || conduceTabla.length === 0) {
+        return res.status(400).json({ message: 'La tabla de cantidades no puede estar vacía.' });
+    }
+    if (!conduceComentarios || conduceComentarios.trim() === '') {
+        return res.status(400).json({ message: 'Los comentarios de cierre son obligatorios.' });
+    }
+    // --- Fin Validación ---
+    
+    // Creamos el objeto JSON que guardaremos en la base de datos
+    const conduceData = {
+        tabla: conduceTabla,
+        comentarios: conduceComentarios,
+        fecha_cierre: new Date(),
+        cerrado_por: req.session.user.username
+    };
+
     try {
         const result = await pool.query(
             `UPDATE confeccion_projects 
              SET 
                  status = 'Completado', 
-                 fecha_entrega = NOW() 
-             WHERE id = $1 RETURNING *`,
-            [req.params.id]
+                 fecha_entrega = NOW(),
+                 conduce_data = $1 -- Guardamos el JSON con los datos
+             WHERE id = $2 RETURNING *`,
+            [JSON.stringify(conduceData), id] // Guardamos el objeto como un string JSON
         );
         
         if (result.rowCount === 0) {
@@ -822,9 +848,8 @@ app.put('/api/proyectos/:id/completar-entrega', requireLogin, checkRole(['Admini
     }
 });
 // ==========================================================
-// === FIN TAREA 6.1 ===
+// === FIN TAREA B.2 ===
 // ==========================================================
-
 // REEMPLAZA ESTE BLOQUE COMPLETO EN server_confeccion.js
 app.put('/api/proyectos/:id/aprobar-calidad', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     try {
