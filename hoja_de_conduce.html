@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hoja de Conduce</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 800px;
+            margin: 20px auto;
+            padding: 40px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+        }
+        header h1 {
+            color: #0056b3;
+            margin: 0;
+        }
+        header img {
+            max-height: 60px; /* Ajusta esto al tamaño de tu logo */
+        }
+        .project-details {
+            margin-top: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #ccc;
+        }
+        .project-details p {
+            margin: 5px 0;
+            font-size: 1.1em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+        th, td {
+            border: 1px solid #999;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+            color: #333;
+            text-align: center;
+        }
+        td:nth-child(2),
+        td:nth-child(3),
+        td:nth-child(4) {
+            text-align: center;
+            font-weight: bold;
+        }
+        .comments-section {
+            margin-top: 20px;
+        }
+        .comments-section h3 {
+            margin-bottom: 5px;
+        }
+        .comments-box {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 5px;
+            min-height: 60px;
+            white-space: pre-wrap; /* Respeta los saltos de línea */
+        }
+        .signature-section {
+            margin-top: 80px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .signature-box {
+            text-align: center;
+            width: 40%;
+            padding-top: 10px;
+            border-top: 1px solid #000;
+        }
+        .no-print {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .no-print button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Estilos solo para Imprimir */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: #fff;
+            }
+            .container {
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+                box-shadow: none;
+            }
+            .no-print {
+                display: none; /* Oculta el botón al imprimir */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <div class="no-print">
+            <button onclick="window.print()">Imprimir Conduce</button>
+        </div>
+
+        <header>
+            <h1>Be Eventos</h1>
+            </header>
+
+        <div class="project-details">
+            <h2>Hoja de Conduce y Cierre</h2>
+            <p><strong>Proyecto:</strong> <span id="proyecto-codigo">Cargando...</span></p>
+            <p><strong>Centro:</strong> <span id="proyecto-centro">Cargando...</span></p>
+            <p><strong>Fecha de Cierre:</strong> <span id="fecha-cierre">Cargando...</span></p>
+            <p><strong>Cerrado por:</strong> <span id="cerrado-por">Cargando...</span></p>
+        </div>
+
+        <div class="table-section">
+            <h3>Detalle de Cantidades</h3>
+            <table id="conduce-tabla">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cant. Cotizada</th>
+                        <th>Cant. Listado</th>
+                        <th>Cant. Entregada</th>
+                    </tr>
+                </thead>
+                <tbody id="conduce-tbody">
+                    </tbody>
+            </table>
+        </div>
+
+        <div class="comments-section">
+            <h3>Comentarios de Cierre</h3>
+            <div id="conduce-comentarios" class="comments-box">
+                Cargando...
+            </div>
+        </div>
+
+        <div class="signature-section">
+            <div class="signature-box">
+                <p>Entregado por (Be Eventos)</p>
+            </div>
+            <div class="signature-box">
+                <p>Recibido Conforme (Cliente)</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="hoja_de_conduce.js"></script>
+</body>
+</html>
