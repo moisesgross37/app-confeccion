@@ -1059,7 +1059,7 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
             }, 500); // 500 milisegundos
 
         } catch (error) { 
-            alert(`Error: ${error.message}`);This 
+            alert(`Error: ${error.message}`); 
             btnCompletar.disabled = false;
             btnCompletar.textContent = 'Confirmar Cierre y Generar Conduce';
         }
@@ -1073,8 +1073,8 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
             const response = await fetch(`/api/proyectos/${proyecto.id}/reportar-incidencia`, { 
                 method: 'PUT', 
                 headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-              t       comentarios: comentarios
+                body: JSON.stringify({
+                    comentarios: comentarios
                 }) 
             });
             if (!response.ok) throw new Error('Error al reportar la incidencia.');
