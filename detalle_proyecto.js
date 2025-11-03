@@ -371,7 +371,7 @@ function renderizarLineaDeTiempo(proyecto, user) {
             mostrarPanelEntrega(panelContainer, proyecto.id, proyecto);
         }
     }
-else if (proyecto.status === 'Completado' && esAsesor) { // esAsesor cubre Admin, Asesor y Coord.
+else if (proyecto.status === 'Completado') { // esAsesor cubre Admin, Asesor y Coord.
         const panelContainer = document.getElementById('panel-etapa-14'); // Reusamos el espacio de la etapa 14
         if (panelContainer) {
             // Llamamos a una función nueva que vamos a crear
