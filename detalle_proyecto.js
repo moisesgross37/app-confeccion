@@ -1048,45 +1048,40 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
                 const err = await response.json(); 
                 throw new Error(err.message || 'Error del servidor'); 
             }
-            
-            alert('¡Proyecto completado y archivado con éxito!');
+ alert('¡Proyecto completado y archivado con éxito!');
             
             // ESTANDARIZADO: Usamos proyecto.id porque tenemos el objeto 'proyecto'
             window.open(`hoja_de_conduce.html?id=${proyecto.id}`, '_blank');
-           nbsp;
+            
             // CORRECCIÓN: Añadimos el retraso para que el pop-up funcione
             setTimeout(() => {
-                window.location.href = '/panel_confeccion.html';fs;
-            }, 500); // 500 milisegundos
+                window.location.href = '/panel_confeccion.html';
+            }, 500); // 500 milisegundos
 
-        } catch (error) { 
-            alert(`Error: ${error.message}`); 
+        } catch (error) { 
+            alert(`Error: ${error.message}`);This 
             btnCompletar.disabled = false;
             btnCompletar.textContent = 'Confirmar Cierre y Generar Conduce';
         }
     });
-
+    
     // Botón de Reportar Incidencia
     btnReportar.addEventListener('click', async () => {
-        // ... (el resto de esta función no cambia)
-
-    // Botón de Reportar Incidencia (Lógica que ya teníamos)
-    btnReportar.addEventListener('click', async () => {
-        const comentarios = prompt('Describa la falla (se devolverá a Diseño):');
+        const comentarios = prompt('Describa la falla (se devolverá a Diseño):');
         if (!comentarios || comentarios.trim() === '') { alert('Debes incluir un comentario.'); return; }
-        try {
-            const response = await fetch(`/api/proyectos/${projectId}/reportar-incidencia`, { 
-                method: 'PUT', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ 
-                    comentarios: comentarios
-                }) 
-            });
-            if (!response.ok) throw new Error('Error al reportar la incidencia.');
+        try {
+            const response = await fetch(`/api/proyectos/${proyecto.id}/reportar-incidencia`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+              t       comentarios: comentarios
+                }) 
+            });
+            if (!response.ok) throw new Error('Error al reportar la incidencia.');
             alert('Incidencia reportada. El proyecto volverá a Diseño (Etapa 3).');
-            window.location.reload();
-        } catch (error) { alert(`Error: ${error.message}`); }
-    });
+            window.location.reload();
+        } catch (error) { alert(`Error: ${error.message}`); }
+    });
 }
 // ==========================================================
 // === FIN TAREA B.3 ===
