@@ -368,7 +368,7 @@ function renderizarLineaDeTiempo(proyecto, user) {
     else if (proyecto.status === 'Listo para Entrega' && esAdmin) {
         const panelContainer = document.getElementById('panel-etapa-14');
         if (panelContainer) {
-            mostrarPanelEntrega(panelContainer, proyecto.id);
+            mostrarPanelEntrega(panelContainer, proyecto.id, proyecto);
         }
     }
 }
@@ -918,13 +918,13 @@ async function mostrarPanelProduccion(container, proyecto) {
 // === TAREA B.3 (Frontend): REEMPLAZA ESTA FUNCIÓN COMPLETA ===
 // (Implementa el formulario de Cierre de la Etapa 14)
 // ==========================================================
-async function mostrarPanelEntrega(container, projectId) {
+async function mostrarPanelEntrega(container, projectId, proyecto) {
     if (!container) return;
     const panelId = `panel-entrega-${Math.random()}`;
     const div = document.createElement('div');
 
     // 1. Leemos los productos del proyecto
-    const productos = g_proyecto.productos || []; // Usamos la variable global
+    const productos = proyecto.productos || [];
     if (productos.length === 0) {
         // Si no hay productos, mostramos un error simple (caso borde)
         div.innerHTML = `<h3>Error: No se pueden registrar cantidades.</h3><p>Este proyecto no tiene productos registrados. Por favor, contacte a un administrador.</p>`;
