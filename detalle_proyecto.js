@@ -237,136 +237,141 @@ function renderizarTiemposEHistorial(proyecto) {
 // === REEMPLAZA ESTA FUNCIÓN COMPLETA ("EL CEREBRO") ===
 // ==========================================================
 function renderizarLineaDeTiempo(proyecto, user) {
-    const container = document.getElementById('flujo-de-etapas-container');
-    container.innerHTML = ''; 
-    
-    // Mapeo de estados (Tarea 3.4)
-    const estadoEtapaMap = {
-        'Diseño Pendiente de Asignación': 2, 
-        'Diseño en Proceso': 3, 
-        'Pendiente Aprobación Interna': 4, 
-        'Pendiente Aprobación Cliente': 5, 
-        'Pendiente de Proforma': 6, 
-        'Pendiente Aprobación Proforma': 7,
-        'Pendiente Autorización Producción': 8, // ¡Estado NUEVO!
-        'En Lista de Producción': 9,
-        'En Diagramación': 10,
-        'En Impresión': 11,
-        'En Calandrado': 12,
-        'En Confección': 12, 
-        'Supervisión de Calidad': 13,
-        'Listo para Entrega': 14,
-        'Completado': 15 // ¡Estado FINAL!
-    };
+    const container = document.getElementById('flujo-de-etapas-container');
+    container.innerHTML = ''; 
+    
+    // Mapeo de estados (¡AQUÍ ESTÁ LA CORRECCIÓN!)
+    const estadoEtapaMap = {
+        'Diseño Pendiente de Asignación': 2, 
+        'Diseño en Proceso': 3, 
+        'Pendiente Aprobación Interna': 4, 
+        'Pendiente Aprobación Cliente': 5, 
+        'Pendiente de Proforma': 6, 
+        'Pendiente Aprob. Proforma Interna': 7, // <-- CORREGIDO
+        'Pendiente Aprob. Proforma Cliente': 8, // <-- CORREGIDO
+        'En Lista de Producción': 9,
+        'En Diagramación': 10,
+        'En Impresión': 11,
+        'En Calandrado': 12,
+        'En Confección': 12, // Ambos estados 12 y 11 usan el mismo número
+        'Supervisión de Calidad': 13,
+        'Listo para Entrega': 14,
+        'Completado': 15 // ¡Estado FINAL!
+    };
 
-    const etapaActualNum = estadoEtapaMap[proyecto.status] || 1; 
-    
-    // Lista de etapas (Corregida, 14 etapas, sin bugs visuales)
-    const etapas = [
-        { num: 1, titulo: 'Solicitud Creada', fecha: proyecto.fecha_creacion },
-        { num: 2, titulo: 'Asignación de Diseñador', fecha: proyecto.fecha_de_asignacion, panelId: 'panel-etapa-2' },
-        { num: 3, titulo: 'Propuesta del Diseñador', fecha: proyecto.fecha_propuesta, panelId: 'panel-etapa-3' },
-        { num: 4, titulo: 'Autorización Interna (Diseño)', fecha: proyecto.fecha_aprobacion_interna, panelId: 'panel-etapa-4' },
-        { num: 5, titulo: 'Aprobación del Cliente (Diseño)', fecha: proyecto.fecha_aprobacion_cliente, panelId: 'panel-etapa-5' },
-        { num: 6, titulo: 'Subida de Proforma', fecha: proyecto.fecha_proforma_subida, panelId: 'panel-etapa-6' },
-        { num: 7, titulo: 'Aprob. Proforma Interna', fecha: proyecto.status === 'Pendiente Aprob. Proforma Cliente' || etapaActualNum > 7 ? new Date() : null, panelId: 'panel-etapa-7' },
-        { num: 8, titulo: 'Aprob. Proforma Cliente (y Listado)', fecha: proyecto.fecha_autorizacion_produccion, panelId: 'panel-etapa-8' },
-        { num: 9, titulo: 'Diagramación', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Diagramación')?.fecha, panelId: 'panel-etapa-9' },
-        { num: 10, titulo: 'Impresión', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Impresión')?.fecha, panelId: 'panel-etapa-10' },
-        { num: 11, titulo: 'Calandrado', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Calandrado')?.fecha, panelId: 'panel-etapa-11' },
-        { num: 12, titulo: 'Confección', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Confección')?.fecha, panelId: 'panel-etapa-12' },
-        { num: 13, titulo: 'Control de Calidad', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'Supervisión de Calidad')?.fecha, panelId: 'panel-etapa-13' },
-        { num: 14, titulo: 'Entrega del Combo', fecha: proyecto.fecha_entrega, panelId: 'panel-etapa-14' } 
-    ];
+    const etapaActualNum = estadoEtapaMap[proyecto.status] || 1; 
+    
+    // Lista de etapas (Corregida, 14 etapas)
+    // (Esta lógica de fechas ya estaba correcta y adaptada al flujo 6,7,8)
+    const etapas = [
+        { num: 1, titulo: 'Solicitud Creada', fecha: proyecto.fecha_creacion },
+        { num: 2, titulo: 'Asignación de Diseñador', fecha: proyecto.fecha_de_asignacion, panelId: 'panel-etapa-2' },
+        { num: 3, titulo: 'Propuesta del Diseñador', fecha: proyecto.fecha_propuesta, panelId: 'panel-etapa-3' },
+        { num: 4, titulo: 'Autorización Interna (Diseño)', fecha: proyecto.fecha_aprobacion_interna, panelId: 'panel-etapa-4' },
+        { num: 5, titulo: 'Aprobación del Cliente (Diseño)', fecha: proyecto.fecha_aprobacion_cliente, panelId: 'panel-etapa-5' },
+        { num: 6, titulo: 'Subida de Proforma', fecha: proyecto.fecha_proforma_subida, panelId: 'panel-etapa-6' },
+        { num: 7, titulo: 'Aprob. Proforma Interna', fecha: proyecto.status === 'Pendiente Aprob. Proforma Cliente' || etapaActualNum > 7 ? new Date() : null, panelId: 'panel-etapa-7' },
+        { num: 8, titulo: 'Aprob. Proforma Cliente (y Listado)', fecha: proyecto.fecha_autorizacion_produccion, panelId: 'panel-etapa-8' },
+        { num: 9, titulo: 'En Lista de Producción', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Lista de Producción' || e.etapa === 'En Diagramación')?.fecha, panelId: 'panel-etapa-9' },
+        { num: 10, titulo: 'Diagramación', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Diagramación')?.fecha, panelId: 'panel-etapa-10' },
+        { num: 11, titulo: 'Impresión', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Impresión')?.fecha, panelId: 'panel-etapa-11' },
+        { num: 12, titulo: 'Confección', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'En Confección')?.fecha, panelId: 'panel-etapa-12' },
+        { num: 13, titulo: 'Control de Calidad', fecha: proyecto.historial_produccion?.find(e => e.etapa === 'Supervisión de Calidad')?.fecha, panelId: 'panel-etapa-13' },
+        { num: 14, titulo: 'Entrega del Combo', fecha: proyecto.fecha_entrega, panelId: 'panel-etapa-14' } 
+    ];
+    
+    // Pequeña corrección en la lógica de pintado para simplificar
+    etapas.forEach(etapa => {
+        const li = document.createElement('li');
+        li.className = 'timeline-etapa';
+        
+        let estado = 'pendiente'; // Gris 🔵
+        
+        if (etapa.num < etapaActualNum) {
+            estado = 'completado'; // Verde ✅
+        } else if (etapa.num === etapaActualNum) {
+            estado = 'actual'; // Azul ➡️
+        }
+        
+        // Si el proyecto está completado, pinta todo de verde
+        if (proyecto.status === 'Completado') {
+            estado = 'completado';
+        }
+        
+        // Lógica para obtener la fecha (la tuya era casi perfecta, solo ajusté la Etapa 9)
+        let fechaEtapa = etapa.fecha;
+        if (etapa.num === 9 && !fechaEtapa) {
+            fechaEtapa = proyecto.fecha_autorizacion_produccion;
+        }
 
-    etapas.forEach(etapa => {
-        const li = document.createElement('li');
-        li.className = 'timeline-etapa';
-        
-        let estado = 'pendiente'; 
-        if (etapa.fecha) {
-            estado = 'completado'; 
-        }
-        if (etapa.num === 1 && proyecto.fecha_creacion) {
-            estado = 'completado';
-        }
-        if (etapa.num === etapaActualNum) {
-            estado = 'actual'; 
-        }
-        if (estado === 'completado' && etapa.num === etapaActualNum) {
-             estado = 'actual';
-        }
-        if (estado === 'pendiente' && etapa.num < etapaActualNum) {
-             estado = 'completado'; 
-        }
-        if (proyecto.status === 'Completado') {
-            estado = 'completado';
-        }
+        li.setAttribute('data-estado', estado);
+        const fechaFormateada = fechaEtapa ? new Date(fechaEtapa).toLocaleDateString() : '';
+        
+        li.innerHTML = `
+            <div class="etapa-header">
+                <h3>${etapa.num}. ${etapa.titulo}</h3>
+                <span class="etapa-fecha">${fechaFormateada}</span>
+            </div>
+            ${etapa.panelId && estado === 'actual' ? `<div class="etapa-panel-acciones" id="${etapa.panelId}"></div>` : ''}
+        `;
+        
+        container.appendChild(li);
+    });
 
-        li.setAttribute('data-estado', estado);
-        const fechaFormateada = etapa.fecha ? new Date(etapa.fecha).toLocaleDateString() : '';
-        
-        li.innerHTML = `
-            <div class="etapa-header">
-                <h3>${etapa.num}. ${etapa.titulo}</h3>
-                <span class="etapa-fecha">${fechaFormateada}</span>
-            </div>
-            ${etapa.panelId && estado === 'actual' ? `<div class="etapa-panel-acciones" id="${etapa.panelId}"></div>` : ''}
-        `;
-        
-        container.appendChild(li);
-    });
 
-    // --- "CEREBRO" (IF/ELSE) CORREGIDO CON ETAPA 14 ---
-    
-    const rolesAdmin = ['Administrador', 'Coordinador'];
-    const rolesDiseno = ['Administrador', 'Diseñador'];
-    const rolesAsesor = ['Administrador', 'Asesor', 'Coordinador'];
-    const esAdmin = rolesAdmin.includes(user.rol);
-    const esDisenador = rolesDiseno.includes(user.rol);
-    const esAsesor = rolesAsesor.includes(user.rol);
+    // --- "CEREBRO" (IF/ELSE) ---
+    // Esta parte de tu código ya estaba PERFECTA y usaba los strings correctos.
+    // No necesita cambios, pero la incluyo como parte de la función completa.
+    
+    const rolesAdmin = ['Administrador', 'Coordinador'];
+    const rolesDiseno = ['Administrador', 'Diseñador'];
+    const rolesAsesor = ['Administrador', 'Asesor', 'Coordinador'];
+    const esAdmin = rolesAdmin.includes(user.rol);
+    const esDisenador = rolesDiseno.includes(user.rol);
+    const esAsesor = rolesAsesor.includes(user.rol);
 
-    if (proyecto.status === 'Diseño Pendiente de Asignación' && esAdmin) {
-        mostrarPanelAsignacion(document.getElementById('panel-etapa-2'), proyecto.id);
-    } 
-    else if (proyecto.status === 'Pendiente Aprobación Interna' && esAdmin) {
-        mostrarPanelRevisarPropuesta(document.getElementById('panel-etapa-4'), proyecto.id, proyecto);
-    } 
-    else if (proyecto.status === 'Pendiente Aprobación Cliente' && esAsesor) {
-        mostrarPanelAprobarCliente(document.getElementById('panel-etapa-5'), proyecto.id, proyecto);
-    } 
-    else if (proyecto.status === 'Pendiente de Proforma' && esDisenador) { 
-        mostrarPanelSubirProforma(document.getElementById('panel-etapa-6'), proyecto.id);
-    } 
-    else if (proyecto.status === 'Pendiente Aprob. Proforma Interna' && esAdmin) {
-        mostrarPanelAprobProformaInterna(document.getElementById('panel-etapa-7'), proyecto.id, proyecto);
-    }
-    else if (proyecto.status === 'Pendiente Aprob. Proforma Cliente' && esAsesor) {
-        mostrarPanelAprobProformaCliente(document.getElementById('panel-etapa-8'), proyecto.id, proyecto);
-    }
-    else if (esAdmin && (etapaActualNum >= 9 && etapaActualNum <= 13) && proyecto.status !== 'Listo para Entrega' ) {
-        const panelId = `panel-etapa-${etapaActualNum}`;
-        const panelContainer = document.getElementById(panelId);
-        if (panelContainer) {
-            mostrarPanelProduccion(panelContainer, proyecto);
-        }
-    }
-    else if (esDisenador && (proyecto.status === 'Diseño en Proceso' || (proyecto.status === 'En Confección' && proyecto.historial_incidencias?.length > 0))) {
-        const panelId = (proyecto.status === 'En Confección') ? 'panel-etapa-12' : 'panel-etapa-3';
-        mostrarPanelSubirPropuesta(document.getElementById(panelId), proyecto.id, proyecto);
-    }
-    else if (proyecto.status === 'Listo para Entrega' && esAdmin) {
-        // --- ¡ESTA ES LA LÍNEA QUE CONECTA TODO! ---
-        const panelContainer = document.getElementById('panel-etapa-14');
-        if (panelContainer) {
-            mostrarPanelEntrega(panelContainer, proyecto.id);
-        }
-    }
+    if (proyecto.status === 'Diseño Pendiente de Asignación' && esAdmin) {
+        mostrarPanelAsignacion(document.getElementById('panel-etapa-2'), proyecto.id);
+    } 
+    else if (proyecto.status === 'Pendiente Aprobación Interna' && esAdmin) {
+        mostrarPanelRevisarPropuesta(document.getElementById('panel-etapa-4'), proyecto.id, proyecto);
+    } 
+    else if (proyecto.status === 'Pendiente Aprobación Cliente' && esAsesor) {
+        mostrarPanelAprobarCliente(document.getElementById('panel-etapa-5'), proyecto.id, proyecto);
+    } 
+    else if (proyecto.status === 'Pendiente de Proforma' && esDisenador) { 
+        mostrarPanelSubirProforma(document.getElementById('panel-etapa-6'), proyecto.id);
+    } 
+    // ¡Esta es la lógica que ahora SÍ funcionará!
+    else if (proyecto.status === 'Pendiente Aprob. Proforma Interna' && esAdmin) {
+        mostrarPanelAprobProformaInterna(document.getElementById('panel-etapa-7'), proyecto.id, proyecto);
+    }
+    // ¡Esta también!
+    else if (proyecto.status === 'Pendiente Aprob. Proforma Cliente' && esAsesor) {
+        mostrarPanelAprobProformaCliente(document.getElementById('panel-etapa-8'), proyecto.id, proyecto);
+    }
+    else if (esAdmin && (etapaActualNum >= 9 && etapaActualNum <= 13) && proyecto.status !== 'Listo para Entrega' ) {
+        const panelId = `panel-etapa-${etapaActualNum}`;
+        const panelContainer = document.getElementById(panelId);
+        if (panelContainer) {
+            mostrarPanelProduccion(panelContainer, proyecto);
+        }
+    }
+    else if (esDisenador && (proyecto.status === 'Diseño en Proceso' || (proyecto.status === 'En Confección' && proyecto.historial_incidencias?.length > 0))) {
+        // Corrección: La etapa de "En Confección" es la 12, no la 3
+        const panelId = (proyecto.status === 'Diseño en Proceso') ? 'panel-etapa-3' : 'panel-etapa-12';
+        const panelContainer = document.getElementById(panelId);
+        if (panelContainer) {
+        	mostrarPanelSubirPropuesta(panelContainer, proyecto.id, proyecto);
+        }
+    }
+    else if (proyecto.status === 'Listo para Entrega' && esAdmin) {
+        const panelContainer = document.getElementById('panel-etapa-14');
+        if (panelContainer) {
+            mostrarPanelEntrega(panelContainer, proyecto.id);
+        }
+    }
 }
-// ==========================================================
-// === FIN TAREA A.3 ===
-// ==========================================================
-
 // --- FUNCIÓN DE AYUDA: Cargar Diseñadores ---
 const loadDesigners = async (selectElement) => {
     try {
