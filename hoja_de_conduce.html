@@ -103,22 +103,39 @@
         }
 
         /* Estilos solo para Imprimir */
-        @media print {
-            body {
-                margin: 0;
-                padding: 0;
-                background-color: #fff;
-            }
-            .container {
-                width: 100%;
-                margin: 0;
-                padding: 20px;
-                box-shadow: none;
-            }
-            .no-print {
-                display: none; /* Oculta el botón al imprimir */
-            }
-        }
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: #fff;
+                
+                /* === 1. AÑADIMOS EL MEMBRETE COMO FONDO === */
+                background-image: url('/logo_membrete.jpg'); 
+                background-repeat: no-repeat;
+                background-position: top center;
+                /* Ajusta el tamaño: 80% del ancho de la página */
+                background-size: 80% auto; 
+            }
+            
+            .container {
+                width: 100%;
+                margin: 0;
+                box-shadow: none;
+                
+                /* === 2. AJUSTAMOS EL PADDING PARA DAR ESPACIO AL MEMBRETE === */
+                /* (150px arriba, 40px a los lados, 40px abajo) */
+                padding: 150px 40px 40px 40px; 
+            }
+            
+            .no-print {
+                display: none; /* Oculta el botón al imprimir */
+            }
+
+            /* === 3. OCULTAMOS EL LOGO PEQUEÑO DEL HEADER AL IMPRIMIR === */
+            header img {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
