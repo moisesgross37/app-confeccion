@@ -1050,19 +1050,25 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
             }
             
             alert('¡Proyecto completado y archivado con éxito!');
-            
-            // ¡Paso final! Abre la Hoja de Conduce en una nueva pestaña
-            window.open(`hoja_de_conduce.html?id=${projectId}`, '_blank');
-            
-            // Redirige al panel principal
-            window.location.href = '/panel_confeccion.html'; 
+            
+            // ESTANDARIZADO: Usamos proyecto.id porque tenemos el objeto 'proyecto'
+            window.open(`hoja_de_conduce.html?id=${proyecto.id}`, '_blank');
+           nbsp;
+            // CORRECCIÓN: Añadimos el retraso para que el pop-up funcione
+            setTimeout(() => {
+                window.location.href = '/panel_confeccion.html';fs;
+            }, 500); // 500 milisegundos
 
-        } catch (error) { 
-            alert(`Error: ${error.message}`); 
-            btnCompletar.disabled = false;
-            btnCompletar.textContent = 'Confirmar Cierre y Generar Conduce';
-        }
-    });
+        } catch (error) { 
+            alert(`Error: ${error.message}`); 
+            btnCompletar.disabled = false;
+            btnCompletar.textContent = 'Confirmar Cierre y Generar Conduce';
+        }
+    });
+
+    // Botón de Reportar Incidencia
+    btnReportar.addEventListener('click', async () => {
+        // ... (el resto de esta función no cambia)
 
     // Botón de Reportar Incidencia (Lógica que ya teníamos)
     btnReportar.addEventListener('click', async () => {
