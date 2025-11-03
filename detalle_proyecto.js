@@ -303,20 +303,30 @@ function renderizarLineaDeTiempo(proyecto, user) {
         if (etapa.num === 9 && !fechaEtapa) {
             fechaEtapa = proyecto.fecha_autorizacion_produccion;
         }
-
-        li.setAttribute('data-estado', estado);
+li.setAttribute('data-estado', estado);
         const fechaFormateada = fechaEtapa ? new Date(fechaEtapa).toLocaleDateString() : '';
         
+        // --- ¡ESTA ES LA CORRECCIÓN LÓGICA! ---
+        // Creamos una variable para el HTML del panel
+        let panelHtml = '';
+        const esEtapaActual = (estado === 'actual');
+        const esPanelDeCompletado = (etapa.num === 14 && proyecto.status === 'Completado');
+
+        // Inyectamos el div si la etapa es la "actual" O si es la etapa 14 en un proyecto "completado"
+        if (etapa.panelId && (esEtapaActual || esPanelDeCompletado)) {
+            panelHtml = `<div class="etapa-panel-acciones" id="${etapa.panelId}"></div>`;
+        }
+        // --- FIN DE LA CORRECCIÓN LÓGICA ---
+
         li.innerHTML = `
             <div class="etapa-header">
                 <h3>${etapa.num}. ${etapa.titulo}</h3>
                 <span class="etapa-fecha">${fechaFormateada}</span>
             </div>
-            ${etapa.panelId && estado === 'actual' ? `<div class="etapa-panel-acciones" id="${etapa.panelId}"></div>` : ''}
-        `;
+    	    ${panelHtml}         `;
         
         container.appendChild(li);
-    });
+        });
 
 
     // --- "CEREBRO" (IF/ELSE) ---
