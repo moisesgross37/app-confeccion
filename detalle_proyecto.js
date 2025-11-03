@@ -375,7 +375,7 @@ else if (proyecto.status === 'Completado' && esAsesor) { // esAsesor cubre Admin
         const panelContainer = document.getElementById('panel-etapa-14'); // Reusamos el espacio de la etapa 14
         if (panelContainer) {
             // Llamamos a una función nueva que vamos a crear
-            mostrarPanelCompletado(panelContainer, proyecto.id);
+            mostrarPanelCompletado(panelContainer, proyecto);
         }
     }
 }
@@ -1111,17 +1111,25 @@ async function subirNuevasReferencias(projectId, files) {
 // ==========================================================
 // === AÑADE ESTA FUNCIÓN NUEVA AL FINAL DEL ARCHIVO ===
 // ==========================================================
-async function mostrarPanelCompletado(container, projectId) {
+// ==========================================================
+// === REEMPLAZA LA FUNCIÓN ANTERIOR POR ESTA ===
+// ==========================================================
+async function mostrarPanelCompletado(container, proyecto) { // ¡Recibimos 'proyecto'!
     if (!container) return;
     const panelId = `panel-completado-${Math.random()}`;
     const div = document.createElement('div');
+
+    // Usamos 'proyecto.fecha_entrega' (la variable local, no la global)
+    const fechaEntrega = proyecto.fecha_entrega 
+        ? new Date(proyecto.fecha_entrega).toLocaleDateString('es-DO') 
+        : 'Fecha no registrada';
 
     div.innerHTML = `
         <h3 style="color: #28a745;">Proyecto Archivado</h3>
         <div class="card">
             <div class="card-body">
                 <p>Este proyecto se marcó como 'Completado' el 
-                    <strong>${new Date(g_proyecto.fecha_entrega).toLocaleDateString('es-DO')}</strong> 
+                    <strong>${fechaEntrega}</strong> 
                     y está archivado.
                 </p>
                 <button id="ver-conduce-btn-${panelId}" class="button" style="background-color: #007bff;">
@@ -1134,7 +1142,7 @@ async function mostrarPanelCompletado(container, projectId) {
 
     // Lógica del botón
     document.getElementById(`ver-conduce-btn-${panelId}`).addEventListener('click', () => {
-        // Simplemente abre la hoja de conduce en una pestaña nueva
-        window.open(`hoja_de_conduce.html?id=${projectId}`, '_blank');
+        // Usamos 'proyecto.id'
+        window.open(`hoja_de_conduce.html?id=${proyecto.id}`, '_blank');
     });
 }
