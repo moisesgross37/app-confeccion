@@ -371,6 +371,13 @@ function renderizarLineaDeTiempo(proyecto, user) {
             mostrarPanelEntrega(panelContainer, proyecto.id, proyecto);
         }
     }
+else if (proyecto.status === 'Completado' && esAsesor) { // esAsesor cubre Admin, Asesor y Coord.
+        const panelContainer = document.getElementById('panel-etapa-14'); // Reusamos el espacio de la etapa 14
+        if (panelContainer) {
+            // Llamamos a una función nueva que vamos a crear
+            mostrarPanelCompletado(panelContainer, proyecto.id);
+        }
+    }
 }
 // --- FUNCIÓN DE AYUDA: Cargar Diseñadores ---
 const loadDesigners = async (selectElement) => {
@@ -1100,4 +1107,34 @@ async function subirNuevasReferencias(projectId, files) {
     
     // Devolvemos la lista actualizada de archivos de referencia
     return result;
+}
+// ==========================================================
+// === AÑADE ESTA FUNCIÓN NUEVA AL FINAL DEL ARCHIVO ===
+// ==========================================================
+async function mostrarPanelCompletado(container, projectId) {
+    if (!container) return;
+    const panelId = `panel-completado-${Math.random()}`;
+    const div = document.createElement('div');
+
+    div.innerHTML = `
+        <h3 style="color: #28a745;">Proyecto Archivado</h3>
+        <div class="card">
+            <div class="card-body">
+                <p>Este proyecto se marcó como 'Completado' el 
+                    <strong>${new Date(g_proyecto.fecha_entrega).toLocaleDateString('es-DO')}</strong> 
+                    y está archivado.
+                </p>
+                <button id="ver-conduce-btn-${panelId}" class="button" style="background-color: #007bff;">
+                    📄 Ver Hoja de Conduce
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+
+    // Lógica del botón
+    document.getElementById(`ver-conduce-btn-${panelId}`).addEventListener('click', () => {
+        // Simplemente abre la hoja de conduce en una pestaña nueva
+        window.open(`hoja_de_conduce.html?id=${projectId}`, '_blank');
+    });
 }
