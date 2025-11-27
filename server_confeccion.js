@@ -23,20 +23,23 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads_confeccion', express.static('/var/data/uploads_confeccion'));
 
 // --- 4. CONEXIONES A BASES DE DATOS ---
+
+// Detección Automática: ¿Estamos en la Nube (Producción)?
+// Render siempre establece NODE_ENV como 'production'. Tu Mac no.
+const isProduction = process.env.NODE_ENV === 'production';
+
 // Conexión principal de este programa ("confección")
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    // Switch Inteligente: Si es Producción -> Activa SSL. Si es Local -> Desactiva SSL.
+    ssl: isProduction ? { rejectUnauthorized: false } : false
 });
 
 // Conexión secundaria a la BD de "gestión" (solo para leer centros)
 const gestionPool = new Pool({
     connectionString: process.env.GESTION_DB_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    // Switch Inteligente: Misma lógica aquí
+    ssl: isProduction ? { rejectUnauthorized: false } : false
 });
 
 const initializeDatabase = async () => {
@@ -983,6 +986,53 @@ app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administra
 });
 // Servidor de archivos estáticos (Debe ir al final de todas las rutas)
 app.use(express.static(path.join(__dirname)));
+
+
+// ==========================================
+// === RUTAS PARA GESTIONAR DISEÑADORES ===
+// ==========================================
+
+// 1. OBTENER TODOS LOS DISEÑADORES
+app.get('/api/designers', async (req, res) => {
+    try {
+        // Consultamos la tabla 'confeccion_designers'
+        const result = await pool.query('SELECT * FROM confeccion_designers ORDER BY id ASC');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error al obtener diseñadores:', error);
+        res.status(500).json({ message: 'Error del servidor al cargar diseñadores.' });
+    }
+});
+
+// 2. CREAR UN NUEVO DISEÑADOR
+app.post('/api/designers', async (req, res) => {
+    const { name } = req.body;
+    if (!name) {
+        return res.status(400).json({ message: 'El nombre es obligatorio.' });
+    }
+    try {
+        const result = await pool.query(
+            'INSERT INTO confeccion_designers (name) VALUES ($1) RETURNING *',
+            [name]
+        );
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error al crear diseñador:', error);
+        res.status(500).json({ message: 'Error del servidor al crear diseñador.' });
+    }
+});
+
+// 3. ELIMINAR UN DISEÑADOR
+app.delete('/api/designers/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM confeccion_designers WHERE id = $1', [id]);
+        res.json({ message: 'Diseñador eliminado correctamente.' });
+    } catch (error) {
+        console.error('Error al eliminar diseñador:', error);
+        res.status(500).json({ message: 'Error del servidor al eliminar.' });
+    }
+});
 
 // Función para iniciar el servidor
 const startServer = async () => {
