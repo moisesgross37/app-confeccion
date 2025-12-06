@@ -234,7 +234,7 @@ function renderizarTiemposEHistorial(proyecto) {
     }
 }
 // ==========================================================
-// === CEREBRO ACTUALIZADO (Versión Estable + Historial de Archivos) ===
+// === CEREBRO ACTUALIZADO (Historial en Etapas 3, 6 y 8) ===
 // ==========================================================
 function renderizarLineaDeTiempo(proyecto, user) {
     const container = document.getElementById('flujo-de-etapas-container');
@@ -307,9 +307,11 @@ function renderizarLineaDeTiempo(proyecto, user) {
         // =======================================================
         let archivosHtml = '';
         
-        // Mapa de qué archivos van en qué etapa
+        // ¡AQUÍ ESTÁ LA ACTUALIZACIÓN! Activamos 3, 6 y 8
         const mapaArchivosPorEtapa = {
-            3: 'propuesta_diseno' // Activamos solo etapa 3 por ahora
+            3: 'propuesta_diseno',
+            6: 'proforma',
+            8: 'listado_final'
         };
 
         if (mapaArchivosPorEtapa[etapa.num] && proyecto.archivos) {
@@ -340,7 +342,7 @@ function renderizarLineaDeTiempo(proyecto, user) {
         }
         // =======================================================
 
-        // --- Lógica del Panel de Acciones (Tu versión correcta) ---
+        // --- Lógica del Panel de Acciones ---
         let panelHtml = '';
         const esEtapaActual = (estado === 'actual');
         const esPanelDeCompletado = (etapa.num === 14 && proyecto.status === 'Completado');
@@ -406,7 +408,6 @@ function renderizarLineaDeTiempo(proyecto, user) {
             mostrarPanelEntrega(panelContainer, proyecto.id, proyecto);
         }
     }
-    // Tu corrección para el botón de archivo (Hoja de conduce)
     else if (proyecto.status === 'Completado') {
         const panelContainer = document.getElementById('panel-etapa-14'); 
         if (panelContainer) {
