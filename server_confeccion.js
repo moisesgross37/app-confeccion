@@ -836,29 +836,30 @@ app.put('/api/proyectos/:id/aprobar-proforma-interna', requireLogin, checkRole([
     }
 });
 // ==========================================================
-// === TAREA B.2 (Backend): REEMPLAZA ESTA RUTA COMPLETA ===
-// (Actualiza la ruta 'completar-entrega' para guardar el conduce)
+// === TAREA B.2 (Backend - CORREGIDO): COMPLETAR ENTREGA ===
+// (Permite cerrar proyectos viejos sin productos)
 // ==========================================================
 app.put('/api/proyectos/:id/completar-entrega', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
     const { id } = req.params;
-    // ¡Ahora recibimos los datos del formulario!
     const { conduceTabla, conduceComentarios } = req.body;
 
-    // --- Validación de Entrada ---
-    if (!conduceTabla || conduceTabla.length === 0) {
-        return res.status(400).json({ message: 'La tabla de cantidades no puede estar vacía.' });
-    }
+    // --- Validación de Entrada (FLEXIBILIZADA) ---
+    
+    // 1. YA NO bloqueamos si la tabla está vacía. 
+    // Esto permite cerrar proyectos "Legacy" (Viejos).
+    
+    // 2. Comentarios siguen siendo obligatorios por seguridad.
     if (!conduceComentarios || conduceComentarios.trim() === '') {
         return res.status(400).json({ message: 'Los comentarios de cierre son obligatorios.' });
     }
     // --- Fin Validación ---
     
-    // Creamos el objeto JSON que guardaremos en la base de datos
+    // Creamos el objeto JSON
     const conduceData = {
-        tabla: conduceTabla,
+        tabla: conduceTabla || [], // Si viene vacío, guardamos un array vacío
         comentarios: conduceComentarios,
         fecha_cierre: new Date(),
-        cerrado_por: req.session.user.username
+        cerrado_por: req.session.user ? req.session.user.username : 'Sistema'
     };
 
     try {
@@ -867,9 +868,9 @@ app.put('/api/proyectos/:id/completar-entrega', requireLogin, checkRole(['Admini
              SET 
                  status = 'Completado', 
                  fecha_entrega = NOW(),
-                 conduce_data = $1 -- Guardamos el JSON con los datos
+                 conduce_data = $1 
              WHERE id = $2 RETURNING *`,
-            [JSON.stringify(conduceData), id] // Guardamos el objeto como un string JSON
+            [JSON.stringify(conduceData), id]
         );
         
         if (result.rowCount === 0) {
