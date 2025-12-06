@@ -510,7 +510,7 @@ async function mostrarPanelSubirPropuesta(container, projectId, proyecto) {
             <div class="form-group">
                 <label>Archivos de Propuesta:</label>
                 <button type="button" class="button btn-add-file">Añadir Archivo(s)</button>
-                <input type="file" name="propuestas_diseno" multiple style="display: none;">
+                <input type="file" name="propuestas_diseno" multiple style="display: none;" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
                 <div class="file-list" style="margin-top: 15px;"></div>
             </div>
             <button type="submit">Enviar Propuesta(s) Corregidas</button>
@@ -612,7 +612,7 @@ async function mostrarPanelSubirProforma(container, projectId) {
             <div class="form-group">
                 <label>Archivos de Proforma:</label>
                 <button type="button" class="button btn-add-file">Añadir Archivo(s)</button>
-                <input type="file" name="proformas" multiple style="display: none;">
+                <input type="file" name="proformas" multiple style="display: none;" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
                 <div class="file-list" style="margin-top: 15px;"></div>
             </div>
             <button type="submit">Enviar Proforma(s)</button>
@@ -806,7 +806,7 @@ async function mostrarPanelAprobProformaCliente(container, projectId, proyecto) 
                 <p>La proforma ha sido aprobada internamente. Por favor, cargue el listado final del cliente para autorizar el inicio de la producción.</p>
                 <div class="mb-3">
                     <label for="listado-final-input-${panelId}" class="form-label"><strong>Paso 1:</strong> Cargar listado final de clientes (Obligatorio)</label>
-                    <input class="form-control" type="file" id="listado-final-input-${panelId}" required>
+                    <input class="form-control" type="file" id="listado-final-input-${panelId}" required accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx">
                 </div>
                 <button id="autorizar-produccion-btn-${panelId}" class="btn btn-success w-100"><strong>Paso 2:</strong> Aprobar y Autorizar Producción</button>
                 <hr>
