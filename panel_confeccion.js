@@ -1,14 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const tableBody = document.querySelector('#proyectos-table-body');
+    // Referencias a las DOS tablas nuevas
+    const tbodyInterna = document.getElementById('tabla-body-interna');
+    const tbodyEspera = document.getElementById('tabla-body-espera');
+
     const filtroAsesor = document.getElementById('filtro-asesor');
     const filtroDisenador = document.getElementById('filtro-disenador');
     const filtroEstatus = document.getElementById('filtro-estatus');
-    
-    // --- ¡NUEVO ELEMENTO! ---
     const filtroCompletados = document.getElementById('filtro-completados');
     
     let currentUser = null;
-    let todosLosProyectos = []; // Esta variable guardará los proyectos cargados
+    let todosLosProyectos = [];
+
+    // --- LISTA DE ESTATUS "EN ESPERA" (Cancha del Cliente) ---
+    const estatusCliente = [
+        'Pendiente Aprobación Cliente',
+        'Pendiente Aprob. Proforma Cliente'
+    ];
 
     const populateFilters = (proyectos) => {
         const asesores = [...new Set(proyectos.map(p => p.nombre_asesor).filter(Boolean))];
@@ -24,8 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
         estatus.sort().forEach(nombre => filtroEstatus.add(new Option(nombre, nombre)));
     };
 
-    // --- ¡FUNCIÓN MODIFICADA! ---
-    // Ahora 'applyFilters' solo filtra la lista que YA TENEMOS cargada
     const applyFilters = () => {
         const asesorSeleccionado = filtroAsesor.value;
         const disenadorSeleccionado = filtroDisenador.value;
@@ -38,146 +43,156 @@ document.addEventListener('DOMContentLoaded', () => {
             return matchAsesor && matchDisenador && matchEstatus;
         });
 
-        renderTable(proyectosFiltrados, currentUser); // Pasamos currentUser a renderTable
+        renderTables(proyectosFiltrados, currentUser);
     };
 
-    // --- ¡NUEVA FUNCIÓN DE CARGA! ---
-    // Esta función es la que habla con el servidor
     const fetchProyectos = () => {
-        // 1. Revisa si el checkbox "Completados" está marcado
         const verCompletados = filtroCompletados.checked;
-        
-        // 2. Construye la URL de la API
         let apiUrl = '/api/proyectos';
-        if (verCompletados) {
-            apiUrl += '?filtro=completados'; // Llama a la API para ver los archivados
-        }
+        if (verCompletados) apiUrl += '?filtro=completados';
         
-        // 3. Muestra "Cargando..." en la tabla
-        tableBody.innerHTML = '<tr><td colspan="7">Cargando proyectos...</td></tr>';
+        // Ponemos mensaje de carga en ambas tablas
+        tbodyInterna.innerHTML = '<tr><td colspan="7" style="text-align:center;">Cargando...</td></tr>';
+        tbodyEspera.innerHTML = '<tr><td colspan="7" style="text-align:center;">Cargando...</td></tr>';
 
-        // 4. Llama a la API y luego actualiza todo
         Promise.all([
             fetch(apiUrl, { cache: 'no-store' }).then(res => res.json()),
             fetch('/api/me').then(res => res.json())
         ])
         .then(([proyectos, user]) => {
-            todosLosProyectos = proyectos; // Guardamos los proyectos globalmente
-            currentUser = user; // Guardamos el usuario globalmente
-
+            todosLosProyectos = proyectos;
+            currentUser = user;
             populateFilters(todosLosProyectos);
-            renderTable(todosLosProyectos, currentUser); 
+            renderTables(todosLosProyectos, currentUser); 
         })
         .catch(error => {
-            console.error('Error al cargar los proyectos o el usuario:', error);
-            tableBody.innerHTML = `<tr><td colspan="7">Error al cargar los proyectos. Verifique la consola.</td></tr>`;
+            console.error('Error:', error);
+            tbodyInterna.innerHTML = '<tr><td colspan="7">Error de conexión.</td></tr>';
         });
     };
 
-    // La función de renderizado no cambia, solo la copiamos
-    const renderTable = (proyectos, user) => {
-        tableBody.innerHTML = '';
+    // --- FUNCIÓN MAESTRA DE RENDERIZADO (DIVIDE EN DOS TABLAS) ---
+    const renderTables = (proyectos, user) => {
+        tbodyInterna.innerHTML = '';
+        tbodyEspera.innerHTML = '';
 
         if (!proyectos || proyectos.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="7">No hay proyectos que coincidan con los filtros.</td></tr>';
+            tbodyInterna.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay proyectos.</td></tr>';
             return;
         }
 
+        // Ordenamos por urgencia (los que llevan más días en su etapa actual van primero)
+        proyectos.sort((a, b) => {
+            const fechaA = a.fecha_ultimo_cambio_etapa ? new Date(a.fecha_ultimo_cambio_etapa) : new Date(a.fecha_creacion);
+            const fechaB = b.fecha_ultimo_cambio_etapa ? new Date(b.fecha_ultimo_cambio_etapa) : new Date(b.fecha_creacion);
+            return fechaA - fechaB; // Los más viejos primero (más urgentes)
+        });
+
         proyectos.forEach(proyecto => {
-            const row = document.createElement('tr');
+            // 1. Determinar en qué tabla va
+            const esEsperaCliente = estatusCliente.includes(proyecto.status) || proyecto.status === 'Completado';
+            const targetTable = esEsperaCliente ? tbodyEspera : tbodyInterna;
+
+            // 2. Calcular Tiempos
+            const hoy = new Date();
+            hoy.setHours(0,0,0,0);
+
+            // A) Tiempo en Etapa Actual (El dato grande)
+            // Si no existe la fecha de cambio (proyectos viejos), usamos la de creación como fallback
+            const fechaEtapa = proyecto.fecha_ultimo_cambio_etapa ? new Date(proyecto.fecha_ultimo_cambio_etapa) : new Date(proyecto.created_at);
+            fechaEtapa.setHours(0,0,0,0);
+            const diffEtapa = Math.floor((hoy - fechaEtapa) / (1000 * 60 * 60 * 24));
+
+            // B) Tiempo Total (El dato pequeño)
+            const fechaCreacion = new Date(proyecto.created_at);
+            fechaCreacion.setHours(0,0,0,0);
+            const diffTotal = Math.floor((hoy - fechaCreacion) / (1000 * 60 * 60 * 24));
+
+            // 3. Determinar Colores (Semáforo)
+            let badgeClass = 'bg-secondary'; // Gris por defecto
+            let daysText = `${diffEtapa} días`;
+
+            if (!esEsperaCliente && proyecto.status !== 'Completado') {
+                // Lógica de Semáforo solo para "Tu Cancha"
+                if (diffEtapa <= 3) badgeClass = 'bg-success';       // Verde (0-3 días)
+                else if (diffEtapa <= 7) badgeClass = 'bg-warning text-dark'; // Amarillo (4-7 días)
+                else badgeClass = 'bg-danger';                       // Rojo (8+ días)
+            } else {
+                // Para "Esperando Cliente", siempre azul suave o gris
+                badgeClass = 'bg-info text-dark';
+            }
+
+            // 4. HTML del Botón Eliminar (Solo Admin)
             let eliminarButtonHtml = '';
             if (user && user.rol === 'Administrador') {
                 eliminarButtonHtml = `
                     <button class="button-danger" 
                             data-project-id="${proyecto.id}" 
-                            data-project-code="${proyecto.codigo_proyecto || proyecto.id}">
-                        Eliminar
+                            data-project-code="${proyecto.codigo_proyecto || proyecto.id}"
+                            style="padding: 2px 8px; font-size: 0.8em; margin-left:5px;">
+                        🗑️
                     </button>
                 `;
             }
 
-            const createdAt = new Date(proyecto.created_at);
-            const startOfToday = new Date();
-            startOfToday.setHours(0, 0, 0, 0); 
-            let antiguedadHtml = '';
-
-            if (!proyecto.created_at || isNaN(createdAt.getTime())) {
-                antiguedadHtml = '<td>--</td>'; 
-            } else {
-                const startOfCreateDay = new Date(createdAt);
-                startOfCreateDay.setHours(0, 0, 0, 0); 
-                const diffTime = startOfToday.getTime() - startOfCreateDay.getTime();
-                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); 
-                let daysText = `${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
-                let daysClass = '';
-
-                if (diffDays < 0) { 
-                     daysText = "Fecha Futura";
-                     daysClass = 'bg-secondary text-white'; 
-                } else if (diffDays === 0) { 
-                     daysText = "Hoy";
-                     daysClass = 'bg-info text-dark'; 
-                } else if (diffDays >= 1 && diffDays <= 10) {
-                    daysClass = 'bg-info text-dark'; 
-                } else if (diffDays >= 11 && diffDays <= 17) {
-                    daysClass = 'bg-warning text-dark'; 
-                } else { 
-                    daysClass = 'bg-danger text-white'; 
-                }
-                
-                antiguedadHtml = `<td class="${daysClass}">${daysText}</td>`;
-            }
-            
+            // 5. Construir la fila
+            const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${proyecto.id}</td>
+                <td><strong>${proyecto.codigo_proyecto || proyecto.id}</strong></td>
                 <td>${proyecto.cliente}</td>
                 <td>${proyecto.nombre_asesor}</td>
-                <td>${proyecto.nombre_disenador || 'No asignado'}</td>
-                <td><mark>${proyecto.status}</mark></td>
-                ${antiguedadHtml} 
-                <td>
-                    <a href="detalle_proyecto.html?id=${proyecto.id}" class="button">Ver</a>
+                <td>${proyecto.nombre_disenador || '<span style="color:#999;">--</span>'}</td>
+                <td>${proyecto.status}</td>
+                
+                <td style="text-align: center;">
+                    <span class="badge ${badgeClass}" style="font-size: 1em; padding: 5px 10px; border-radius: 12px;">
+                        ${daysText}
+                    </span>
+                    <br>
+                    <small style="color: #666; font-size: 0.75em;">
+                        Total: ${diffTotal} días
+                    </small>
+                </td>
+
+                <td style="white-space: nowrap;">
+                    <a href="detalle_proyecto.html?id=${proyecto.id}" class="button" style="padding: 4px 10px;">Ver</a>
                     ${eliminarButtonHtml}
                 </td>
             `;
-            tableBody.appendChild(row);
+            targetTable.appendChild(row);
         });
     };
 
-    // Lógica del botón Eliminar (sin cambios)
-    tableBody.addEventListener('click', async (event) => {
-        if (event.target.classList.contains('button-danger')) {
-            const button = event.target;
+    // --- MANEJO DE ELIMINACIÓN (Para ambas tablas) ---
+    const handleDelete = async (event) => {
+        if (event.target.closest('.button-danger')) {
+            const button = event.target.closest('.button-danger');
             const projectId = button.dataset.projectId;
-            const projectCode = button.dataset.projectCode;
-            if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente el proyecto "${projectCode}"? Esta acción no se puede deshacer.`)) {
-                return;
-            }
+            if (!confirm(`¿Estás seguro de eliminar este proyecto?`)) return;
+            
             try {
                 const response = await fetch(`/api/proyectos/${projectId}`, { method: 'DELETE' });
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ message: 'Error desconocido del servidor.' }));
-                    throw new Error(errorData.message);
+                if (response.ok) {
+                    alert('Proyecto eliminado.');
+                    fetchProyectos();
+                } else {
+                    throw new Error('Error al eliminar.');
                 }
-                const result = await response.json();
-                alert(result.message);
-                fetchProyectos(); // Recargamos la lista en lugar de toda la página
             } catch (error) {
-                console.error('Error al eliminar:', error);
-                alert(`No se pudo eliminar el proyecto: ${error.message}`);
+                alert(error.message);
             }
         }
-    });
+    };
 
-    // --- EVENT LISTENERS (MODIFICADOS) ---
-    // Los filtros normales (asesor, diseñador, estatus) solo aplican filtros
+    // Escuchamos clics en ambas tablas
+    tbodyInterna.addEventListener('click', handleDelete);
+    tbodyEspera.addEventListener('click', handleDelete);
+
+    // Filtros
     filtroAsesor.addEventListener('change', applyFilters);
     filtroDisenador.addEventListener('change', applyFilters);
     filtroEstatus.addEventListener('change', applyFilters);
-    
-    // El NUEVO checkbox "Completados" es el único que vuelve a llamar al servidor
     filtroCompletados.addEventListener('change', fetchProyectos);
 
-    // --- CARGA INICIAL ---
-    fetchProyectos(); // Carga la lista de proyectos (activos por defecto) al iniciar
+    fetchProyectos();
 });
