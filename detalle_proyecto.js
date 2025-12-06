@@ -1042,8 +1042,8 @@ async function mostrarPanelProduccion(container, proyecto) {
     }
 }
 // ==========================================================
-// === TAREA B.3 (MEJORADA): PANEL DE ENTREGA INTELIGENTE ===
-// (Soporta proyectos nuevos con productos y viejos sin ellos)
+// === TAREA B.3 (MEJORADA v2): PANEL DE ENTREGA INTELIGENTE ===
+// (Incluye el "Truco del Fantasma" para evitar bloqueos del servidor)
 // ==========================================================
 async function mostrarPanelEntrega(container, projectId, proyecto) {
     if (!container) return;
@@ -1054,7 +1054,7 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
     const productos = proyecto.productos || [];
 
     // ========================================================================
-    // --- CASO 1: PROYECTO ANTIGUO O SIN PRODUCTOS (MODO MANUAL) ---
+    // --- CAMINO 1: PROYECTO ANTIGUO O SIN PRODUCTOS (MODO MANUAL) ---
     // ========================================================================
     if (productos.length === 0) {
         div.innerHTML = `
@@ -1077,15 +1077,13 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
         `;
         container.appendChild(div);
 
-        // Lógica para cierre manual (sin validar tabla)
+        // Lógica EXCLUSIVA para cierre manual
         const btnCompletar = document.getElementById(`completar-entrega-btn-${panelId}`);
         const comentariosEl = document.getElementById(`comentarios-cierre-${panelId}`);
         const btnReportar = document.getElementById(`reportar-incidencia-btn-${panelId}`);
 
         btnCompletar.addEventListener('click', async () => {
             const comentarios = comentariosEl.value;
-            
-            // Validación básica
             if (comentarios.trim() === '') {
                 return alert('Error: Los comentarios son obligatorios para cerrar este proyecto.');
             }
@@ -1093,25 +1091,27 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
             if (!confirm('¿Seguro que deseas archivar este proyecto antiguo como Completado?')) return;
 
             try {
-                // Feedback visual para que sepas que está trabajando
                 btnCompletar.disabled = true;
                 btnCompletar.textContent = 'Guardando...';
 
-                // --- AQUÍ ESTÁ EL TRUCO DEL FANTASMA ---
-                // Enviamos un producto falso llamado "(CIERRE ADMINISTRATIVO)"
-                // Así el servidor, aunque tenga reglas viejas, lo dejará pasar.
+                // --- 👻 AQUÍ ESTÁ EL TRUCO DEL FANTASMA ---
+                // Creamos un item falso para engañar al servidor y que nos deje pasar
+                const tablaFantasma = [
+                    { producto: "(CIERRE ADMINISTRATIVO)", cotizada: 0, listado: 0, entregada: 0 }
+                ];
+
                 const response = await fetch(`/api/proyectos/${projectId}/completar-entrega`, { 
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        conduceTabla: [{ producto: "(CIERRE ADMINISTRATIVO)", cotizada: 0, listado: 0, entregada: 0 }], 
+                        conduceTabla: tablaFantasma, // <--- Enviamos el fantasma aquí
                         conduceComentarios: comentarios
                     })
                 });
                 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Error al cerrar proyecto.');
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.message || 'Error al cerrar proyecto.');
                 }
                 
                 alert('¡Proyecto antiguo completado y archivado!');
@@ -1122,13 +1122,12 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
 
             } catch (error) {
                 alert(`Error: ${error.message}`);
-                // Si falla, reactivamos el botón para que puedas intentar de nuevo
                 btnCompletar.disabled = false;
                 btnCompletar.textContent = 'Confirmar Cierre Manual y Archivar';
             }
         });
 
-        // Lógica de reporte
+        // Lógica de reporte para proyectos viejos
         btnReportar.addEventListener('click', async () => {
             const comentarios = prompt('Describa la falla:');
             if (!comentarios) return;
@@ -1144,11 +1143,11 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
             } catch (error) { alert(error.message); }
         });
 
-        return; // ¡IMPORTANTE! Aquí termina la función para proyectos viejos
+        return; // ¡AQUÍ TERMINA EL CAMINO 1!
     }
 
     // ========================================================================
-    // --- CASO 2: PROYECTO NUEVO (CON PRODUCTOS - FLUJO ESTÁNDAR) ---
+    // --- CAMINO 2: PROYECTO NUEVO (CON PRODUCTOS - ESTE NO CAMBIA) ---
     // ========================================================================
     
     // Construimos la tabla de cantidades
@@ -1198,7 +1197,7 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
     `;
     container.appendChild(div);
 
-    // Lógica Estándar
+    // Lógica Estándar (Esta parte funciona bien y se queda igual)
     const btnCompletar = document.getElementById(`completar-entrega-btn-${panelId}`);
     const btnReportar = document.getElementById(`reportar-incidencia-btn-${panelId}`);
     const tablaEl = document.getElementById(`tabla-conduce-${panelId}`);
