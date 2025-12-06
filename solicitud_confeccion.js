@@ -10,6 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const productosContainer = document.getElementById('productos-checkbox-container');
     const productosHiddenInput = document.getElementById('productos-seleccionados');
     
+    // --- TAREA 2: HACER DETALLES OPCIONALES AUTOMÁTICAMENTE ---
+    // Buscamos cualquier campo de texto o textarea y le quitamos el "obligatorio" si lo tiene
+    const camposTexto = form.querySelectorAll('textarea, input[type="text"]');
+    camposTexto.forEach(campo => {
+        // Excluimos los campos ocultos o de búsqueda, enfocándonos en la descripción
+        if (campo.id !== 'nombre_centro' && campo.id !== 'nombre_asesor') {
+            campo.removeAttribute('required');
+        }
+    });
+
     let selectedFiles = []; // Aquí se guardarán los archivos seleccionados
 
     // --- Carga inicial de datos (Centros) ---
@@ -33,34 +43,29 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ==================================================
-    // === FUNCIÓN DE CARGAR PRODUCTOS (MODIFICADA) ===
+    // === FUNCIÓN DE CARGAR PRODUCTOS ===
     // ==================================================
     const loadProducts = () => {
         fetch('/api/proxy/productos')
             .then(res => res.ok ? res.json() : Promise.reject('Error al cargar productos'))
             .then(productos => {
-                productosContainer.innerHTML = ''; // Limpiar "Cargando..."
+                productosContainer.innerHTML = ''; 
                 
-                // --- ¡AQUÍ ESTÁ TU FILTRO! ---
-                // 1. Filtramos el array para incluir solo los que dicen "PROMOCIONALES"
                 const productosFiltrados = productos
                     .filter(p => p.RENGLON && p.RENGLON.toUpperCase() === 'PROMOCIONALES')
-                    .map(p => p['PRODUCTO / SERVICIO']) // 2. Obtenemos solo el nombre
-                    .filter(Boolean); // 3. Filtramos nombres vacíos
+                    .map(p => p['PRODUCTO / SERVICIO']) 
+                    .filter(Boolean); 
                 
-                // 4. Obtenemos los nombres únicos
                 const productosUnicos = [...new Set(productosFiltrados)];
-                // --- FIN DE LA MODIFICACIÓN ---
                 
                 if (productosUnicos.length === 0) {
                      productosContainer.innerHTML = '<p>No hay productos promocionales definidos.</p>';
                      return;
                 }
 
-                // Creamos un checkbox por cada producto único
                 productosUnicos.sort().forEach((productoNombre, index) => {
                     const div = document.createElement('div');
-                    div.className = 'checkbox-item'; // Puedes darle estilo a esto en CSS
+                    div.className = 'checkbox-item'; 
                     div.innerHTML = `
                         <input type="checkbox" id="prod-${index}" name="producto_check" value="${productoNombre}" style="margin-right: 5px;">
                         <label for="prod-${index}">${productoNombre}</label>
@@ -106,7 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- LÓGICA DE ENVÍO FINAL (sin cambios) ---
+    // ======================================================
+    // === LÓGICA DE ENVÍO FINAL (VALIDACIONES AJUSTADAS) ===
+    // ======================================================
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         
@@ -118,8 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Guardamos el array como un string JSON en el input oculto
         productosHiddenInput.value = JSON.stringify(productosSeleccionados);
-        // --- FIN ---
-
+        
         const formData = new FormData(form);
         
         // Añade todos los archivos de nuestra lista al FormData
@@ -127,21 +133,22 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('imagenes_referencia', file);
         }
 
+        // 1. VALIDACIÓN BÁSICA (CENTRO Y ASESOR)
         if (!formData.get('nombre_centro') || !formData.get('nombre_asesor')) {
             return alert('Por favor, seleccione el centro y el asesor.');
         }
-        if (selectedFiles.length === 0) {
-            // Lo hacemos opcional, ya que a veces la descripción es suficiente
-            if (!confirm('No has añadido imágenes de referencia. ¿Estás seguro de que deseas continuar?')) {
-                 return;
-            }
-        }
+
+        // 2. VALIDACIÓN DE PRODUCTOS (AHORA ES OBLIGATORIA)
+        // Antes era un confirm, ahora es un Alert + Return (Bloqueo)
         if (productosSeleccionados.length === 0) {
-             if (!confirm('No has seleccionado ningún producto. ¿Estás seguro de que deseas continuar?')) {
-                 return;
-            }
+             alert('⚠️ ATENCIÓN: Es OBLIGATORIO seleccionar al menos un producto del paquete para crear la solicitud.');
+             return; // Detenemos el proceso aquí. No pasa nada más hasta que seleccionen.
         }
 
+        // 3. VALIDACIÓN DE DETALLES/ARCHIVOS (ELIMINADA)
+        // Ya no preguntamos nada si no hay archivos o detalles. Es opcional.
+        
+        // --- ENVÍO AL SERVIDOR ---
         try {
             const botonSubmit = form.querySelector('button[type="submit"]');
             botonSubmit.textContent = 'Enviando...';
@@ -164,5 +171,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Cargar todos los datos al iniciar ---
     loadAdvisors();
     loadAllCenters();
-    loadProducts(); // <-- Llamamos a la nueva función
+    loadProducts();
 });
