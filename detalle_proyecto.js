@@ -881,7 +881,8 @@ async function mostrarPanelAprobProformaCliente(container, projectId, proyecto) 
 // ==========================================================
 // === FIN TAREA A.5 ===
 // ==========================================================
-// --- PANELES DE ACCIÓN: ETAPAS 9-13 (Con Validación de Pago para Diagramación) ---
+// === PANELES DE ACCIÓN: ETAPAS 9-13 (Completo: Pago + Retroceder) ===
+// ==========================================================
 async function mostrarPanelProduccion(container, proyecto) {
     if (!container) return;
     const projectId = proyecto.id;
@@ -903,7 +904,7 @@ async function mostrarPanelProduccion(container, proyecto) {
         `;
     }
     
-    // Flujo de producción
+    // 1. Flujo de AVANCE (Hacia adelante)
     const flujo = {
         'En Lista de Producción': { texto: 'Pasar a Diagramación', siguienteEstado: 'En Diagramación' },
         'En Diagramación': { texto: 'Pasar a Impresión', siguienteEstado: 'En Impresión' },
@@ -912,10 +913,25 @@ async function mostrarPanelProduccion(container, proyecto) {
         'En Confección': { texto: 'Pasar a Supervisión de Calidad', siguienteEstado: 'Supervisión de Calidad' }
     };
 
-    // Generación del HTML del botón principal
+    // 2. Flujo de RETROCESO (Hacia atrás - Corrección de errores)
+    const flujoInverso = {
+        'En Diagramación': 'En Lista de Producción',
+        'En Impresión': 'En Diagramación',
+        'En Calandrado': 'En Impresión',
+        'En Confección': 'En Calandrado',
+        'Supervisión de Calidad': 'En Confección'
+    };
+
+    // Generación del HTML
     if (flujo[estadoActual]) {
         const accion = flujo[estadoActual];
-        panelHTML = `<button id="avanzar-btn-${panelId}" class="btn btn-primary">${accion.texto}</button>`;
+        // Botón Principal (Avanzar)
+        panelHTML = `<button id="avanzar-btn-${panelId}" class="btn btn-primary" style="width: 100%; margin-bottom: 10px;">${accion.texto}</button>`;
+        
+        // Botón Secundario (Retroceder) - Solo si hay un paso anterior definido
+        if (flujoInverso[estadoActual]) {
+            panelHTML += `<button id="retroceder-btn-${panelId}" class="button" style="background-color: #6c757d; color: white; width: 100%; margin-top: 5px;">↩️ Corregir (Volver al paso anterior)</button>`;
+        }
     
     // Panel de Control de Calidad
     } else if (estadoActual === 'Supervisión de Calidad') {
@@ -929,33 +945,32 @@ async function mostrarPanelProduccion(container, proyecto) {
             <div class="button-group">
                 <button id="reportar-incidencia-btn-${panelId}" class="btn btn-danger">Devolver a Diseño (Etapa 3)</button>
             </div>
+            <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+                 <button id="retroceder-btn-${panelId}" class="button" style="background-color: #6c757d; color: white; width: 100%;">↩️ Corregir (Volver a Confección)</button>
+            </div>
         `;
     }
 
     div.innerHTML = `<div class="card">${incidenciaHtml}${panelHTML}</div>`;
     container.appendChild(div);
 
-    // --- LÓGICA DEL BOTÓN DE AVANZAR (Aquí está el cambio) ---
+    // --- LÓGICA DEL BOTÓN DE AVANZAR (Con Validación de Pago) ---
     const avanzarBtn = document.getElementById(`avanzar-btn-${panelId}`);
     if (avanzarBtn) {
         avanzarBtn.addEventListener('click', async () => {
             const accion = flujo[estadoActual];
             
-            // 1. VALIDACIÓN DE PAGO (Solo si vamos hacia Diagramación)
+            // Validación de Pago (Diagramación)
             if (accion.siguienteEstado === 'En Diagramación') {
                 const mensajePago = 
                     "💰 VERIFICACIÓN ADMINISTRATIVA DE PAGO\n\n" +
                     "Antes de pasar a Diagramación, es OBLIGATORIO confirmar que este cliente ya realizó su PRIMER ABONO.\n\n" +
                     "¿Confirmas que ya validaste con Administración el pago del abono?";
-                
-                // Si el usuario cancela, detenemos la ejecución aquí.
                 if (!confirm(mensajePago)) return;
             }
 
-            // 2. Confirmación estándar (Para todos los estados)
             if (!confirm(`¿Confirmas que deseas avanzar el proyecto a "${accion.siguienteEstado}"?`)) return;
             
-            // 3. Ejecución del cambio de etapa
             try {
                 const response = await fetch(`/api/proyectos/${projectId}/avanzar-etapa`, { 
                     method: 'PUT', 
@@ -964,6 +979,28 @@ async function mostrarPanelProduccion(container, proyecto) {
                 });
                 if (!response.ok) throw new Error('Error en el servidor');
                 alert('Etapa actualizada con éxito.');
+                window.location.reload();
+            } catch (error) { alert(`Error: ${error.message}`); }
+        });
+    }
+
+    // --- LÓGICA DEL BOTÓN DE RETROCEDER (NUEVO) ---
+    const retrocederBtn = document.getElementById(`retroceder-btn-${panelId}`);
+    if (retrocederBtn) {
+        retrocederBtn.addEventListener('click', async () => {
+            const etapaAnterior = flujoInverso[estadoActual];
+            
+            if (!confirm(`⚠️ CORRECCIÓN DE ERROR\n\n¿Deseas devolver este proyecto a la etapa "${etapaAnterior}"?\n\nÚsalo solo si avanzaste por error.`)) return;
+            
+            try {
+                // Reutilizamos la misma ruta 'avanzar-etapa' porque técnicamente solo estamos cambiando el estado
+                const response = await fetch(`/api/proyectos/${projectId}/avanzar-etapa`, { 
+                    method: 'PUT', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ nuevaEtapa: etapaAnterior }) 
+                });
+                if (!response.ok) throw new Error('Error en el servidor');
+                alert('Corrección aplicada. El proyecto ha retrocedido un paso.');
                 window.location.reload();
             } catch (error) { alert(`Error: ${error.message}`); }
         });
@@ -1003,7 +1040,7 @@ async function mostrarPanelProduccion(container, proyecto) {
             } catch (error) { alert(`Error: ${error.message}`); }
         });
     }
-}// ==========================================================
+}
 // === TAREA B.3 (Frontend): REEMPLAZA ESTA FUNCIÓN COMPLETA ===
 // (Implementa el formulario de Cierre de la Etapa 14)
 // ==========================================================
