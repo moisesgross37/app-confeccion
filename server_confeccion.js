@@ -175,7 +175,32 @@ const storage = multer.diskStorage({
         cb(null, file.fieldname + '-' + uniqueSuffix + fileExtension);
     }
 });
-const upload = multer({ storage: storage });
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 25 * 1024 * 1024 }, // Límite opcional de 25MB (puedes ajustarlo)
+    fileFilter: function (req, file, cb) {
+        // Lista de tipos de archivo permitidos (MIME Types)
+        const allowedMimes = [
+            'image/jpeg',
+            'image/png',
+            'image/jpg',
+            'application/pdf',
+            // Permitir WORD (.doc y .docx)
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            // Permitir EXCEL (.xls y .xlsx)
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
+
+        if (allowedMimes.includes(file.mimetype)) {
+            cb(null, true); // Archivo aceptado
+        } else {
+            // Si el archivo no es de estos tipos, lo rechazamos
+            cb(new Error('Formato no permitido. Solo se aceptan: PDF, Imágenes, Word y Excel.'));
+        }
+    }
+});
 
 // --- Rutas de Autenticación ---
 app.get('/login.html', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
