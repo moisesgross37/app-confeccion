@@ -1041,24 +1041,104 @@ async function mostrarPanelProduccion(container, proyecto) {
         });
     }
 }
-// === TAREA B.3 (Frontend): REEMPLAZA ESTA FUNCIÓN COMPLETA ===
-// (Implementa el formulario de Cierre de la Etapa 14)
+// ==========================================================
+// === TAREA B.3 (MEJORADA): PANEL DE ENTREGA INTELIGENTE ===
+// (Soporta proyectos nuevos con productos y viejos sin ellos)
 // ==========================================================
 async function mostrarPanelEntrega(container, projectId, proyecto) {
     if (!container) return;
     const panelId = `panel-entrega-${Math.random()}`;
     const div = document.createElement('div');
 
-    // 1. Leemos los productos del proyecto
+    // Leemos los productos
     const productos = proyecto.productos || [];
+
+    // ========================================================================
+    // --- CASO 1: PROYECTO ANTIGUO O SIN PRODUCTOS (MODO MANUAL) ---
+    // ========================================================================
     if (productos.length === 0) {
-        // Si no hay productos, mostramos un error simple (caso borde)
-        div.innerHTML = `<h3>Error: No se pueden registrar cantidades.</h3><p>Este proyecto no tiene productos registrados. Por favor, contacte a un administrador.</p>`;
+        div.innerHTML = `
+            <h3>Entrega Final (Proyecto Antiguo)</h3>
+            <div class="card" style="border-left: 5px solid #ffc107;">
+                <div class="card-body">
+                    <p><strong>Nota:</strong> Este es un proyecto antiguo que no tiene lista de productos registrada. Se permitirá el cierre manual.</p>
+                    
+                    <h4>Comentarios de Cierre (Obligatorio)</h4>
+                    <div class="form-group">
+                        <textarea id="comentarios-cierre-${panelId}" class="form-control" rows="3" placeholder="Detalle aquí lo que se está entregando..." required></textarea>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="completar-entrega-btn-${panelId}" class="btn btn-warning">Confirmar Cierre Manual y Archivar</button>
+                        <button id="reportar-incidencia-btn-${panelId}" class="btn btn-danger">Reportar Incidencia (Devolver a Diseño)</button>
+                    </div>
+                </div>
+            </div>
+        `;
         container.appendChild(div);
-        return;
+
+        // Lógica para cierre manual (sin validar tabla)
+        const btnCompletar = document.getElementById(`completar-entrega-btn-${panelId}`);
+        const comentariosEl = document.getElementById(`comentarios-cierre-${panelId}`);
+        const btnReportar = document.getElementById(`reportar-incidencia-btn-${panelId}`);
+
+        btnCompletar.addEventListener('click', async () => {
+            const comentarios = comentariosEl.value;
+            if (comentarios.trim() === '') {
+                return alert('Error: Los comentarios son obligatorios para cerrar este proyecto.');
+            }
+            if (!confirm('¿Seguro que deseas archivar este proyecto antiguo como Completado?')) return;
+
+            try {
+                btnCompletar.disabled = true;
+                btnCompletar.textContent = 'Guardando...';
+
+                // Enviamos un array vacío en la tabla
+                const response = await fetch(`/api/proyectos/${projectId}/completar-entrega`, { 
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        conduceTabla: [], 
+                        conduceComentarios: comentarios
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Error al cerrar proyecto.');
+                
+                alert('¡Proyecto antiguo completado y archivado!');
+                window.open(`hoja_de_conduce.html?id=${proyecto.id}`, '_blank');
+                setTimeout(() => { window.location.href = '/panel_confeccion.html'; }, 500);
+
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                btnCompletar.disabled = false;
+            }
+        });
+
+        // Lógica de reporte
+        btnReportar.addEventListener('click', async () => {
+            const comentarios = prompt('Describa la falla:');
+            if (!comentarios) return;
+             try {
+                const response = await fetch(`/api/proyectos/${projectId}/reportar-incidencia`, { 
+                    method: 'PUT', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ comentarios: comentarios }) 
+                });
+                if (!response.ok) throw new Error('Error al reportar.');
+                alert('Devuelto a Diseño.');
+                window.location.reload();
+            } catch (error) { alert(error.message); }
+        });
+
+        return; // ¡IMPORTANTE! Aquí termina la función para proyectos viejos
     }
 
-    // 2. Construimos la tabla de cantidades
+    // ========================================================================
+    // --- CASO 2: PROYECTO NUEVO (CON PRODUCTOS - FLUJO ESTÁNDAR) ---
+    // ========================================================================
+    
+    // Construimos la tabla de cantidades
     let tablaHtml = `
         <table class="table" id="tabla-conduce-${panelId}" style="table-layout: auto; width: 100%;">
             <thead>
@@ -1083,52 +1163,45 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
     });
     tablaHtml += `</tbody></table>`;
 
-    // 3. Creamos el HTML completo del panel
+    // HTML del Panel Estándar
     div.innerHTML = `
         <h3>Entrega Final del Proyecto</h3>
         <div class="card">
             <div class="card-body">
-                <p>El proyecto está listo para ser entregado. Por favor, complete todas las cantidades y comentarios para archivar el proyecto.</p>
-                
+                <p>El proyecto está listo para ser entregado. Complete las cantidades para generar el conduce.</p>
                 <h4>Tabla de Cantidades (Obligatorio)</h4>
                 ${tablaHtml}
-                
                 <hr>
                 <h4>Comentarios de Cierre (Obligatorio)</h4>
                 <div class="form-group">
-                    <textarea id="comentarios-cierre-${panelId}" class="form-control" rows="3" placeholder="Escriba aquí cualquier observación sobre la entrega (ej. 'Se entregaron 2 polos extra', 'Faltó 1 gorra', etc.)" required></textarea>
+                    <textarea id="comentarios-cierre-${panelId}" class="form-control" rows="3" placeholder="Observaciones..." required></textarea>
                 </div>
-
                 <div class="button-group">
                     <button id="completar-entrega-btn-${panelId}" class="btn btn-primary">Confirmar Cierre y Generar Conduce</button>
-                    <button id="reportar-incidencia-btn-${panelId}" class="btn btn-danger">Reportar Incidencia (Devolver a Diseño)</button>
+                    <button id="reportar-incidencia-btn-${panelId}" class="btn btn-danger">Reportar Incidencia</button>
                 </div>
             </div>
         </div>
     `;
     container.appendChild(div);
 
-    // 4. Lógica de los botones
+    // Lógica Estándar
     const btnCompletar = document.getElementById(`completar-entrega-btn-${panelId}`);
     const btnReportar = document.getElementById(`reportar-incidencia-btn-${panelId}`);
     const tablaEl = document.getElementById(`tabla-conduce-${panelId}`);
     const comentariosEl = document.getElementById(`comentarios-cierre-${panelId}`);
 
-    // Botón de Confirmar Cierre
     btnCompletar.addEventListener('click', async () => {
         let tablaValida = true;
         const conduceTabla = [];
 
-        // Validamos la tabla y recolectamos los datos
         tablaEl.querySelectorAll('tbody tr').forEach(tr => {
             const producto = tr.dataset.productoNombre;
             const cotizada = tr.querySelector('input[name^="cant_cotizada_"]').value;
             const listado = tr.querySelector('input[name^="cant_listado_"]').value;
             const entregada = tr.querySelector('input[name^="cant_entregada_"]').value;
 
-            if (cotizada === '' || listado === '' || entregada === '') {
-                tablaValida = false; // Marcamos como inválido si algún campo está vacío
-            }
+            if (cotizada === '' || listado === '' || entregada === '') tablaValida = false;
             
             conduceTabla.push({
                 producto: producto,
@@ -1140,15 +1213,10 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
 
         const comentarios = comentariosEl.value;
 
-        // Validación final
-        if (!tablaValida) {
-            return alert('Error: Por favor, llene todas las cantidades de la tabla (puede usar 0).');
-        }
-        if (comentarios.trim() === '') {
-            return alert('Error: Los comentarios de cierre son obligatorios.');
-        }
+        if (!tablaValida) return alert('Error: Por favor, llene todas las cantidades (puede usar 0).');
+        if (comentarios.trim() === '') return alert('Error: Los comentarios son obligatorios.');
         
-        if (!confirm('¿Estás seguro de que deseas marcar este proyecto como "Completado" y archivarlo? Esta acción es final.')) return;
+        if (!confirm('¿Estás seguro de cerrar este proyecto?')) return;
 
         try {
             btnCompletar.disabled = true;
@@ -1163,44 +1231,34 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
                 })
             });
             
-            if (!response.ok) { 
-                const err = await response.json(); 
-                throw new Error(err.message || 'Error del servidor'); 
-            }
- alert('¡Proyecto completado y archivado con éxito!');
-            
-            // ESTANDARIZADO: Usamos proyecto.id porque tenemos el objeto 'proyecto'
-            window.open(`hoja_de_conduce.html?id=${proyecto.id}`, '_blank');
-            
-            // CORRECCIÓN: Añadimos el retraso para que el pop-up funcione
-            setTimeout(() => {
-                window.location.href = '/panel_confeccion.html';
-            }, 500); // 500 milisegundos
+            if (!response.ok) throw new Error('Error del servidor');
+            
+            alert('¡Proyecto completado y archivado!');
+            window.open(`hoja_de_conduce.html?id=${proyecto.id}`, '_blank');
+            setTimeout(() => { window.location.href = '/panel_confeccion.html'; }, 500);
 
-        } catch (error) { 
-            alert(`Error: ${error.message}`); 
-            btnCompletar.disabled = false;
-            btnCompletar.textContent = 'Confirmar Cierre y Generar Conduce';
-        }
-    });
-    
-    // Botón de Reportar Incidencia
-    btnReportar.addEventListener('click', async () => {
-        const comentarios = prompt('Describa la falla (se devolverá a Diseño):');
+        } catch (error) { 
+            alert(`Error: ${error.message}`);
+            btnCompletar.disabled = false;
+            btnCompletar.textContent = 'Confirmar Cierre y Generar Conduce';
+        }
+    });
+    
+    // Botón de Reportar Incidencia (Estándar)
+    btnReportar.addEventListener('click', async () => {
+        const comentarios = prompt('Describa la falla (se devolverá a Diseño):');
         if (!comentarios || comentarios.trim() === '') { alert('Debes incluir un comentario.'); return; }
-        try {
-            const response = await fetch(`/api/proyectos/${proyecto.id}/reportar-incidencia`, { 
-                method: 'PUT', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({
-                    comentarios: comentarios
-                }) 
-            });
-            if (!response.ok) throw new Error('Error al reportar la incidencia.');
-            alert('Incidencia reportada. El proyecto volverá a Diseño (Etapa 3).');
-            window.location.reload();
-        } catch (error) { alert(`Error: ${error.message}`); }
-    });
+        try {
+            const response = await fetch(`/api/proyectos/${proyecto.id}/reportar-incidencia`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ comentarios: comentarios }) 
+            });
+            if (!response.ok) throw new Error('Error al reportar.');
+            alert('Incidencia reportada. Vuelve a Diseño.');
+            window.location.reload();
+        } catch (error) { alert(`Error: ${error.message}`); }
+    });
 }
 // ==========================================================
 // === FIN TAREA B.3 ===
