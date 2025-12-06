@@ -855,7 +855,7 @@ async function mostrarPanelAprobProformaCliente(container, projectId, proyecto) 
 // ==========================================================
 // === FIN TAREA A.5 ===
 // ==========================================================
-// --- PANELES DE ACCIÓN: ETAPAS 9-13 ---
+// --- PANELES DE ACCIÓN: ETAPAS 9-13 (Con Validación de Pago para Diagramación) ---
 async function mostrarPanelProduccion(container, proyecto) {
     if (!container) return;
     const projectId = proyecto.id;
@@ -864,6 +864,8 @@ async function mostrarPanelProduccion(container, proyecto) {
     const panelId = `panel-produccion-${Math.random()}`;
     const div = document.createElement('div');
     let incidenciaHtml = '';
+
+    // Manejo de Incidencias visuales
     if (estadoActual === 'En Confección' && proyecto.historial_incidencias && proyecto.historial_incidencias.length > 0) {
         const ultimaIncidencia = proyecto.historial_incidencias[proyecto.historial_incidencias.length - 1];
         incidenciaHtml = `
@@ -884,11 +886,12 @@ async function mostrarPanelProduccion(container, proyecto) {
         'En Confección': { texto: 'Pasar a Supervisión de Calidad', siguienteEstado: 'Supervisión de Calidad' }
     };
 
+    // Generación del HTML del botón principal
     if (flujo[estadoActual]) {
         const accion = flujo[estadoActual];
         panelHTML = `<button id="avanzar-btn-${panelId}" class="btn btn-primary">${accion.texto}</button>`;
     
-    // Panel de Control de Calidad (Simplificado por Tarea 5.2)
+    // Panel de Control de Calidad
     } else if (estadoActual === 'Supervisión de Calidad') {
         panelHTML = `
             <h4>Decisión Final de Calidad</h4>
@@ -905,13 +908,34 @@ async function mostrarPanelProduccion(container, proyecto) {
 
     div.innerHTML = `<div class="card">${incidenciaHtml}${panelHTML}</div>`;
     container.appendChild(div);
+
+    // --- LÓGICA DEL BOTÓN DE AVANZAR (Aquí está el cambio) ---
     const avanzarBtn = document.getElementById(`avanzar-btn-${panelId}`);
     if (avanzarBtn) {
         avanzarBtn.addEventListener('click', async () => {
             const accion = flujo[estadoActual];
+            
+            // 1. VALIDACIÓN DE PAGO (Solo si vamos hacia Diagramación)
+            if (accion.siguienteEstado === 'En Diagramación') {
+                const mensajePago = 
+                    "💰 VERIFICACIÓN ADMINISTRATIVA DE PAGO\n\n" +
+                    "Antes de pasar a Diagramación, es OBLIGATORIO confirmar que este cliente ya realizó su PRIMER ABONO.\n\n" +
+                    "¿Confirmas que ya validaste con Administración el pago del abono?";
+                
+                // Si el usuario cancela, detenemos la ejecución aquí.
+                if (!confirm(mensajePago)) return;
+            }
+
+            // 2. Confirmación estándar (Para todos los estados)
             if (!confirm(`¿Confirmas que deseas avanzar el proyecto a "${accion.siguienteEstado}"?`)) return;
+            
+            // 3. Ejecución del cambio de etapa
             try {
-                const response = await fetch(`/api/proyectos/${projectId}/avanzar-etapa`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nuevaEtapa: accion.siguienteEstado }) });
+                const response = await fetch(`/api/proyectos/${projectId}/avanzar-etapa`, { 
+                    method: 'PUT', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ nuevaEtapa: accion.siguienteEstado }) 
+                });
                 if (!response.ok) throw new Error('Error en el servidor');
                 alert('Etapa actualizada con éxito.');
                 window.location.reload();
@@ -919,6 +943,7 @@ async function mostrarPanelProduccion(container, proyecto) {
         });
     }
 
+    // Lógica de Calidad (Aprobar) - Sin cambios
     const aprobarCalidadBtn = document.getElementById(`aprobar-calidad-btn-${panelId}`);
     if (aprobarCalidadBtn) {
         aprobarCalidadBtn.addEventListener('click', async () => {
@@ -932,7 +957,7 @@ async function mostrarPanelProduccion(container, proyecto) {
         });
     }
 
-    // Lógica simplificada (Tarea 5.2)
+    // Lógica de Calidad (Reportar Incidencia) - Sin cambios
     const reportarIncidenciaBtn = document.getElementById(`reportar-incidencia-btn-${panelId}`);
     if (reportarIncidenciaBtn) {
         reportarIncidenciaBtn.addEventListener('click', async () => {
@@ -952,8 +977,7 @@ async function mostrarPanelProduccion(container, proyecto) {
             } catch (error) { alert(`Error: ${error.message}`); }
         });
     }
-}
-// ==========================================================
+}// ==========================================================
 // === TAREA B.3 (Frontend): REEMPLAZA ESTA FUNCIÓN COMPLETA ===
 // (Implementa el formulario de Cierre de la Etapa 14)
 // ==========================================================
