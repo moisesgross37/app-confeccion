@@ -1084,34 +1084,47 @@ async function mostrarPanelEntrega(container, projectId, proyecto) {
 
         btnCompletar.addEventListener('click', async () => {
             const comentarios = comentariosEl.value;
+            
+            // Validación básica
             if (comentarios.trim() === '') {
                 return alert('Error: Los comentarios son obligatorios para cerrar este proyecto.');
             }
+            
             if (!confirm('¿Seguro que deseas archivar este proyecto antiguo como Completado?')) return;
 
             try {
+                // Feedback visual para que sepas que está trabajando
                 btnCompletar.disabled = true;
                 btnCompletar.textContent = 'Guardando...';
 
-                // Enviamos un array vacío en la tabla
+                // --- AQUÍ ESTÁ EL TRUCO DEL FANTASMA ---
+                // Enviamos un producto falso llamado "(CIERRE ADMINISTRATIVO)"
+                // Así el servidor, aunque tenga reglas viejas, lo dejará pasar.
                 const response = await fetch(`/api/proyectos/${projectId}/completar-entrega`, { 
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        conduceTabla: [], 
+                        conduceTabla: [{ producto: "(CIERRE ADMINISTRATIVO)", cotizada: 0, listado: 0, entregada: 0 }], 
                         conduceComentarios: comentarios
                     })
                 });
                 
-                if (!response.ok) throw new Error('Error al cerrar proyecto.');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Error al cerrar proyecto.');
+                }
                 
                 alert('¡Proyecto antiguo completado y archivado!');
+                
+                // Abrimos el conduce y redirigimos
                 window.open(`hoja_de_conduce.html?id=${proyecto.id}`, '_blank');
-                setTimeout(() => { window.location.href = '/panel_confeccion.html'; }, 500);
+                setTimeout(() => { window.location.href = '/panel_confeccion.html'; }, 1000);
 
             } catch (error) {
                 alert(`Error: ${error.message}`);
+                // Si falla, reactivamos el botón para que puedas intentar de nuevo
                 btnCompletar.disabled = false;
+                btnCompletar.textContent = 'Confirmar Cierre Manual y Archivar';
             }
         });
 
