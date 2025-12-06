@@ -579,26 +579,98 @@ async function mostrarPanelRevisarPropuesta(container, projectId, proyecto) {
     });
 }
 
-// --- PANEL DE ACCIÓN: ETAPA 5 ---
+// ==========================================================
+// === ETAPA 5: APROBACIÓN CLIENTE (Fusionado: Link + Alerta) ===
+// ==========================================================
 async function mostrarPanelAprobarCliente(container, projectId, proyecto) {
-    if (!container) return;
-    const ultimaPropuesta = proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno');
-    const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'N/A';
-    const fileUrl = ultimaPropuesta ? ultimaPropuesta.url_archivo : '#'; // Corregido: quitada la / extra
+    if (!container) return; 
     
-    const panelId = `panel-cliente-${Math.random()}`;
+    // 1. RECUPERAMOS EL ARCHIVO DE LA PROPUESTA (Lógica del código viejo)
+    const ultimaPropuesta = proyecto.archivos ? proyecto.archivos.find(a => a.tipo_archivo === 'propuesta_diseno') : null;
+    const fileName = ultimaPropuesta ? ultimaPropuesta.nombre_archivo : 'Ver Propuesta';
+    const fileUrl = ultimaPropuesta ? ultimaPropuesta.url_archivo : '#';
+
+    const panelId = `panel-aprob-cliente-${Math.random()}`;
     const div = document.createElement('div');
-    div.innerHTML = `<h3>Aprobación Cliente</h3><div class="card"><p><strong>Propuesta:</strong> <a href="${fileUrl}" target="_blank">${fileName}</a></p><hr><div class="button-group"><button id="aprobar-cliente-btn-${panelId}">Confirmar Aprobación</button><button id="solicitar-mejora-cliente-btn-${panelId}">Solicitar Cambios</button></div></div>`;
-    container.appendChild(div);
     
-    document.getElementById(`aprobar-cliente-btn-${panelId}`).addEventListener('click', async () => { if (!confirm('¿Confirmas que el cliente aprobó el diseño?')) return; try { const res = await fetch(`/api/proyectos/${projectId}/aprobar-cliente`, { method: 'PUT' }); if (!res.ok) throw new Error('Error en servidor.'); alert('Aprobación registrada.'); window.location.reload(); } catch (e) { alert(`Error: ${e.message}`); } });
-    document.getElementById(`solicitar-mejora-cliente-btn-${panelId}`).addEventListener('click', async () => {
-        const comentarios = prompt('Escribe los cambios del cliente:');
-        if (!comentarios || comentarios.trim() === '') return;
+    // 2. HTML MEJORADO (Incluye el link del archivo)
+    div.innerHTML = `
+        <h3>Aprobación del Cliente</h3>
+        <div class="card">
+            <div class="card-body">
+                <p>El cliente debe revisar la propuesta. Si aprueba, el proyecto pasará a la siguiente fase.</p>
+                
+                <div style="background: #f1f3f5; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                    <strong>📂 Archivo de Propuesta:</strong> 
+                    <a href="${fileUrl}" target="_blank" style="font-weight: bold; text-decoration: underline;">${fileName}</a>
+                </div>
+
+                <div class="button-group">
+                    <button id="cliente-aprueba-btn-${panelId}" class="btn btn-success">✅ Cliente Aprueba Diseño</button>
+                    <button id="solicitar-cambios-btn-${panelId}" class="btn btn-warning">🔄 Cliente Solicita Cambios</button>
+                </div>
+            </div>
+        </div>
+    `;
+    container.appendChild(div);
+
+    // --- BOTÓN: CLIENTE APRUEBA (Con Alerta de Retraso) ---
+    document.getElementById(`cliente-aprueba-btn-${panelId}`).addEventListener('click', async () => {
+        
+        // --- ⏳ LÓGICA DE ALERTA DE RETRASO ---
+        if (proyecto.fecha_ultimo_cambio_etapa) {
+            const fechaInicioEspera = new Date(proyecto.fecha_ultimo_cambio_etapa);
+            const hoy = new Date();
+            // Calculamos diferencia en días
+            const diferenciaTiempo = hoy - fechaInicioEspera;
+            const diasDetenido = Math.floor(diferenciaTiempo / (1000 * 60 * 60 * 24));
+
+            // Solo mostramos la alerta si ha pasado más de 1 día
+            if (diasDetenido > 1) {
+                const mensajeRetraso = 
+                    `⚠️ ALERTA DE TIEMPO DETENIDO\n\n` +
+                    `Este proyecto ha estado detenido **${diasDetenido} días** esperando al cliente.\n` +
+                    `Es importante comunicarle que la fecha de entrega se moverá en consecuencia.\n\n` +
+                    `¿Deseas continuar y aprobar?`;
+                
+                if (!confirm(mensajeRetraso)) return; // Si cancela, no hacemos nada
+            } else {
+                // Confirmación normal si fue rápido
+                if (!confirm('¿El cliente ha aprobado el diseño formalmente?')) return;
+            }
+        } else {
+            // Fallback por si es un proyecto muy viejo sin fecha registrada
+            if (!confirm('¿El cliente ha aprobado el diseño formalmente?')) return;
+        }
+        // ----------------------------------------
+
         try {
-            const res = await fetch(`/api/proyectos/${projectId}/solicitar-mejora`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comentarios: `CLIENTE: ${comentarios}` }) });
-            if (!res.ok) throw new Error('Error al enviar.'); alert('Cambios enviados.'); window.location.reload();
-        } catch (e) { alert(`Error: ${e.message}`); }
+            // Usamos la ruta genérica 'avanzar-etapa' para moverlo a la siguiente fase
+            const response = await fetch(`/api/proyectos/${projectId}/avanzar-etapa`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ nuevaEtapa: 'Pendiente de Proforma' }) 
+            });
+            if (!response.ok) throw new Error('Error en el servidor');
+            alert('Diseño aprobado. El proyecto pasa a Proforma.');
+            window.location.reload();
+        } catch (error) { alert(`Error: ${error.message}`); }
+    });
+
+    // --- BOTÓN: SOLICITAR CAMBIOS (Igual que antes) ---
+    document.getElementById(`solicitar-cambios-btn-${panelId}`).addEventListener('click', async () => {
+        const comentarios = prompt('Describa los cambios solicitados por el cliente:');
+        if (comentarios === null || comentarios.trim() === "") return;
+        try {
+            const response = await fetch(`/api/proyectos/${projectId}/solicitar-mejora`, { 
+                method: 'PUT', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ comentarios: `CLIENTE: ${comentarios}` }) 
+            });
+            if (!response.ok) throw new Error('Error al solicitar cambios.');
+            alert('El proyecto ha sido devuelto al Diseñador.');
+            window.location.reload();
+        } catch(error) { alert(`Error: ${error.message}`); }
     });
 }
 // --- PANEL DE ACCIÓN: ETAPA 6 ---
