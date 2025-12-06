@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control de Confección v2</title>
-    <link rel="stylesheet" href="confeccion_estilos.css">
+    
+    <link rel="stylesheet" href="estilos.css?v=2">
+    
+    <link rel="stylesheet" href="confeccion_estilos.css?v=2">
 
     <style>
         .filtros-container {
@@ -18,8 +21,6 @@
             margin-bottom: 20px;
         }
 
-        /* (Corrección) Eliminé 'table-layout: fixed' para que las columnas 
-           se ajusten automáticamente al contenido, lo cual es mejor. */
         .table {
             width: 100%;
             border-collapse: collapse; 
@@ -62,19 +63,20 @@
                     <label for="filtro-completados">Ver Proyectos Completados (Archivados)</label>
                 </div>
             </div>
-            </div>
+        </div>
 
         <table class="table">
             <thead>
-    <tr>
-        <th>Código</th>
-        <th>Centro</th>
-        <th>Asesor</th>
-        <th>Diseñador</th>
-        <th>Estatus</th>
-        <th>Antigüedad</th>
-        <th>Acciones</th>   </tr>
-</thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Centro</th>
+                    <th>Asesor</th>
+                    <th>Diseñador</th>
+                    <th>Estatus</th>
+                    <th>Antigüedad</th>
+                    <th>Acciones</th>   
+                </tr>
+            </thead>
             <tbody id="proyectos-table-body">
                 </tbody>
         </table>
