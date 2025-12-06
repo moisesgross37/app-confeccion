@@ -206,3 +206,52 @@ tr:hover {
 .back-button:hover {
     text-decoration: underline;
 }
+/* ======================================================= */
+/* === VERSIÓN MÓVIL (FUERZA BRUTA) === */
+/* ======================================================= */
+@media only screen and (max-width: 768px) {
+    /* Forzamos a la tabla a dejar de ser tabla */
+    .table, .table tbody, .table tr, .table td {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    /* Ocultamos los títulos viejos */
+    .table thead {
+        display: none !important;
+    }
+
+    /* Convertimos cada fila en una tarjeta bonita */
+    .table tr {
+        margin-bottom: 20px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 10px;
+    }
+
+    /* Estilo de cada linea dentro de la tarjeta */
+    .table td {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        text-align: right;
+        padding: 10px 5px !important;
+        border-bottom: 1px solid #eee;
+        font-size: 14px; /* Texto un poco más legible */
+    }
+
+    .table td:last-child {
+        border-bottom: none;
+        justify-content: center;
+    }
+
+    /* ETIQUETAS (Las ponemos a la fuerza) */
+    .table td:nth-of-type(1)::before { content: "Código"; font-weight: bold; }
+    .table td:nth-of-type(2)::before { content: "Centro"; font-weight: bold; }
+    .table td:nth-of-type(3)::before { content: "Asesor"; font-weight: bold; }
+    .table td:nth-of-type(4)::before { content: "Diseñador"; font-weight: bold; }
+    .table td:nth-of-type(5)::before { content: "Estatus"; font-weight: bold; }
+    .table td:nth-of-type(6)::before { content: "Días"; font-weight: bold; }
+}
