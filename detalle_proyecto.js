@@ -772,7 +772,7 @@ async function mostrarPanelAprobProformaCliente(container, projectId, proyecto) 
     const panelId = `panel-autorizar-produccion-${Math.random()}`;
     const div = document.createElement('div');
     
-    // El HTML interno es el mismo, es el panel de "Autorización Final"
+    // El HTML interno es el mismo
     div.innerHTML = `
         <h3>Aprobación de Cliente y Autorización</h3>
         <div class="card">
@@ -790,16 +790,35 @@ async function mostrarPanelAprobProformaCliente(container, projectId, proyecto) 
     `;
     container.appendChild(div);
 
-    // Lógica del botón de Autorizar (sin cambios)
+    // --- Lógica del botón de Autorizar (CON EL NUEVO AVISO) ---
     document.getElementById(`autorizar-produccion-btn-${panelId}`).addEventListener('click', async () => {
         const listadoInput = document.getElementById(`listado-final-input-${panelId}`);
         const listadoFile = listadoInput.files[0];
-        if (!listadoFile) { alert('Debes cargar el archivo con el listado final para poder autorizar.'); return; }
-        if (!confirm('¿Estás seguro de que quieres autorizar el inicio de la producción?')) return;
+
+        // 1. Validar que haya archivo
+        if (!listadoFile) { 
+            alert('Debes cargar el archivo con el listado final para poder autorizar.'); 
+            return; 
+        }
+
+        // 2. NUEVO MENSAJE DE ADVERTENCIA (Texto Mejorado)
+        const mensaje = 
+            "⚠️ AVISO IMPORTANTE SOBRE PROFESORES\n\n" +
+            "Si este listado NO incluye a los profesores, su entrega NO saldrá en la misma fecha que la promoción.\n\n" +
+            "¿Confirmas que has informado esto y deseas continuar?";
+
+        // Si el usuario le da a "Cancelar", detenemos todo aquí.
+        if (!confirm(mensaje)) return;
         
+        // 3. Si dice que SÍ, procedemos con la carga
         const formData = new FormData();
         formData.append('listado_final', listadoFile);
         
+        // (Opcional) Cambiamos el texto del botón para evitar doble clic
+        const btn = document.getElementById(`autorizar-produccion-btn-${panelId}`);
+        btn.textContent = "Procesando...";
+        btn.disabled = true;
+
         try {
             const response = await fetch(`/api/proyectos/${projectId}/autorizar-produccion`, { method: 'PUT', body: formData });
             if (!response.ok) { const err = await response.json(); throw new Error(err.message || 'Error del servidor'); }
@@ -808,10 +827,13 @@ async function mostrarPanelAprobProformaCliente(container, projectId, proyecto) 
             window.location.reload();
         } catch (error) { 
             alert(`Error: ${error.message}`); 
+            // Si falló, reactivamos el botón
+            btn.textContent = "Reintentar Autorización";
+            btn.disabled = false;
         }
     });
 
-    // Lógica del botón de Rechazar (sin cambios)
+    // --- Lógica del botón de Rechazar (sin cambios) ---
     document.getElementById(`solicitar-mejora-proforma-btn-${panelId}`).addEventListener('click', async () => {
         const comentarios = prompt('Escriba los cambios necesarios para la proforma:');
         if (comentarios === null || comentarios.trim() === "") return;
