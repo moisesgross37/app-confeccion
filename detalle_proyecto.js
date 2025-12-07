@@ -234,7 +234,7 @@ function renderizarTiemposEHistorial(proyecto) {
     }
 }
 // ==========================================================
-// === CEREBRO ACTUALIZADO (Historial en Etapas 3, 6 y 8) ===
+// === CEREBRO FINAL (Producción delegada al Diseñador) ===
 // ==========================================================
 function renderizarLineaDeTiempo(proyecto, user) {
     const container = document.getElementById('flujo-de-etapas-container');
@@ -302,12 +302,8 @@ function renderizarLineaDeTiempo(proyecto, user) {
         li.setAttribute('data-estado', estado);
         const fechaFormateada = fechaEtapa ? new Date(fechaEtapa).toLocaleDateString() : '';
         
-        // =======================================================
-        // === NUEVO: LÓGICA DE HISTORIAL DE ARCHIVOS ===
-        // =======================================================
+        // --- HISTORIAL DE ARCHIVOS (3, 6, 8) ---
         let archivosHtml = '';
-        
-        // ¡AQUÍ ESTÁ LA ACTUALIZACIÓN! Activamos 3, 6 y 8
         const mapaArchivosPorEtapa = {
             3: 'propuesta_diseno',
             6: 'proforma',
@@ -316,14 +312,9 @@ function renderizarLineaDeTiempo(proyecto, user) {
 
         if (mapaArchivosPorEtapa[etapa.num] && proyecto.archivos) {
             const tipoBuscado = mapaArchivosPorEtapa[etapa.num];
-            // Filtramos los archivos de este tipo
             const archivosDeEstaEtapa = proyecto.archivos.filter(a => a.tipo_archivo === tipoBuscado);
-
-            // Si hay archivos, generamos la lista
             if (archivosDeEstaEtapa.length > 0) {
-                // Ordenamos del más viejo al más nuevo
                 archivosDeEstaEtapa.sort((a, b) => new Date(a.fecha_subida) - new Date(b.fecha_subida));
-
                 archivosHtml = `<div style="margin-top: 8px; font-size: 0.85rem; background: #f8f9fa; padding: 8px; border-radius: 5px; border-left: 3px solid #007bff;">
                     <strong style="display:block; margin-bottom:4px; color:#555;">📂 Historial de Archivos:</strong>
                     <ul style="margin:0; padding-left: 20px;">`;
@@ -340,9 +331,7 @@ function renderizarLineaDeTiempo(proyecto, user) {
                 archivosHtml += `</ul></div>`;
             }
         }
-        // =======================================================
 
-        // --- Lógica del Panel de Acciones ---
         let panelHtml = '';
         const esEtapaActual = (estado === 'actual');
         const esPanelDeCompletado = (etapa.num === 14 && proyecto.status === 'Completado');
@@ -358,11 +347,10 @@ function renderizarLineaDeTiempo(proyecto, user) {
             </div>
             ${archivosHtml} ${panelHtml}
         `;
-        
         container.appendChild(li);
     });
 
-    // --- CEREBRO (IF/ELSE DE PANELES) - Sin cambios ---
+    // --- CEREBRO: LÓGICA DE PERMISOS ---
     const rolesAdmin = ['Administrador', 'Coordinador'];
     const rolesDiseno = ['Administrador', 'Diseñador'];
     const rolesAsesor = ['Administrador', 'Asesor', 'Coordinador'];
@@ -386,28 +374,44 @@ function renderizarLineaDeTiempo(proyecto, user) {
         mostrarPanelAprobProformaInterna(document.getElementById('panel-etapa-7'), proyecto.id, proyecto);
     }
     else if (proyecto.status === 'Pendiente Aprob. Proforma Cliente' && esAsesor) {
-    	mostrarPanelAprobProformaCliente(document.getElementById('panel-etapa-8'), proyecto.id, proyecto);
+        mostrarPanelAprobProformaCliente(document.getElementById('panel-etapa-8'), proyecto.id, proyecto);
     }
-    else if (esAdmin && (etapaActualNum >= 9 && etapaActualNum <= 13) && proyecto.status !== 'Listo para Entrega' ) {
+    
+    // --- CAMBIO AQUÍ: PRODUCCIÓN (9-12) -> ADMIN O DISEÑADOR ---
+    // Delegamos la parte operativa al diseñador para liberar al admin
+    else if ((esAdmin || esDisenador) && (etapaActualNum >= 9 && etapaActualNum <= 12)) {
         const panelId = `panel-etapa-${etapaActualNum}`;
         const panelContainer = document.getElementById(panelId);
         if (panelContainer) {
             mostrarPanelProduccion(panelContainer, proyecto);
         }
     }
+    
+    // --- CAMBIO AQUÍ: CALIDAD (13) -> SOLO ADMIN ---
+    // El control final y el pase a entrega sigue siendo exclusivo
+    else if (esAdmin && etapaActualNum === 13) {
+        const panelContainer = document.getElementById('panel-etapa-13');
+        if (panelContainer) {
+            mostrarPanelProduccion(panelContainer, proyecto);
+        }
+    }
+
+    // (Lógica para correcciones de diseño)
     else if (esDisenador && (proyecto.status === 'Diseño en Proceso' || (proyecto.status === 'En Confección' && proyecto.historial_incidencias?.length > 0))) {
         const panelId = (proyecto.status === 'Diseño en Proceso') ? 'panel-etapa-3' : 'panel-etapa-12';
         const panelContainer = document.getElementById(panelId);
         if (panelContainer) {
-        	mostrarPanelSubirPropuesta(panelContainer, proyecto.id, proyecto);
+            mostrarPanelSubirPropuesta(panelContainer, proyecto.id, proyecto);
         }
     }
+    // (Lógica de entrega final)
     else if (proyecto.status === 'Listo para Entrega' && esAdmin) {
         const panelContainer = document.getElementById('panel-etapa-14');
         if (panelContainer) {
             mostrarPanelEntrega(panelContainer, proyecto.id, proyecto);
         }
     }
+    // (Lógica de visualización final - Hoja de conduce)
     else if (proyecto.status === 'Completado') {
         const panelContainer = document.getElementById('panel-etapa-14'); 
         if (panelContainer) {
