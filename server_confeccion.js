@@ -990,11 +990,11 @@ app.put('/api/proyectos/:id/reportar-incidencia', requireLogin, checkRole(['Admi
         res.status(500).json({ message: 'Error en el servidor al reportar la incidencia.' });
     }
 });
-// ==========================================================
-// === FIN TAREA 5.1 ===
-// ==========================================================
-// REEMPLAZA ESTE BLOQUE COMPLETO
-app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administrador', 'Coordinador']), async (req, res) => {
+// =============================================================================
+// RUTA GENÉRICA PARA AVANZAR ETAPAS (CORREGIDA PARA DISEÑADORES Y ASESORES)
+// =============================================================================
+// Agregamos 'Diseñador' (para mover producción) y 'Asesor' (para aprobaciones)
+app.put('/api/proyectos/:id/avanzar-etapa', requireLogin, checkRole(['Administrador', 'Coordinador', 'Diseñador', 'Asesor']), async (req, res) => {
     const { nuevaEtapa } = req.body;
     try {
         const result = await pool.query(
